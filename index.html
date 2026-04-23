@@ -630,7 +630,7 @@ function getFiltered() {
   if (xrayFilter) list = list.filter(c => (appState[c.cntr]?.spec||c.spec)==='RF');
   if (curTab==='pending') list = list.filter(c => !appState[c.cntr]?.checked);
   else if (curTab==='done') list = list.filter(c => appState[c.cntr]?.checked);
-  else if (curTab==='xray') list = list.filter(c => (appState[c.cntr]?.spec||c.spec)==='RF');
+  else if (curTab==='xray') list = list.filter(c => (appState[c.cntr]?.spec||c.spec)==='XRAY');
   else if (curTab==='special') list = list.filter(c => (appState[c.cntr]?.spec||c.spec));
   return list;
 }
@@ -687,7 +687,10 @@ function renderCard(c) {
   let badges = spec==='20DC'||c.size.startsWith('20')
     ? `<span class="badge b20">${c.size}</span>`
     : `<span class="badge b40">${c.size}</span>`;
-  if (spec==='XRAY') badges += `<span class="badge bxr">⚠ XRAY</span>`;
+  if (spec==='XRAY') {
+    const xcat = c.specDetail ? c.specDetail.replace('XRAY (','').replace(')','') : 'XRAY';
+    badges += `<span class="badge bxr">⚠ ${xcat}</span>`;
+  }
   else if (spec==='DG/TANK') badges += `<span class="badge bdg">☢ DG/TANK</span>`;
   else if (spec==='OT') badges += `<span class="badge bot">OT</span>`;
   else if (spec==='RF') badges += `<span class="badge" style="background:rgba(0,212,255,.15);color:var(--acc)">❄ RF ${c.specDetail?c.specDetail.replace('RF','').trim():''}</span>`;
@@ -712,30 +715,104 @@ function renderCard(c) {
 }
 
 function renderSpecial(area) {
-  const specs = ['긴급','RF','FR','DG','OT'];
-  const labels = {'긴급':'🚨 긴급화물','RF':'❄ RF (리퍼)','FR':'📐 FR (플랫랙)','DG':'☢ DG (위험물)','OT':'📦 OT'};
-  const labels_UNUSED = {'XRAY':'⚠ XRAY 대상','DG/TANK':'☢ DG / TANK','OT':'📦 OT','RF':'❄ RF','FR':'📐 FR','OOG':'🔺 OOG'};
-  const cls = {'긴급':'xr','RF':'ot','FR':'ot','DG':'dg','OT':'ot'};
   let html = '';
-  specs.forEach(sp => {
-    const items = CONTAINERS_RAW.filter(c => (appState[c.cntr]?.spec||c.spec)===sp);
-    if (!items.length) return;
-    html += `<div class="sec-hdr"><span>${labels[sp]} (${items.length})</span></div>`;
-    items.forEach(c => {
+
+  // ===== XRAY - 검사방법별 구분 =====
+  const xrayItems = CONTAINERS_RAW.filter(c => (appState[c.cntr]?.spec||c.spec)==='XRAY');
+  if (xrayItems.length) {
+    // 검사방법별 그룹핑
+    const xrayGroups = {
+      'X-RAY':    {label:'⚠ X-RAY 검색기', cls:'xr', items:[]},
+      'Sea & Air':{label:'✈ Sea & Air',     cls:'xr', items:[]},
+      '즉시검사':  {label:'🔍 즉시검사',      cls:'xr', items:[]},
+      '반입후검사':{label:'📋 반입후검사',     cls:'xr', items:[]},
+      '기타':     {label:'❓ 기타',           cls:'xr', items:[]}
+    };
+    xrayItems.forEach(c => {
+      const detail = c.specDetail || '';
+      if (detail.includes('X-RAY'))    xrayGroups['X-RAY'].items.push(c);
+      else if (detail.includes('Sea & Air')) xrayGroups['Sea & Air'].items.push(c);
+      else if (detail.includes('즉시검사'))  xrayGroups['즉시검사'].items.push(c);
+      else if (detail.includes('반입후검사')) xrayGroups['반입후검사'].items.push(c);
+      else xrayGroups['기타'].items.push(c);
+    });
+    html += `<div class="sec-hdr"><span>⚠ XRAY 대상 총 ${xrayItems.length}개</span></div>`;
+    Object.values(xrayGroups).forEach(grp => {
+      if (!grp.items.length) return;
+      html += `<div class="sec-hdr" style="background:rgba(255,61,87,.08);color:var(--red);padding:6px 16px"><span>${grp.label} (${grp.items.length})</span></div>`;
+      grp.items.forEach(c => {
+        const st = appState[c.cntr];
+        const seal = st?.seal||c.seal;
+        html += `<div class="sp-card xr" onclick="openModal(${c.no})">
+          <div class="sp-title xr">${grp.label}</div>
+          <div class="sp-cntr">${c.cntr}</div>
+          <div class="sp-detail">
+            실번호: <span>${seal}</span> · 위치: <span>${c.pos||'-'}</span><br>
+            규격: <span>${c.size}</span> · 중량: <span>${c.wt?c.wt.toLocaleString()+'kg':'-'}</span>
+            ${st?.damage?`<br>데미지: <span style="color:var(--red)">${st.damage}</span>`:''}
+          </div>
+        </div>`;
+      });
+    });
+  }
+
+  // ===== RF 리퍼 =====
+  const rfItems = CONTAINERS_RAW.filter(c => (appState[c.cntr]?.spec||c.spec)==='RF');
+  if (rfItems.length) {
+    html += `<div class="sec-hdr"><span>❄ RF 리퍼 (${rfItems.length})</span></div>`;
+    rfItems.forEach(c => {
       const st = appState[c.cntr];
       const seal = st?.seal||c.seal;
-      html += `<div class="sp-card ${cls[sp]}" onclick="openModal(${c.no})">
-        <div class="sp-title ${cls[sp]}">${labels[sp]}</div>
+      html += `<div class="sp-card ot" onclick="openModal(${c.no})">
+        <div class="sp-title ot">❄ RF (리퍼)</div>
         <div class="sp-cntr">${c.cntr}</div>
         <div class="sp-detail">
           실번호: <span>${seal}</span> · 위치: <span>${c.pos||'-'}</span><br>
           규격: <span>${c.size}</span> · 중량: <span>${c.wt?c.wt.toLocaleString()+'kg':'-'}</span>
-          ${c.specDetail?`<br>특수: <span style="color:var(--grn);font-weight:700">${c.specDetail}</span>`:''}
+          ${c.specDetail?`<br>온도: <span style="color:#00e5ff;font-weight:700;font-size:13px">${c.specDetail}</span>`:''}
           ${st?.damage?`<br>데미지: <span style="color:var(--red)">${st.damage}</span>`:''}
         </div>
       </div>`;
     });
-  });
+  }
+
+  // ===== FR 플랫랙 =====
+  const frItems = CONTAINERS_RAW.filter(c => (appState[c.cntr]?.spec||c.spec)==='FR');
+  if (frItems.length) {
+    html += `<div class="sec-hdr"><span>📐 FR 플랫랙 (${frItems.length})</span></div>`;
+    frItems.forEach(c => {
+      const st = appState[c.cntr];
+      const seal = st?.seal||c.seal;
+      html += `<div class="sp-card ot" onclick="openModal(${c.no})">
+        <div class="sp-title ot">📐 FR (플랫랙)</div>
+        <div class="sp-cntr">${c.cntr}</div>
+        <div class="sp-detail">
+          실번호: <span>${seal}</span> · 위치: <span>${c.pos||'-'}</span><br>
+          규격: <span>${c.size}</span> · 중량: <span>${c.wt?c.wt.toLocaleString()+'kg':'-'}</span>
+        </div>
+      </div>`;
+    });
+  }
+
+  // ===== 긴급화물 =====
+  const urgItems = CONTAINERS_RAW.filter(c => (appState[c.cntr]?.spec||c.spec)==='긴급');
+  if (urgItems.length) {
+    html += `<div class="sec-hdr"><span>🚨 긴급화물 (${urgItems.length})</span></div>`;
+    urgItems.forEach(c => {
+      const st = appState[c.cntr];
+      const seal = st?.seal||c.seal;
+      html += `<div class="sp-card xr" onclick="openModal(${c.no})">
+        <div class="sp-title xr">🚨 긴급화물</div>
+        <div class="sp-cntr">${c.cntr}</div>
+        <div class="sp-detail">
+          실번호: <span>${seal}</span> · 위치: <span>${c.pos||'-'}</span><br>
+          규격: <span>${c.size}</span> · 중량: <span>${c.wt?c.wt.toLocaleString()+'kg':'-'}</span>
+          ${c.specDetail?`<br>구분: <span style="color:var(--acc2);font-weight:700">${c.specDetail}</span>`:''}
+        </div>
+      </div>`;
+    });
+  }
+
   if (!html) html = '<div class="empty"><span class="ei">📭</span>특수화물 없음</div>';
   area.innerHTML = html;
 }
