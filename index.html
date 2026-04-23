@@ -1,0 +1,1097 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>OBWH 2619E 검수앱</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+:root {
+  --bg:#0a0e1a; --sur:#111827; --sur2:#1e2a3a; --bdr:#2a3a4a;
+  --acc:#00d4ff; --acc2:#ff6b35; --grn:#00e676; --yel:#ffd600;
+  --red:#ff3d57; --pur:#b388ff; --txt:#e8f0fe; --txt2:#8899aa;
+  --mono:'JetBrains Mono',monospace; --font:'Noto Sans KR',sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:var(--font);background:var(--bg);color:var(--txt);min-height:100vh;overflow-x:hidden}
+
+/* LOGIN */
+#loginScreen{min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,#0d2040,#0a0e1a 70%)}
+.login-logo{text-align:center;margin-bottom:40px}
+.login-logo .icon{font-size:48px;display:block;margin-bottom:12px;filter:drop-shadow(0 0 20px var(--acc))}
+.login-logo h1{font-size:22px;font-weight:900;letter-spacing:2px;color:var(--acc)}
+.login-logo p{font-size:12px;color:var(--txt2);margin-top:4px;font-family:var(--mono)}
+.login-card{background:var(--sur);border:1px solid var(--bdr);border-radius:16px;padding:32px 24px;width:100%;max-width:360px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.login-card h2{font-size:16px;font-weight:700;margin-bottom:24px;color:var(--txt2);text-align:center;letter-spacing:1px}
+.fg{margin-bottom:16px}
+.fg label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:6px;letter-spacing:1px;text-transform:uppercase}
+.fg input,.fg select{width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:12px 14px;font-size:15px;color:var(--txt);font-family:var(--font);outline:none;transition:border-color .2s}
+.fg select option{background:var(--sur2)}
+.fg input:focus,.fg select:focus{border-color:var(--acc);box-shadow:0 0 0 2px rgba(0,212,255,.15)}
+.login-btn{width:100%;background:linear-gradient(135deg,var(--acc),#0080ff);border:none;border-radius:10px;padding:14px;font-size:15px;font-weight:700;color:#000;cursor:pointer;margin-top:8px;letter-spacing:1px;transition:opacity .2s,transform .1s}
+.login-btn:active{transform:scale(.98);opacity:.9}
+.login-err{background:rgba(255,61,87,.15);border:1px solid rgba(255,61,87,.4);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--red);margin-top:12px;text-align:center;display:none}
+
+/* MAIN */
+#mainApp{display:none}
+.topbar{background:var(--sur);border-bottom:1px solid var(--bdr);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.topbar-left h1{font-size:14px;font-weight:900;color:var(--acc);font-family:var(--mono)}
+.topbar-left p{font-size:10px;color:var(--txt2);margin-top:1px}
+.topbar-right{display:flex;align-items:center;gap:6px}
+.topbar-right span{font-size:12px;color:var(--txt2)}
+.tbtn{background:var(--sur2);border:1px solid var(--bdr);border-radius:6px;padding:5px 10px;font-size:11px;color:var(--txt2);cursor:pointer;font-family:var(--font)}
+.tbtn.sync{background:rgba(0,212,255,.1);border-color:rgba(0,212,255,.3);color:var(--acc)}
+.tbtn.logout{background:rgba(255,107,53,.1);border-color:rgba(255,107,53,.3);color:var(--acc2)}
+
+/* PROGRESS */
+.prog-wrap{padding:8px 16px;background:var(--sur2);border-bottom:1px solid var(--bdr)}
+.prog-top{display:flex;justify-content:space-between;font-size:10px;color:var(--txt2);margin-bottom:4px}
+.prog-bg{height:5px;background:var(--bdr);border-radius:3px;overflow:hidden}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--grn),var(--acc));border-radius:3px;transition:width .4s}
+
+/* STATS */
+.stats{padding:10px 16px;background:var(--sur2);border-bottom:1px solid var(--bdr);display:flex;gap:10px;overflow-x:auto;scrollbar-width:none}
+.stats::-webkit-scrollbar{display:none}
+.chip{flex-shrink:0;background:var(--sur);border:1px solid var(--bdr);border-radius:20px;padding:4px 12px;font-size:11px;font-family:var(--mono);white-space:nowrap}
+.chip .v{font-weight:700}
+.chip.done .v{color:var(--grn)} .chip.rem .v{color:var(--yel)} .chip.xr .v{color:var(--red)} .chip.tot .v{color:var(--acc)}
+
+/* TABS */
+.tabs{background:var(--sur);border-bottom:1px solid var(--bdr);display:flex;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{flex-shrink:0;padding:10px 16px;font-size:12px;font-weight:600;color:var(--txt2);border-bottom:2px solid transparent;cursor:pointer;white-space:nowrap;transition:all .2s}
+.tab.active{color:var(--acc);border-bottom-color:var(--acc)}
+
+/* SEARCH */
+.search{padding:12px 16px;background:var(--sur);border-bottom:1px solid var(--bdr);display:flex;gap:8px}
+.search input{flex:1;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:14px;color:var(--txt);font-family:var(--mono);outline:none}
+.search input:focus{border-color:var(--acc)}
+.search input::placeholder{color:var(--txt2);font-family:var(--font)}
+.fbtn{background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:9px 12px;font-size:12px;color:var(--txt2);cursor:pointer;font-family:var(--font);flex-shrink:0}
+.fbtn.on{border-color:var(--acc);color:var(--acc)}
+
+/* LIST */
+.list{padding:8px 0}
+.sec-hdr{padding:8px 16px 4px;font-size:10px;font-weight:700;color:var(--txt2);letter-spacing:2px;text-transform:uppercase;display:flex;justify-content:space-between}
+.card{margin:4px 12px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:all .15s;position:relative}
+.card:active{transform:scale(.99)}
+.card.done{background:rgba(0,230,118,.08);border-color:rgba(0,230,118,.3);opacity:.75}
+.card.xray{border-left:3px solid var(--red)}
+.card.dg{border-left:3px solid var(--pur)}
+.card.ot{border-left:3px solid var(--yel)}
+.chk{width:28px;height:28px;flex-shrink:0;border-radius:50%;border:2px solid var(--bdr);display:flex;align-items:center;justify-content:center;font-size:14px;background:var(--sur2);transition:all .2s}
+.card.done .chk{background:var(--grn);border-color:var(--grn);color:#000}
+.cinfo{flex:1;min-width:0}
+.cntr-no{font-family:var(--mono);font-size:20px;font-weight:900;color:var(--acc);letter-spacing:1.5px;text-shadow:0 0 10px rgba(0,212,255,.4)}
+.cntr-no .lbl{font-size:9px;font-weight:500;color:var(--txt2);display:block;text-shadow:none;letter-spacing:1px}
+.card.done .cntr-no{color:var(--txt2);text-shadow:none;text-decoration:line-through}
+.seal-no{font-family:var(--mono);font-size:20px;font-weight:900;color:#fff;margin-top:3px;letter-spacing:2px;text-shadow:0 0 12px rgba(0,212,255,.5)}
+.seal-no .lbl{font-size:9px;font-weight:500;color:var(--txt2);display:block;text-shadow:none;letter-spacing:1px}
+.card.done .seal-no{color:var(--txt2);text-shadow:none;text-decoration:line-through}
+.cmeta{display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center}
+.badge{font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;letter-spacing:.5px}
+.b20{background:rgba(0,212,255,.15);color:var(--acc)}
+.b40{background:rgba(179,136,255,.15);color:var(--pur)}
+.bxr{background:rgba(255,61,87,.2);color:var(--red)}
+.bdg{background:rgba(179,136,255,.2);color:var(--pur)}
+.bot{background:rgba(255,214,0,.2);color:var(--yel)}
+.btk{background:rgba(255,107,53,.2);color:var(--acc2)}
+.bdmg{background:rgba(255,61,87,.1);color:var(--red);font-style:italic}
+.cpos{font-family:var(--mono);font-size:10px;color:var(--txt2);text-align:right;flex-shrink:0}
+.cpos .pv{font-size:12px;color:var(--yel);font-weight:700}
+.chk-time{font-size:9px;color:var(--grn);margin-top:2px;font-family:var(--mono)}
+.done-div{margin:8px 12px;padding:8px 12px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.2);border-radius:8px;font-size:11px;color:var(--grn);font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:space-between}
+.empty{text-align:center;padding:60px 20px;color:var(--txt2);font-size:14px}
+.empty .ei{font-size:40px;margin-bottom:12px;display:block}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:200;display:none;align-items:flex-end}
+.overlay.open{display:flex}
+.sheet{background:var(--sur);border-top:1px solid var(--bdr);border-radius:16px 16px 0 0;width:100%;padding:20px 20px 40px;max-height:90vh;overflow-y:auto}
+.sh{width:40px;height:4px;background:var(--bdr);border-radius:2px;margin:0 auto 20px}
+.mtitle{font-size:16px;font-weight:700;margin-bottom:2px}
+.mcntr{font-family:var(--mono);font-size:13px;color:var(--acc);margin-bottom:16px}
+.minfo{background:var(--sur2);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--txt2);line-height:2;font-family:var(--mono);margin-bottom:14px}
+.minfo span{color:var(--txt)}
+.mf{margin-bottom:12px}
+.mf label{display:block;font-size:11px;font-weight:700;color:var(--txt2);margin-bottom:5px;letter-spacing:1px;text-transform:uppercase}
+.mf input,.mf select,.mf textarea{width:100%;background:var(--sur2);border:1px solid var(--bdr);border-radius:8px;padding:11px 13px;font-size:14px;color:var(--txt);font-family:var(--mono);outline:none;transition:border-color .2s}
+.mf input:focus,.mf select:focus,.mf textarea:focus{border-color:var(--acc)}
+.mf select option{background:var(--sur2)}
+.mf textarea{resize:vertical;min-height:60px;font-family:var(--font);font-size:13px}
+.seal-edit-log{margin-top:8px;background:rgba(0,212,255,.05);border:1px solid rgba(0,212,255,.15);border-radius:8px;padding:8px 12px}
+.sel-title{font-size:10px;font-weight:700;color:var(--txt2);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px}
+.sel-item{font-size:10px;font-family:var(--mono);color:var(--txt2);padding:3px 0;border-bottom:1px solid var(--bdr);line-height:1.6}
+.sel-item:last-child{border-bottom:none}
+.sel-item .st{color:var(--yel)} .sel-item .su{color:var(--acc)}
+.mbtns{display:flex;gap:8px;margin-top:16px}
+.mbtn{flex:1;padding:13px;border-radius:10px;border:none;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font)}
+.mbtn.cancel{background:var(--sur2);color:var(--txt2)}
+.mbtn.save{background:var(--acc);color:#000}
+.mbtn.chk{background:var(--grn);color:#000}
+.mbtn.unchk{background:var(--red);color:#fff}
+
+/* SPECIAL TAB */
+.sp-card{margin:4px 12px;background:var(--sur);border:1px solid var(--bdr);border-radius:10px;padding:14px}
+.sp-card.xr{border-left:3px solid var(--red)}
+.sp-card.dg{border-left:3px solid var(--pur)}
+.sp-card.ot{border-left:3px solid var(--yel)}
+.sp-title{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:6px}
+.sp-title.xr{color:var(--red)} .sp-title.dg{color:var(--pur)} .sp-title.ot{color:var(--yel)}
+.sp-cntr{font-family:var(--mono);font-size:15px;font-weight:700;margin-bottom:4px}
+.sp-detail{font-size:11px;color:var(--txt2);line-height:2;font-family:var(--mono)}
+.sp-detail span{color:var(--txt)}
+
+/* SYNC BANNER */
+#syncBanner{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--sur);border:1px solid var(--bdr);border-radius:8px;padding:8px 16px;font-size:12px;color:var(--txt);z-index:300;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.5);display:none}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="login-logo">
+    <span class="icon">🚢</span>
+    <h1>OCEAN BLUE</h1>
+    <p>OCEAN BLUE V.2619E · (주)그린마린</p>
+  </div>
+  <div class="login-card">
+    <h2>🔐 로그인</h2>
+    <div class="fg">
+      <label>이름 선택</label>
+      <select id="loginName">
+        <option value="">-- 이름을 선택하세요 --</option>
+        <option value="신성호">신성호 (대표이사)</option>
+        <option value="표인수">표인수 (상무이사)</option>
+        <option value="황창웅">황창웅 (이사)</option>
+        <option value="최장욱">최장욱 (실장)</option>
+        <option value="이현규">이현규 (부장·수석검수)</option>
+        <option value="김명보">김명보 (부장·수석검수)</option>
+        <option value="권수안">권수안 (차장)</option>
+        <option value="정영배">정영배 (차장)</option>
+        <option value="오승택">오승택 (차장·수석검수)</option>
+        <option value="성창모">성창모 (과장·수석검수)</option>
+        <option value="이강익">이강익 (과장·수석검수)</option>
+        <option value="김유신">김유신 (대리)</option>
+        <option value="김석">김 석 (대리)</option>
+        <option value="전우수">전우수 (대리·수석검수)</option>
+        <option value="김성일">김성일 (대리·부수석)</option>
+        <option value="장문영">장문영 (검수)</option>
+        <option value="김판석">김판석 (검수)</option>
+        <option value="최관식">최관식 (검수)</option>
+        <option value="김홍규">김홍규 (검수)</option>
+        <option value="한성호">한성호 (검수)</option>
+        <option value="오종하">오종하 (검수)</option>
+        <option value="이인철">이인철 (검수)</option>
+        <option value="이종부">이종부 (검수)</option>
+        <option value="이종현">이종현 (검수)</option>
+        <option value="송제욱">송제욱 (검수)</option>
+        <option value="최원형">최원형 (검수)</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label>패스워드 (입사년월일 YYMMDD)</label>
+      <input type="password" id="loginPw" placeholder="예: 240108" maxlength="6" inputmode="numeric">
+    </div>
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr">이름 또는 패스워드가 맞지 않습니다.</div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainApp">
+  <div class="topbar">
+    <div class="topbar-left">
+      <h1>OBWH V.2619E</h1>
+      <p>양하검수 · 난퉁→평택</p>
+    </div>
+    <div class="topbar-right">
+      <span id="curUser"></span>
+      <button class="tbtn sync" onclick="loadFromSheets()">🔄</button>
+      <button class="tbtn logout" onclick="doLogout()">로그아웃</button>
+    </div>
+  </div>
+
+  <div class="prog-wrap">
+    <div class="prog-top">
+      <span id="progLabel">진행률</span>
+      <span id="progPct">0%</span>
+    </div>
+    <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  </div>
+
+  <div class="stats">
+    <div class="chip tot">총 <span class="v" id="sTot">167</span>개</div>
+    <div class="chip done">완료 <span class="v" id="sDone">0</span></div>
+    <div class="chip rem">잔여 <span class="v" id="sRem">603</span></div>
+    <div class="chip">20DC <span class="v">69</span></div>
+    <div class="chip">40DC/HQ <span class="v">78</span></div>
+    <div class="chip xr">XRAY <span class="v">16</span></div>
+    <div class="chip">FR <span class="v">4</span></div>
+    <div class="chip">긴급 <span class="v">15</span></div>
+    <div class="chip">YTF <span class="v">167</span></div>
+    <div class="chip">PTK <span class="v">167</span></div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('all',this)">전체 (167)</div>
+    <div class="tab" onclick="switchTab('pending',this)">미완료</div>
+    <div class="tab" onclick="switchTab('done',this)">완료</div>
+    <div class="tab" onclick="switchTab('xray',this)">⚠ XRAY (16)</div>
+    <div class="tab" onclick="switchTab('special',this)">특수화물</div>
+  </div>
+
+  <div class="search">
+    <input type="text" id="srchInput" placeholder="컨테이너 끝 4자리 또는 실번호 검색"
+      oninput="doSearch()" autocomplete="off" autocorrect="off" spellcheck="false">
+    <button class="fbtn" id="xrayFBtn" onclick="toggleXrayFilter()">RF만</button>
+  </div>
+
+  <div class="list" id="listArea"></div>
+</div>
+
+<!-- MODAL -->
+<div class="overlay" id="overlay" onclick="closeModalOut(event)">
+  <div class="sheet" id="modalSheet">
+    <div class="sh"></div>
+    <div class="mtitle" id="mTitle">상세정보</div>
+    <div class="mcntr" id="mCntr"></div>
+    <div class="minfo" id="mInfo"></div>
+
+    <div class="mf">
+      <label>실번호 수정</label>
+      <input type="text" id="mSeal" placeholder="실번호 입력">
+    </div>
+
+    <div class="mf" id="xraySealField" style="display:none">
+      <label id="xraySealLabel">⚠ XRAY SEAL</label>
+      <input type="text" id="mXraySeal" placeholder="SEAL 번호 입력" style="border-color:rgba(255,61,87,.5);background:rgba(255,61,87,.08)">
+    </div>
+
+    <div class="mf">
+      <label>데미지</label>
+      <textarea id="mDamage" placeholder="데미지 내용 입력 (없으면 비워둠)" rows="2"></textarea>
+    </div>
+
+    <div class="mf">
+      <label>특수화물 구분</label>
+      <select id="mSpec">
+        <option value="">일반</option>
+        <option value="XRAY">⚠ XRAY 대상</option>
+        <option value="DG/TANK">☢ DG / TANK</option>
+        <option value="OT">📦 OT (Open Top)</option>
+        <option value="RF">❄ RF (Reefer)</option>
+        <option value="FR">📐 FR (Flat Rack)</option>
+        <option value="OOG">🔺 OOG (Over Gauge)</option>
+      </select>
+    </div>
+
+    <div id="sealLogWrap" style="display:none">
+      <div class="seal-edit-log">
+        <div class="sel-title">✏️ 실번호 수정 이력</div>
+        <div id="sealLogItems"></div>
+      </div>
+    </div>
+
+    <div class="mbtns">
+      <button class="mbtn cancel" onclick="closeModal()">취소</button>
+      <button class="mbtn save" onclick="saveModal()">저장</button>
+      <button class="mbtn chk" id="mChkBtn" onclick="toggleCheck()">✓ 확인</button>
+    </div>
+  </div>
+</div>
+
+<div id="syncBanner"></div>
+
+<script>
+// ============ CONFIG ============
+var GS_ENABLED = true;
+var GS_URL = 'https://script.google.com/macros/s/AKfycbwM-prhIYrbBnhCLHEU2ZkSHxKJEwDnj68DS2_4kKsLetZd__6jX1FE_OYokPQTcTSUlQ/exec';
+
+// ============ PASSWORDS ============
+var PW = {
+  '신성호':'630101','표인수':'101001','황창웅':'041001','최장욱':'010301',
+  '이현규':'220620','김명보':'241209','권수안':'230901','정영배':'020314',
+  '오승택':'140401','성창모':'150121','이강익':'240508','김유신':'200713',
+  '김석':'201102','전우수':'240801','김성일':'240902','장문영':'210215',
+  '김판석':'240108','최관식':'240109','김홍규':'240617','한성호':'240708',
+  '오종하':'250210','이인철':'250701','이종부':'250707','이종현':'250811',
+  '송제욱':'260421','최원형':'240710'
+};
+
+// ============ DATA ============
+var CONTAINERS_RAW = [
+{"no":1,"cntr":"SPSU2008821","seal":"0052471","size":"20DC","fe":"F","pos":"09-01-04","wt":10260,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":2,"cntr":"SPSU2009155","seal":"0052431","size":"20DC","fe":"F","pos":"09-01-02","wt":12019,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":3,"cntr":"SPSU2009197","seal":"0046543","size":"20DC","fe":"F","pos":"17-05-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":4,"cntr":"SPSU2009303","seal":"0040406","size":"20DC","fe":"F","pos":"05-04-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":5,"cntr":"SPSU2009371","seal":"007591","size":"20DC","fe":"F","pos":"09-02-02","wt":21050,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":6,"cntr":"SPSU2009643","seal":"0040555","size":"20DC","fe":"F","pos":"19-06-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":7,"cntr":"SPSU2010496","seal":"000131","size":"20DC","fe":"F","pos":"19-01-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":8,"cntr":"SPSU2019092","seal":"007838","size":"20DC","fe":"F","pos":"11-01-04","wt":17140,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":9,"cntr":"SPSU2019132","seal":"235312","size":"20DC","fe":"F","pos":"17-06-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":10,"cntr":"SPSU2019390","seal":"0046587","size":"20DC","fe":"F","pos":"07-04-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":11,"cntr":"SPSU2020030","seal":"0052203","size":"20DC","fe":"F","pos":"13-04-02","wt":8582,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":12,"cntr":"SPSU2020051","seal":"0018717","size":"20DC","fe":"F","pos":"19-02-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":13,"cntr":"SPSU2020278","seal":"0052361","size":"20DC","fe":"F","pos":"15-01-02","wt":13662,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":14,"cntr":"SPSU2020365","seal":"000192","size":"20DC","fe":"F","pos":"17-07-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":15,"cntr":"SPSU2020750","seal":"001235","size":"20DC","fe":"F","pos":"03-01-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":16,"cntr":"SPSU2020792","seal":"0052279","size":"20DC","fe":"F","pos":"09-03-02","wt":11617,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":17,"cntr":"SPSU2020806","seal":"000115","size":"20DC","fe":"F","pos":"19-07-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":18,"cntr":"SPSU2020848","seal":"249966","size":"20DC","fe":"F","pos":"15-03-04","wt":3451,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":19,"cntr":"SPSU2020956","seal":"014551","size":"20DC","fe":"F","pos":"13-02-02","wt":20834,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":20,"cntr":"SPSU2021042","seal":"045068","size":"20DC","fe":"F","pos":"15-07-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":21,"cntr":"SPSU2021103","seal":"0040480","size":"20DC","fe":"F","pos":"05-02-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":22,"cntr":"SPSU2021119","seal":"008469","size":"20DC","fe":"F","pos":"07-03-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":23,"cntr":"SPSU2021124","seal":"007205","size":"20DC","fe":"F","pos":"17-02-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":24,"cntr":"SPSU2021166","seal":"000203","size":"20DC","fe":"F","pos":"07-01-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":25,"cntr":"SPSU2021248","seal":"000136","size":"20DC","fe":"F","pos":"05-01-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":26,"cntr":"SPSU2021269","seal":"0046524","size":"20DC","fe":"F","pos":"17-08-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":27,"cntr":"SPSU2021422","seal":"0018712","size":"20DC","fe":"F","pos":"05-01-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":28,"cntr":"SPSU2021443","seal":"007246","size":"20DC","fe":"F","pos":"07-06-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":29,"cntr":"SPSU2021633","seal":"738653","size":"20DC","fe":"F","pos":"13-01-04","wt":10732,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":30,"cntr":"SPSU2021818","seal":"007221","size":"20DC","fe":"F","pos":"13-03-04","wt":3956,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":31,"cntr":"SPSU2022120","seal":"001259","size":"20DC","fe":"F","pos":"03-02-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":32,"cntr":"SPSU2022223","seal":"044622","size":"20DC","fe":"F","pos":"03-03-06","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":33,"cntr":"SPSU2022239","seal":"001256","size":"20DC","fe":"F","pos":"15-08-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":34,"cntr":"SPSU2022856","seal":"0052349","size":"20DC","fe":"F","pos":"15-05-02","wt":13393,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":35,"cntr":"SPSU2022898","seal":"045016","size":"20DC","fe":"F","pos":"05-02-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":36,"cntr":"SPSU2022959","seal":"0046578","size":"20DC","fe":"F","pos":"07-02-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":37,"cntr":"SPSU2022970","seal":"0040413","size":"20DC","fe":"F","pos":"07-05-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":38,"cntr":"SPSU2023600","seal":"0052457","size":"20DC","fe":"F","pos":"11-01-02","wt":13115,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":39,"cntr":"SPSU2024627","seal":"044609","size":"20DC","fe":"F","pos":"19-05-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":40,"cntr":"SPSU2025135","seal":"044694","size":"20DC","fe":"F","pos":"19-08-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":41,"cntr":"SPSU2025222","seal":"0052240","size":"20DC","fe":"F","pos":"15-04-02","wt":13192,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":42,"cntr":"SPSU2025264","seal":"235347","size":"20DC","fe":"F","pos":"17-03-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":43,"cntr":"SPSU2025372","seal":"045048","size":"20DC","fe":"F","pos":"01-01-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":44,"cntr":"SPSU2025407","seal":"000141","size":"20DC","fe":"F","pos":"07-03-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":45,"cntr":"SPSU2025578","seal":"0040554","size":"20DC","fe":"F","pos":"19-04-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":46,"cntr":"SPSU2025599","seal":"000128","size":"20DC","fe":"F","pos":"17-04-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":47,"cntr":"SPSU2025623","seal":"000239","size":"20DC","fe":"F","pos":"17-01-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":48,"cntr":"SPSU2025840","seal":"0040582","size":"20DC","fe":"F","pos":"07-01-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":49,"cntr":"SPSU2025942","seal":"044618","size":"20DC","fe":"F","pos":"01-02-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":50,"cntr":"SPSU2025979","seal":"000240","size":"20DC","fe":"F","pos":"15-03-02","wt":19200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":51,"cntr":"SPSU2026050","seal":"000164","size":"20DC","fe":"F","pos":"11-04-02","wt":8266,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":52,"cntr":"SPSU2026105","seal":"0040548","size":"20DC","fe":"F","pos":"07-04-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":53,"cntr":"SPSU2026390","seal":"008401","size":"20DC","fe":"F","pos":"07-02-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":54,"cntr":"SPSU2026506","seal":"0052447","size":"20DC","fe":"F","pos":"11-02-02","wt":23990,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":55,"cntr":"SPSU2026609","seal":"0040470","size":"20DC","fe":"F","pos":"19-03-02","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":56,"cntr":"SPSU2026954","seal":"001297","size":"20DC","fe":"F","pos":"05-03-04","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":57,"cntr":"SPSU2027014","seal":"045043","size":"20DC","fe":"F","pos":"01-03-06","wt":29200,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":58,"cntr":"SPSU2040952","seal":"0042635","size":"20DC","fe":"F","pos":"01-03-82","wt":5176,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":59,"cntr":"SPSU2040968","seal":"0035469","size":"20DC","fe":"F","pos":"15-01-04","wt":7197,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":60,"cntr":"SPSU2040973","seal":"0052359","size":"20DC","fe":"F","pos":"13-01-02","wt":12874,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":61,"cntr":"SPSU2041115","seal":"001303","size":"20DC","fe":"F","pos":"13-03-02","wt":26700,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":62,"cntr":"SPSU2041178","seal":"004350","size":"20DC","fe":"F","pos":"03-06-84","wt":3443,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":63,"cntr":"SPSU2041265","seal":"0053518","size":"20DC","fe":"F","pos":"09-04-02","wt":3029,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":64,"cntr":"SPSU2041394","seal":"0052341","size":"20DC","fe":"F","pos":"13-05-02","wt":12019,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":65,"cntr":"SPSU2042024","seal":"YTZL24109329","size":"20DC","fe":"F","pos":"11-03-02","wt":20680,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":66,"cntr":"SPSU2042195","seal":"007787","size":"20DC","fe":"F","pos":"13-06-02","wt":10242,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":67,"cntr":"SPSU2042282","seal":"007892","size":"20DC","fe":"F","pos":"15-02-02","wt":24735,"spec":"XRAY","specDetail":"XRAY (X-RAY)","oper":"YTF","dest":"KRPTK"},
+{"no":68,"cntr":"SPSU2042298","seal":"007729","size":"20DC","fe":"F","pos":"15-06-02","wt":14937,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":69,"cntr":"SPSU2042317","seal":"BHGJ3019527","size":"20DC","fe":"F","pos":"03-05-82","wt":4660,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":70,"cntr":"CICU8585829","seal":"ZHLD141802","size":"40DC","fe":"F","pos":"02-02-84","wt":16677,"spec":"XRAY","specDetail":"XRAY (반입후검사)","oper":"YTF","dest":"KRPTK"},
+{"no":71,"cntr":"CICU9969011","seal":"890269","size":"40DC","fe":"F","pos":"18-05-84","wt":17570,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":72,"cntr":"CXDU1205372","seal":"YN6696","size":"40DC","fe":"F","pos":"02-03-84","wt":16506,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":73,"cntr":"CXDU2029724","seal":"BHGJ2025003324","size":"40DC","fe":"F","pos":"06-06-84","wt":17808,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":74,"cntr":"CXDU2109922","seal":"BHGJ2025003325","size":"40DC","fe":"F","pos":"06-04-84","wt":18792,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":75,"cntr":"CXDU2110965","seal":"BHGJ2025003326","size":"40DC","fe":"F","pos":"06-05-84","wt":17438,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":76,"cntr":"CXDU2214548","seal":"890363","size":"40DC","fe":"F","pos":"18-07-84","wt":13917,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":77,"cntr":"HCFU9002094","seal":"659511","size":"40DC","fe":"F","pos":"06-03-84","wt":15590,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":78,"cntr":"HCFU9545126","seal":"1166464","size":"40DC","fe":"F","pos":"18-04-84","wt":25019,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":79,"cntr":"HMMU9028040","seal":"0046905","size":"40DC","fe":"F","pos":"18-02-84","wt":19231,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":80,"cntr":"LYGU1508920","seal":"250446","size":"40DC","fe":"F","pos":"06-02-84","wt":21291,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":81,"cntr":"NHFU9000008","seal":"177285","size":"40DC","fe":"F","pos":"18-06-84","wt":20167,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":82,"cntr":"SEGU5860410","seal":"0058749","size":"40DC","fe":"F","pos":"06-01-84","wt":20159,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":83,"cntr":"SEGU5876588","seal":"249990","size":"40DC","fe":"F","pos":"02-04-84","wt":16517,"spec":"XRAY","specDetail":"XRAY (즉시검사)","oper":"YTF","dest":"KRPTK"},
+{"no":84,"cntr":"TDRU4617456","seal":"HD292265","size":"40DC","fe":"F","pos":"18-01-84","wt":20056,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":85,"cntr":"UESU4850947","seal":"008265","size":"40DC","fe":"F","pos":"02-01-84","wt":15160,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":86,"cntr":"XHCU9070792","seal":"HD292255","size":"40DC","fe":"F","pos":"18-03-84","wt":20482,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":87,"cntr":"CICU8417050","seal":"004351","size":"40HQ","fe":"F","pos":"18-08-82","wt":12369,"spec":"XRAY","specDetail":"XRAY (Sea & Air)","oper":"YTF","dest":"KRPTK"},
+{"no":88,"cntr":"CICU8417086","seal":"263335","size":"40HQ","fe":"F","pos":"14-03-06","wt":10501,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":89,"cntr":"CICU8418550","seal":"SDYT072752","size":"40HQ","fe":"F","pos":"18-03-04","wt":9932,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":90,"cntr":"CICU8418987","seal":"0040044","size":"40HQ","fe":"F","pos":"18-04-06","wt":12987,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":91,"cntr":"CICU8420351","seal":"0034451","size":"40HQ","fe":"F","pos":"02-01-82","wt":16997,"spec":"긴급(우선하역(긴급야드))","specDetail":"긴급(우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":92,"cntr":"CICU8420460","seal":"004356","size":"40HQ","fe":"F","pos":"14-04-82","wt":11534,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":93,"cntr":"CICU8421996","seal":"0034642","size":"40HQ","fe":"F","pos":"14-04-04","wt":22189,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":94,"cntr":"CICU8422858","seal":"264261","size":"40HQ","fe":"F","pos":"18-06-04","wt":13739,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":95,"cntr":"CICU9628587","seal":"014302","size":"40HQ","fe":"F","pos":"18-07-04","wt":11969,"spec":"XRAY","specDetail":"XRAY (X-RAY)","oper":"YTF","dest":"KRPTK"},
+{"no":96,"cntr":"CICU9679286","seal":"JF5267996","size":"40HQ","fe":"F","pos":"10-04-82","wt":10721,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":97,"cntr":"CICU9807807","seal":"903285","size":"40HQ","fe":"F","pos":"18-08-84","wt":13865,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":98,"cntr":"CICU9807875","seal":"263358","size":"40HQ","fe":"F","pos":"18-01-04","wt":13687,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":99,"cntr":"CICU9808260","seal":"YTZL2469702","size":"40HQ","fe":"F","pos":"10-02-06","wt":16740,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":100,"cntr":"CICU9808568","seal":"264246","size":"40HQ","fe":"F","pos":"14-08-06","wt":11073,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":101,"cntr":"HHXU3145593","seal":"2538542","size":"40HQ","fe":"F","pos":"14-06-82","wt":15008,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":102,"cntr":"HPCU4027514","seal":"0058750","size":"40HQ","fe":"F","pos":"14-02-04","wt":6476,"spec":"긴급(우선하역(긴급야드))","specDetail":"긴급(우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":103,"cntr":"LYGU4027996","seal":"2801732","size":"40HQ","fe":"F","pos":"14-08-04","wt":11441,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":104,"cntr":"LYGU4030285","seal":"0014852","size":"40HQ","fe":"F","pos":"18-03-06","wt":10003,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":105,"cntr":"LYGU4030979","seal":"264256","size":"40HQ","fe":"F","pos":"18-02-04","wt":10693,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":106,"cntr":"LYGU4031147","seal":"004349","size":"40HQ","fe":"F","pos":"14-02-82","wt":11724,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":107,"cntr":"LYGU4031804","seal":"007507","size":"40HQ","fe":"F","pos":"10-03-06","wt":19077,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":108,"cntr":"LYGU4033725","seal":"2025003334","size":"40HQ","fe":"F","pos":"10-04-06","wt":13229,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":109,"cntr":"LYGU4033880","seal":"0058872","size":"40HQ","fe":"F","pos":"14-03-82","wt":12723,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":110,"cntr":"LYGU4034594","seal":"0058801","size":"40HQ","fe":"F","pos":"14-01-82","wt":27022,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":111,"cntr":"LYGU4035327","seal":"0035253","size":"40HQ","fe":"F","pos":"18-05-04","wt":13900,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":112,"cntr":"LYGU4037823","seal":"551816","size":"40HQ","fe":"F","pos":"14-07-04","wt":11657,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":113,"cntr":"LYGU4037973","seal":"HD303437","size":"40HQ","fe":"F","pos":"14-06-06","wt":11261,"spec":"XRAY","specDetail":"XRAY (X-RAY)","oper":"YTF","dest":"KRPTK"},
+{"no":114,"cntr":"LYGU4039596","seal":"73603252","size":"40HQ","fe":"F","pos":"18-07-82","wt":12774,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":115,"cntr":"SPSU6000942","seal":"YN6730","size":"40HQ","fe":"F","pos":"10-01-82","wt":14835,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":116,"cntr":"SPSU6017035","seal":"006207","size":"40HQ","fe":"F","pos":"02-04-82","wt":8320,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":117,"cntr":"SPSU6017056","seal":"SDYT078754","size":"40HQ","fe":"F","pos":"02-04-06","wt":26348,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":118,"cntr":"SPSU6017077","seal":"0040134","size":"40HQ","fe":"F","pos":"14-07-06","wt":13299,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":119,"cntr":"SPSU6017101","seal":"0017589","size":"40HQ","fe":"F","pos":"14-04-06","wt":21889,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":120,"cntr":"SPSU6017117","seal":"078860","size":"40HQ","fe":"F","pos":"18-06-06","wt":9300,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":121,"cntr":"SPSU6017190","seal":"27083","size":"40HQ","fe":"F","pos":"10-03-82","wt":12110,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":122,"cntr":"SPSU6017312","seal":"2548066","size":"40HQ","fe":"F","pos":"10-01-06","wt":8773,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":123,"cntr":"SPSU6017349","seal":"005245","size":"40HQ","fe":"F","pos":"10-02-82","wt":12140,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":124,"cntr":"SPSU6017420","seal":"890940","size":"40HQ","fe":"F","pos":"14-07-82","wt":9903,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":125,"cntr":"SPSU6017523","seal":"SITE552174","size":"40HQ","fe":"F","pos":"02-02-82","wt":22225,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":126,"cntr":"SPSU6017539","seal":"001255","size":"40HQ","fe":"F","pos":"06-05-06","wt":9620,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":127,"cntr":"SPSU6017565","seal":"007031","size":"40HQ","fe":"F","pos":"18-05-06","wt":11780,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":128,"cntr":"SPSU6017890","seal":"119347","size":"40HQ","fe":"F","pos":"02-02-06","wt":7620,"spec":"XRAY","specDetail":"XRAY (X-RAY)","oper":"YTF","dest":"KRPTK"},
+{"no":129,"cntr":"SPSU6017966","seal":"HC252874","size":"40HQ","fe":"F","pos":"18-01-06","wt":25849,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":130,"cntr":"SPSU6017971","seal":"0017587","size":"40HQ","fe":"F","pos":"14-06-04","wt":15033,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":131,"cntr":"SPSU6017987","seal":"0040076","size":"40HQ","fe":"F","pos":"18-04-04","wt":6650,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":132,"cntr":"SPSU6018026","seal":"008212","size":"40HQ","fe":"F","pos":"14-05-04","wt":7599,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":133,"cntr":"SPSU6018094","seal":"0053261","size":"40HQ","fe":"F","pos":"18-02-06","wt":7620,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":134,"cntr":"SPSU6018216","seal":"0040028","size":"40HQ","fe":"F","pos":"18-08-06","wt":12878,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":135,"cntr":"SPSU6018237","seal":"004355","size":"40HQ","fe":"F","pos":"14-01-06","wt":12372,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":136,"cntr":"SPSU6018371","seal":"004354","size":"40HQ","fe":"F","pos":"14-05-06","wt":12463,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":137,"cntr":"SPSU6018387","seal":"0040166","size":"40HQ","fe":"F","pos":"10-02-04","wt":13470,"spec":"긴급(우선하역)","specDetail":"긴급(우선하역)","oper":"YTF","dest":"KRPTK"},
+{"no":138,"cntr":"SPSU6018704","seal":"0017765","size":"40HQ","fe":"F","pos":"14-08-82","wt":11991,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":139,"cntr":"SPSU6018730","seal":"350741","size":"40HQ","fe":"F","pos":"18-08-04","wt":7041,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":140,"cntr":"TCNU1135120","seal":"903265","size":"40HQ","fe":"F","pos":"10-04-04","wt":13008,"spec":"긴급(최우선하역(긴급야드))","specDetail":"긴급(최우선하역(긴급야드))","oper":"YTF","dest":"KRPTK"},
+{"no":141,"cntr":"TCNU9775761","seal":"328093","size":"40HQ","fe":"F","pos":"18-07-06","wt":6852,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":142,"cntr":"TLLU6838492","seal":"265099","size":"40HQ","fe":"F","pos":"02-03-08","wt":14287,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":143,"cntr":"TRHU8813789","seal":"2506030","size":"40HQ","fe":"F","pos":"10-03-04","wt":27774,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":144,"cntr":"TRHU8818121","seal":"328002","size":"40HQ","fe":"F","pos":"02-01-06","wt":21112,"spec":"XRAY","specDetail":"XRAY (X-RAY)","oper":"YTF","dest":"KRPTK"},
+{"no":145,"cntr":"TRHU8818878","seal":"014582","size":"40HQ","fe":"F","pos":"14-02-06","wt":10699,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":146,"cntr":"YHTU6000062","seal":"773673","size":"40HQ","fe":"F","pos":"14-05-82","wt":9820,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":147,"cntr":"ZHFU8860563","seal":"18744","size":"40HQ","fe":"F","pos":"06-05-08","wt":8773,"spec":"","specDetail":"","oper":"YTF","dest":"KRPTK"},
+{"no":148,"cntr":"FBIU5780320","seal":"SDYT079006","size":"40RF","fe":"F","pos":"06-01-82","wt":28020,"spec":"RF (-2℃)","specDetail":"RF (-2℃)","oper":"YTF","dest":"KRPTK"},
+{"no":149,"cntr":"FBIU5780377","seal":"007899","size":"40RF","fe":"F","pos":"06-05-82","wt":28770,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":150,"cntr":"FBIU5781671","seal":"2025002445","size":"40RF","fe":"F","pos":"06-06-82","wt":28270,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":151,"cntr":"FBIU5781753","seal":"000283","size":"40RF","fe":"F","pos":"18-05-82","wt":28720,"spec":"RF (-2℃)","specDetail":"RF (-2℃)","oper":"YTF","dest":"KRPTK"},
+{"no":152,"cntr":"SEGU9511361","seal":"0040058","size":"40RF","fe":"F","pos":"18-06-82","wt":28810,"spec":"RF (-3℃)","specDetail":"RF (-3℃)","oper":"YTF","dest":"KRPTK"},
+{"no":153,"cntr":"SEGU9511926","seal":"000816","size":"40RF","fe":"F","pos":"06-03-82","wt":28810,"spec":"RF (-3℃)","specDetail":"RF (-3℃)","oper":"YTF","dest":"KRPTK"},
+{"no":154,"cntr":"SEGU9513030","seal":"1168284","size":"40RF","fe":"F","pos":"06-02-82","wt":28260,"spec":"RF (-2.6℃)","specDetail":"RF (-2.6℃)","oper":"YTF","dest":"KRPTK"},
+{"no":155,"cntr":"SEGU9517858","seal":"SDYT000891","size":"40RF","fe":"F","pos":"18-03-82","wt":28800,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":156,"cntr":"SEGU9577728","seal":"NJ836599","size":"40RF","fe":"F","pos":"06-04-82","wt":28770,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":157,"cntr":"SEKU9108962","seal":"1168293","size":"40RF","fe":"F","pos":"18-02-82","wt":28260,"spec":"RF (-2.6℃)","specDetail":"RF (-2.6℃)","oper":"YTF","dest":"KRPTK"},
+{"no":158,"cntr":"SEKU9412717","seal":"0053232","size":"40RF","fe":"F","pos":"06-08-82","wt":28770,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":159,"cntr":"SEKU9412912","seal":"007835","size":"40RF","fe":"F","pos":"18-01-82","wt":28770,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":160,"cntr":"SPSU8001589","seal":"2469752","size":"40RF","fe":"F","pos":"06-07-82","wt":28070,"spec":"RF (-2.5℃)","specDetail":"RF (-2.5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":161,"cntr":"SPSU8001608","seal":"0017795","size":"40RF","fe":"F","pos":"18-04-82","wt":28752,"spec":"RF (-2℃)","specDetail":"RF (-2℃)","oper":"YTF","dest":"KRPTK"},
+{"no":162,"cntr":"SEKU9444930","seal":"0017800","size":"20RF","fe":"F","pos":"03-06-82","wt":16150,"spec":"RF (-2℃)","specDetail":"RF (-2℃)","oper":"YTF","dest":"KRPTK"},
+{"no":163,"cntr":"TEXU9027892","seal":"0053908","size":"20RF","fe":"F","pos":"03-03-82","wt":16359,"spec":"RF (+5℃)","specDetail":"RF (+5℃)","oper":"YTF","dest":"KRPTK"},
+{"no":164,"cntr":"AMZU4205640","seal":"0034644","size":"40FR","fe":"F","pos":"06-04-06","wt":17350,"spec":"FR","specDetail":"FR","oper":"YTF","dest":"KRPTK"},
+{"no":165,"cntr":"SLSU1001506","seal":"0052415","size":"40FR","fe":"F","pos":"02-02-08","wt":23854,"spec":"FR","specDetail":"FR","oper":"YTF","dest":"KRPTK"},
+{"no":166,"cntr":"SPRU1000421","seal":"0052301","size":"40FR","fe":"F","pos":"06-01-06","wt":23854,"spec":"FR","specDetail":"FR","oper":"YTF","dest":"KRPTK"},
+{"no":167,"cntr":"HDMU7203059","seal":"0034646","size":"20FR","fe":"F","pos":"07-08-06","wt":8510,"spec":"FR","specDetail":"FR","oper":"YTF","dest":"KRPTK"}
+];
+
+// ============ STATE ============
+var STORE = 'obwh2619e_v3';
+var currentUser = null;
+var curTab = 'all';
+var xrayFilter = false;
+var searchQ = '';
+var modalNo = null;
+var showDone = true;
+
+function loadState() {
+  try {
+    var s = localStorage.getItem(STORE);
+    if (s) return JSON.parse(s);
+  } catch(e) {}
+  var st = {};
+  for (var _i = 0; _i < CONTAINERS_RAW.length; _i++) { var c = CONTAINERS_RAW[_i];
+    st[c.cntr] = {
+      checked: false, checkTime: null, checkUser: null,
+      seal: c.seal, damage: '', spec: c.spec, sealLog: []
+    };
+  }
+  return st;
+}
+function saveState() { localStorage.setItem(STORE, JSON.stringify(appState)); }
+var appState = loadState();
+
+// ============ LOGIN ============
+function doLogin() {
+  var name = document.getElementById('loginName').value;
+  var pw = document.getElementById('loginPw').value;
+  var err = document.getElementById('loginErr');
+  if (!name) { err.style.display='block'; err.textContent='이름을 선택해주세요.'; return; }
+  if (!PW[name]) { err.style.display='block'; err.textContent='등록되지 않은 사용자입니다.'; return; }
+  if (PW[name] !== pw) { err.style.display='block'; err.textContent='패스워드가 맞지 않습니다.'; return; }
+  err.style.display='none';
+  currentUser = name;
+  localStorage.setItem('obwh_user', name);  // 로그인 상태 저장
+  document.getElementById('loginScreen').style.display='none';
+  document.getElementById('mainApp').style.display='block';
+  document.getElementById('curUser').textContent = name;
+  loadFromSheets();
+  renderList();
+}
+document.getElementById('loginPw').addEventListener('keydown', function(e) { if(e.key==='Enter') doLogin(); });
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('obwh_user');  // 로그인 상태 삭제
+  document.getElementById('loginScreen').style.display='flex';
+  document.getElementById('mainApp').style.display='none';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPw').value='';
+}
+
+// ============ TIME ============
+function now() {
+  var d = new Date();
+  function p(n) { return String(n).length < 2 ? '0' + n : String(n); }
+  return d.getFullYear() + '-' + p(d.getMonth()+1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes()) + ':' + p(d.getSeconds());
+}
+
+// ============ SYNC ============
+async function post(payload) {
+  if (!GS_ENABLED) return;
+  showBanner('💾 저장 중...');
+  try {
+    var res = await fetch(GS_URL, {
+      method: 'POST',
+      headers: {'Content-Type': 'text/plain;charset=utf-8'},
+      body: JSON.stringify(payload)
+    });
+    var txt = await res.text();
+    var r;
+    try { r = JSON.parse(txt); } catch(e) { r = {status:'error', message: txt}; }
+    if (r.status !== 'ok') {
+      showBanner('⚠️ 저장 실패: '+(r.message||'알 수 없는 오류'), 5000);
+      console.error('Post failed:', r, payload);
+    } else {
+      showBanner('✅ 저장됨', 1500);
+    }
+  } catch(e) {
+    showBanner('⚠️ 서버 오류 (로컬에는 저장됨) '+e.message, 4000);
+    console.error('Post error:', e, payload);
+  }
+}
+
+async function loadFromSheets() {
+  if (!GS_ENABLED) return;
+  try {
+    showBanner('🔄 최신 데이터 불러오는 중...');
+    var res = await fetch(GS_URL + '?voyage=OBWH_2619E');
+    var data = await res.json();
+    if (data && data.rows) {
+      for (var _r = 0; _r < data.rows.length; _r++) { var row = data.rows[_r];
+        if (!appState[row.cntr]) return;
+        if (row.seal) appState[row.cntr].seal = row.seal;
+        if (row.confirmed && row.confirmed.trim()) {
+          var p = row.confirmed.split(' / ');
+          appState[row.cntr].checked = true;
+          appState[row.cntr].checkUser = p[0]||'';
+          appState[row.cntr].checkTime = p[1]||'';
+        } else {
+          appState[row.cntr].checked = false;
+          appState[row.cntr].checkTime = null;
+          appState[row.cntr].checkUser = null;
+        }
+        if (row.spec) appState[row.cntr].spec = row.spec;
+        if (row.damage) appState[row.cntr].damage = row.damage;
+        if (row.xraySeal) appState[row.cntr].xraySeal = row.xraySeal;
+      }
+      saveState();
+      renderList();
+      showBanner('✅ 동기화 완료!', 2000);
+    }
+  } catch(e) {
+    showBanner('⚠️ 서버 연결 실패 (로컬 데이터 사용)', 3000);
+  }
+}
+
+function showBanner(msg, hideMs) {
+  var b = document.getElementById('syncBanner');
+  b.textContent = msg; b.style.display = 'block';
+  if (hideMs) setTimeout(function() { b.style.display='none'; }, hideMs);
+}
+
+// ============ RENDER ============
+function updateStats() {
+  var done = 0;
+  for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+    var st = appState[CONTAINERS_RAW[i].cntr];
+    if (st && st.checked) done++;
+  }
+  var total = CONTAINERS_RAW.length;
+  document.getElementById('sDone').textContent = done;
+  document.getElementById('sRem').textContent = total - done;
+  var pct = Math.round(done/total*100);
+  document.getElementById('progPct').textContent = pct+'%';
+  document.getElementById('progFill').style.width = pct+'%';
+  document.getElementById('progLabel').textContent = '완료 ' + done + ' / 잔여 ' + (total-done);
+}
+
+function getFiltered() {
+  var list = [...CONTAINERS_RAW];
+  if (searchQ) {
+    var q = searchQ.toUpperCase();
+    list = list.filter(function(c) {
+      var st = appState[c.cntr] || {};
+      var seal = st.seal || c.seal || '';
+      return c.cntr.slice(-4) === q ||
+        c.cntr.toUpperCase().indexOf(q) >= 0 ||
+        seal.toUpperCase().indexOf(q) >= 0;
+    });
+  }
+  if (xrayFilter) list = list.filter(function(c) { var st=appState[c.cntr]||{}; return (st.spec||c.spec)==='RF'; });
+  if (curTab==='pending') list = list.filter(function(c) { var st=appState[c.cntr]||{}; return !st.checked; });
+  else if (curTab==='done') list = list.filter(function(c) { var st=appState[c.cntr]||{}; return !!st.checked; });
+  else if (curTab==='xray') list = list.filter(function(c) { var st=appState[c.cntr]||{}; return (st.spec||c.spec)==='XRAY'; });
+  else if (curTab==='special') list = list.filter(function(c) { var st=appState[c.cntr]||{}; return !!(st.spec||c.spec); });
+  return list;
+}
+
+function renderList() {
+  updateStats();
+  var area = document.getElementById('listArea');
+  if (curTab==='special') { renderSpecial(area); return; }
+  if (curTab==='xray') { renderXray(area); return; }
+  var list = getFiltered();
+  if (!list.length) { area.innerHTML='<div class="empty"><span class="ei">🔍</span>결과 없음</div>'; return; }
+  var pending = list.filter(function(c) { var st=appState[c.cntr]||{}; return !st.checked; });
+  var done = list.filter(function(c) { var st=appState[c.cntr]||{}; return !!st.checked; });
+  var html = '';
+  if (curTab !== 'done' && pending.length) {
+    html += '<div class="sec-hdr"><span>미완료 (' + pending.length + ')</span></div>';
+    html += pending.map(renderCard).join('');
+  }
+  if (done.length) {
+    if (curTab !== 'done') {
+      html += '<div class="done-div" onclick="toggleDoneSection(this)">✅ 완료 (' + done.length + '개) <span id="doneArrow">' + (showDone?'▼':'▶') + '</span></div>';
+      html += '<div id="doneSect" style="display:' + (showDone?'block':'none') + '">';
+      html += done.map(renderCard).join('');
+      html += '</div>';
+    } else {
+      if (done.length === 0) {
+        html += '<div class="empty"><span class="ei">📋</span>완료된 컨테이너가 없습니다.</div>';
+      } else {
+        html += '<div class="sec-hdr"><span>✅ 완료 ' + done.length + '개</span><span style="color:var(--acc);font-size:10px">최신순</span></div>';
+        // Show newest first in done tab
+        html += done.slice().reverse().map(renderCard).join('');
+      }
+    }
+  }
+  if (!html) html = '<div class="empty"><span class="ei">📭</span>해당 항목 없음</div>';
+  area.innerHTML = html;
+}
+
+function toggleDoneSection(el) {
+  showDone = !showDone;
+  document.getElementById('doneSect').style.display = showDone?'block':'none';
+  document.getElementById('doneArrow').textContent = showDone?'▼':'▶';
+}
+
+function renderCard(c) {
+  var st = appState[c.cntr];
+  var checked = st ? st.checked : false;
+  var seal = (st && st.seal) ? st.seal : c.seal;
+  var spec = (st && st.spec) ? st.spec : c.spec;
+  var damage = (st && st.damage) ? st.damage : '';
+  var sc = '';
+  if (spec==='XRAY') sc='xray';
+  else if (spec==='DG/TANK') sc='dg';
+  else if (spec==='OT'||spec==='RF'||spec==='FR'||spec==='OOG') sc='ot';
+  var badges = (spec==='20DC' || c.size.indexOf('20') === 0)
+    ? '<span class="badge b20">' + c.size + '</span>'
+    : '<span class="badge b40">' + c.size + '</span>';
+  if (spec==='XRAY') {
+    var xcat = c.specDetail ? c.specDetail.replace('XRAY (','').replace(')','') : 'XRAY';
+    badges += '<span class="badge bxr">⚠ ' + xcat + '</span>';
+  }
+  else if (spec==='DG/TANK') badges += '<span class="badge bdg">☢ DG/TANK</span>';
+  else if (spec==='OT') badges += '<span class="badge bot">OT</span>';
+  else if (spec==='RF') { var rfTemp = c.specDetail ? c.specDetail.replace('RF','').trim() : ''; badges += '<span class="badge" style="background:rgba(0,212,255,.15);color:var(--acc)">❄ RF ' + rfTemp + '</span>'; }
+  else if (spec==='FR') badges += '<span class="badge bot">FR</span>';
+  else if (spec==='OOG') badges += '<span class="badge bxr">OOG</span>';
+  if (spec==='긴급') badges += '<span class="badge bxr">🚨 긴급</span>';
+  if (damage) badges += '<span class="badge bdmg">🔧 데미지</span>';
+  var posHtml = c.pos ? '<div class="cpos"><div class="pv">' + c.pos + '</div><div style="font-size:9px">위치</div></div>' : '';
+  var chkTime = (checked && st.checkTime)
+    ? '<div class="chk-time">✓ ' + st.checkTime + ' · ' + st.checkUser + '</div>'
+    : (checked ? '<div class="chk-time">✓ 완료</div>' : '');
+  var isSeaAir = ((st && st.spec ? st.spec : c.spec) === 'XRAY') && ((c.specDetail || '').indexOf('Sea') >= 0);
+  var xraySealBadge = (st && st.xraySeal)
+    ? '<div style="font-size:10px;color:' + (isSeaAir ? '#00b0ff' : '#ff3d57') + ';margin-top:2px;font-family:var(--mono)">' + (isSeaAir ? '✈ 전자SEAL' : '🔒 봉인SEAL') + ': ' + st.xraySeal + '</div>'
+    : '';
+  var cardHtml = '<div class="card ' + sc + ' ' + (checked ? 'done' : '') + '" onclick="openModal(' + c.no + ')">';
+  cardHtml += '<div class="chk">' + (checked ? '✓' : '') + '</div>';
+  cardHtml += '<div class="cinfo">';
+  cardHtml += '<div class="cntr-no"><span class="lbl">컨테이너 번호</span>' + c.cntr + '</div>';
+  cardHtml += '<div class="seal-no"><span class="lbl">실 번 호</span>' + seal + '</div>';
+  cardHtml += '<div class="cmeta">' + badges + '</div>';
+  cardHtml += chkTime;
+  cardHtml += xraySealBadge;
+  cardHtml += '</div>';
+  cardHtml += posHtml;
+  cardHtml += '</div>';
+  return cardHtml;
+}
+
+function renderXray(area) {
+  try {
+    // XRAY 컨테이너만 필터 - 원본 spec 기준
+    var xrayItems = [];
+    for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+      var c = CONTAINERS_RAW[i];
+      if (c.spec === 'XRAY') {
+        xrayItems.push(c);
+      }
+    }
+
+    if (xrayItems.length === 0) {
+      area.innerHTML = '<div class="empty"><span class="ei">🔍</span>XRAY 대상 없음</div>';
+      return;
+    }
+
+    // 그룹 분류
+    var g1 = []; // X-RAY 검색기
+    var g2 = []; // Sea & Air 전자SEAL
+    var g3 = []; // 즉시검사
+    var g4 = []; // 반입후검사
+    var g5 = []; // 기타
+
+    for (var j = 0; j < xrayItems.length; j++) {
+      var c2 = xrayItems[j];
+      var detail = c2.specDetail || '';
+      if (detail.indexOf('X-RAY') >= 0) g1.push(c2);
+      else if (detail.indexOf('Sea') >= 0) g2.push(c2);
+      else if (detail.indexOf('즉시') >= 0) g3.push(c2);
+      else if (detail.indexOf('반입') >= 0) g4.push(c2);
+      else g5.push(c2);
+    }
+
+    var html = '<div class="sec-hdr"><span>⚠ XRAY 대상 총 ' + xrayItems.length + '개</span></div>';
+
+    var groupList = [
+      {label:'⚠ X-RAY 검색기', items:g1},
+      {label:'✈ 전자 SEAL (Sea & Air)', items:g2},
+      {label:'🔍 즉시검사', items:g3},
+      {label:'📋 반입후검사', items:g4},
+      {label:'❓ 기타', items:g5}
+    ];
+
+    for (var k = 0; k < groupList.length; k++) {
+      var grp = groupList[k];
+      if (grp.items.length === 0) continue;
+      html += '<div class="sec-hdr" style="background:rgba(255,61,87,.1);color:var(--red)">';
+      html += '<span>' + grp.label + ' (' + grp.items.length + ')</span></div>';
+
+      for (var m = 0; m < grp.items.length; m++) {
+        var c3 = grp.items[m];
+        var st3 = appState[c3.cntr] || {};
+        var seal3 = st3.seal || c3.seal || '';
+        var xraySeal3 = st3.xraySeal || '';
+        var isSeaAir3 = (c3.specDetail || '').indexOf('Sea') >= 0;
+        var sealLabel3 = isSeaAir3 ? '✈ 전자 SEAL' : '🔒 봉인 SEAL';
+        var sealColor3 = isSeaAir3 ? '#00b0ff' : '#ff3d57';
+        var checked3 = st3.checked ? 'done' : '';
+        var sizeBadge = c3.size && c3.size.indexOf('20') === 0 ? 'b20' : 'b40';
+
+        html += '<div class="card xray ' + checked3 + '" onclick="openModal(' + c3.no + ')">';
+        html += '<div class="chk">' + (st3.checked ? '✓' : '') + '</div>';
+        html += '<div class="cinfo">';
+        html += '<div class="cntr-no"><span class="lbl">컨테이너 번호</span>' + c3.cntr + '</div>';
+        html += '<div class="seal-no"><span class="lbl">실 번 호</span>' + seal3 + '</div>';
+        html += '<div class="cmeta">';
+        html += '<span class="badge bxr">⚠ XRAY</span>';
+        html += '<span class="badge ' + sizeBadge + '">' + c3.size + '</span>';
+        html += '</div>';
+        html += '<div style="font-size:11px;color:' + sealColor3 + ';margin-top:3px;font-weight:700">';
+        html += sealLabel3 + (xraySeal3 ? ': ' + xraySeal3 : ' - 미입력') + '</div>';
+        if (st3.checked && st3.checkTime) {
+          html += '<div class="chk-time">✓ ' + st3.checkTime + ' · ' + st3.checkUser + '</div>';
+        }
+        html += '</div>';
+        var pos3 = c3.pos || '-';
+        html += '<div class="cpos"><div class="pv">' + pos3 + '</div><div style="font-size:9px">위치</div></div>';
+        html += '</div>';
+      }
+    }
+
+    area.innerHTML = html;
+
+  } catch(err) {
+    area.innerHTML = '<div class="empty"><span class="ei">⚠️</span>오류: ' + err.message + '</div>';
+  }
+}
+
+function renderSpecial(area) {
+  try {
+    var html = '';
+
+    // ===== RF 리퍼 =====
+    var rfItems = [];
+    for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+      if (CONTAINERS_RAW[i].spec === 'RF') rfItems.push(CONTAINERS_RAW[i]);
+    }
+    if (rfItems.length > 0) {
+      html += '<div class="sec-hdr"><span>❄ RF 리퍼 (' + rfItems.length + ')</span></div>';
+      for (var i = 0; i < rfItems.length; i++) {
+        var c = rfItems[i];
+        var st = appState[c.cntr] || {};
+        var seal = st.seal || c.seal || '';
+        var temp = c.specDetail || '';
+        var wt = c.wt ? c.wt.toLocaleString() + 'kg' : '-';
+        html += '<div class="sp-card ot" onclick="openModal(' + c.no + ')">';
+        html += '<div class="sp-title ot">❄ RF (리퍼)</div>';
+        html += '<div class="sp-cntr">' + c.cntr + '</div>';
+        html += '<div class="sp-detail">';
+        html += '실번호: <span>' + seal + '</span> · 위치: <span>' + (c.pos || '-') + '</span><br>';
+        html += '규격: <span>' + c.size + '</span> · 중량: <span>' + wt + '</span>';
+        if (temp) html += '<br>온도: <span style="color:#00e5ff;font-weight:700;font-size:13px">' + temp + '</span>';
+        if (st.damage) html += '<br>데미지: <span style="color:var(--red)">' + st.damage + '</span>';
+        html += '</div></div>';
+      }
+    }
+
+    // ===== FR 플랫랙 =====
+    var frItems = [];
+    for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+      if (CONTAINERS_RAW[i].spec === 'FR') frItems.push(CONTAINERS_RAW[i]);
+    }
+    if (frItems.length > 0) {
+      html += '<div class="sec-hdr"><span>📐 FR 플랫랙 (' + frItems.length + ')</span></div>';
+      for (var i = 0; i < frItems.length; i++) {
+        var c = frItems[i];
+        var st = appState[c.cntr] || {};
+        var seal = st.seal || c.seal || '';
+        var wt = c.wt ? c.wt.toLocaleString() + 'kg' : '-';
+        html += '<div class="sp-card ot" onclick="openModal(' + c.no + ')">';
+        html += '<div class="sp-title ot">📐 FR (플랫랙)</div>';
+        html += '<div class="sp-cntr">' + c.cntr + '</div>';
+        html += '<div class="sp-detail">';
+        html += '실번호: <span>' + seal + '</span> · 위치: <span>' + (c.pos || '-') + '</span><br>';
+        html += '규격: <span>' + c.size + '</span> · 중량: <span>' + wt + '</span>';
+        html += '</div></div>';
+      }
+    }
+
+    // ===== 긴급화물 =====
+    var urgItems = [];
+    for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+      if (CONTAINERS_RAW[i].spec === '긴급') urgItems.push(CONTAINERS_RAW[i]);
+    }
+    if (urgItems.length > 0) {
+      html += '<div class="sec-hdr"><span>🚨 긴급화물 (' + urgItems.length + ')</span></div>';
+      for (var i = 0; i < urgItems.length; i++) {
+        var c = urgItems[i];
+        var st = appState[c.cntr] || {};
+        var seal = st.seal || c.seal || '';
+        var wt = c.wt ? c.wt.toLocaleString() + 'kg' : '-';
+        var detail = c.specDetail || '';
+        var checked = st.checked ? 'done' : '';
+        html += '<div class="sp-card xr ' + checked + '" onclick="openModal(' + c.no + ')">';
+        html += '<div class="sp-title xr">🚨 긴급화물</div>';
+        html += '<div class="sp-cntr">' + c.cntr + '</div>';
+        html += '<div class="sp-detail">';
+        html += '실번호: <span>' + seal + '</span> · 위치: <span>' + (c.pos || '-') + '</span><br>';
+        html += '규격: <span>' + c.size + '</span> · 중량: <span>' + wt + '</span>';
+        if (detail) html += '<br>구분: <span style="color:var(--acc2);font-weight:700">' + detail + '</span>';
+        if (st.checked && st.checkTime) html += '<br><span style="color:var(--grn)">✓ ' + st.checkTime + ' · ' + st.checkUser + '</span>';
+        html += '</div></div>';
+      }
+    }
+
+    if (!html) html = '<div class="empty"><span class="ei">📭</span>특수화물 없음</div>';
+    area.innerHTML = html;
+
+  } catch(err) {
+    area.innerHTML = '<div class="empty"><span class="ei">⚠️</span>오류: ' + err.message + '</div>';
+  }
+}
+
+
+// ============ MODAL ============
+function openModal(no) {
+  var c = null;
+  for (var i = 0; i < CONTAINERS_RAW.length; i++) {
+    if (CONTAINERS_RAW[i].no === no) { c = CONTAINERS_RAW[i]; break; }
+  }
+  if (!c) return;
+  modalNo = no;
+  var st = appState[c.cntr] || {};
+  var spec = st.spec || c.spec || '';
+  var wt = c.wt ? c.wt.toLocaleString() + 'kg' : '-';
+
+  document.getElementById('mTitle').textContent = 'No.' + c.no + ' · ' + (c.line || c.oper || '');
+  document.getElementById('mCntr').textContent = c.cntr;
+  document.getElementById('mInfo').innerHTML =
+    '규격: <span>' + c.size + '</span> · F/E: <span>' + c.fe + '</span><br>' +
+    '위치: <span>' + (c.pos || '-') + '</span> · 중량: <span>' + wt + '</span>';
+  document.getElementById('mSeal').value = st.seal || c.seal || '';
+  document.getElementById('mDamage').value = st.damage || '';
+  document.getElementById('mSpec').value = spec;
+
+  // XRAY 실번호 필드 표시/숨김
+  var isXray = (spec === 'XRAY');
+  document.getElementById('xraySealField').style.display = isXray ? 'block' : 'none';
+  document.getElementById('mXraySeal').value = st.xraySeal || '';
+  if (isXray) {
+    var detail = c.specDetail || '';
+    var isSeaAir = (detail.indexOf('Sea') >= 0);
+    var lbl = document.getElementById('xraySealLabel');
+    var inp = document.getElementById('mXraySeal');
+    if (isSeaAir) {
+      lbl.innerHTML = '✈ Sea & Air · 전자 SEAL 번호';
+      lbl.style.color = '#00b0ff';
+      inp.style.borderColor = 'rgba(0,176,255,.5)';
+      inp.style.background = 'rgba(0,176,255,.08)';
+      inp.placeholder = '전자 SEAL 번호 입력';
+    } else {
+      lbl.innerHTML = '⚠ XRAY · 세관봉인 SEAL 번호';
+      lbl.style.color = '#ff3d57';
+      inp.style.borderColor = 'rgba(255,61,87,.5)';
+      inp.style.background = 'rgba(255,61,87,.08)';
+      inp.placeholder = '세관봉인 SEAL 번호 입력';
+    }
+  }
+
+  var btn = document.getElementById('mChkBtn');
+  if (st.checked) { btn.textContent = '✕ 완료취소'; btn.className = 'mbtn unchk'; }
+  else { btn.textContent = '✓ 확인'; btn.className = 'mbtn chk'; }
+
+  // seal log
+  var logs = [];
+  if (st.sealLog) {
+    for (var j = 0; j < st.sealLog.length; j++) {
+      if (st.sealLog[j].type === 'seal') logs.push(st.sealLog[j]);
+    }
+  }
+  if (logs.length > 0) {
+    document.getElementById('sealLogWrap').style.display = 'block';
+    var logHtml = '';
+    var start = Math.max(0, logs.length - 5);
+    for (var k = logs.length - 1; k >= start; k--) {
+      var l = logs[k];
+      logHtml += '<div class="sel-item"><span class="st">' + l.time + '</span> <span class="su">' + l.user + '</span> ' + l.from + ' → ' + l.to + '</div>';
+    }
+    document.getElementById('sealLogItems').innerHTML = logHtml;
+  } else {
+    document.getElementById('sealLogWrap').style.display = 'none';
+  }
+  document.getElementById('overlay').classList.add('open');
+}
+
+function closeModal() { document.getElementById('overlay').classList.remove('open'); modalNo=null; }
+function closeModalOut(e) { if(e.target===document.getElementById('overlay')) closeModal(); }
+
+function saveModal() {
+  var c = null; for (var _f=0; _f<CONTAINERS_RAW.length; _f++) { if (CONTAINERS_RAW[_f].no===modalNo) { c=CONTAINERS_RAW[_f]; break; } }
+  if (!c) return;
+  var st = appState[c.cntr];
+  var newSeal = document.getElementById('mSeal').value.trim();
+  var newDamage = document.getElementById('mDamage').value.trim();
+  var newSpec = document.getElementById('mSpec').value;
+  var newXraySeal = document.getElementById('mXraySeal').value.trim();
+  var changed = false;
+  // 실번호 수정
+  if (newSeal && newSeal !== st.seal) {
+    var old = st.seal;
+    st.sealLog = st.sealLog||[];
+    st.sealLog.push({type:'seal',time:now(),user:currentUser,from:old,to:newSeal});
+    st.seal = newSeal;
+    post({action:'seal_edit',cntr:c.cntr,newSeal:newSeal,editUser:currentUser});
+    changed = true;
+  }
+  // XRAY 세관봉인 실번호
+  if (newXraySeal && newXraySeal !== (st.xraySeal||'')) {
+    st.xraySeal = newXraySeal;
+    post({action:'xray_seal_edit',cntr:c.cntr,xraySeal:newXraySeal,editUser:currentUser});
+    changed = true;
+  }
+  // 데미지 수정
+  if (newDamage !== st.damage) {
+    st.damage = newDamage;
+    post({action:'damage_edit',cntr:c.cntr,damage:newDamage,editUser:currentUser});
+    changed = true;
+  }
+  // 특수화물 수정
+  if (newSpec !== (st.spec||'')) {
+    st.spec = newSpec;
+    post({action:'spec_edit',cntr:c.cntr,spec:newSpec,editUser:currentUser});
+    changed = true;
+  }
+  if (changed) saveState();
+  closeModal();
+  renderList();
+}
+
+function toggleCheck() {
+  var c = null; for (var _f=0; _f<CONTAINERS_RAW.length; _f++) { if (CONTAINERS_RAW[_f].no===modalNo) { c=CONTAINERS_RAW[_f]; break; } }
+  if (!c) return;
+  var st = appState[c.cntr];
+  // 저장 먼저
+  var newSeal = document.getElementById('mSeal').value.trim();
+  var newDamage = document.getElementById('mDamage').value.trim();
+  var newSpec = document.getElementById('mSpec').value;
+  var newXraySeal = document.getElementById('mXraySeal').value.trim();
+  if (newSeal && newSeal !== st.seal) {
+    st.sealLog = st.sealLog||[];
+    st.sealLog.push({type:'seal',time:now(),user:currentUser,from:st.seal,to:newSeal});
+    st.seal = newSeal;
+    post({action:'seal_edit',cntr:c.cntr,newSeal:newSeal,editUser:currentUser});
+  }
+  if (newXraySeal && newXraySeal !== (st.xraySeal||'')) {
+    st.xraySeal = newXraySeal;
+    post({action:'xray_seal_edit',cntr:c.cntr,xraySeal:newXraySeal,editUser:currentUser});
+  }
+  if (newDamage !== st.damage) {
+    st.damage = newDamage;
+    post({action:'damage_edit',cntr:c.cntr,damage:newDamage,editUser:currentUser});
+  }
+  if (newSpec !== (st.spec||'')) {
+    st.spec = newSpec;
+    post({action:'spec_edit',cntr:c.cntr,spec:newSpec,editUser:currentUser});
+  }
+  // 확인 토글
+  if (st.checked) {
+    st.checked=false; st.checkTime=null; st.checkUser=null;
+    post({action:'confirm',cntr:c.cntr,checked:false,checkTime:'',checkUser:currentUser});
+  } else {
+    st.checked=true; st.checkTime=now(); st.checkUser=currentUser;
+    post({action:'confirm',cntr:c.cntr,checked:true,checkTime:st.checkTime,checkUser:currentUser});
+  }
+  saveState();
+  closeModal();
+  renderList();
+}
+
+// ============ TABS & SEARCH ============
+function switchTab(tab, el) {
+  curTab = tab;
+  var _tabs = document.querySelectorAll('.tab'); for (var _t=0; _t<_tabs.length; _t++) _tabs[_t].classList.remove('active');
+  el.classList.add('active');
+  renderList();
+}
+function doSearch() {
+  searchQ = document.getElementById('srchInput').value.trim().toUpperCase();
+  renderList();
+}
+function toggleXrayFilter() {
+  xrayFilter = !xrayFilter;
+  document.getElementById('xrayFBtn').classList.toggle('on', xrayFilter);
+  renderList();
+}
+
+// Init - 새로고침해도 로그인 유지
+var savedUser = localStorage.getItem('obwh_user');
+if (savedUser && PW[savedUser]) {
+  currentUser = savedUser;
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('mainApp').style.display = 'block';
+  document.getElementById('curUser').textContent = savedUser;
+  loadFromSheets();
+}
+renderList();
+</script>
+</body>
+</html>
