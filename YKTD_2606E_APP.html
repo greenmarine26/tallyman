@@ -223,8 +223,11 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
     </div>
   </div>
 </div>
-<div class="search-wrap">
-  <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric">
+<div class="search-wrap" id="searchWrap">
+  <div style="display:flex;align-items:center;gap:8px">
+    <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric" style="flex:1">
+    <button id="searchToggleBtn" onclick="toggleSearch()" style="display:none;background:#1F3864;border:none;color:#fff;border-radius:10px;padding:10px 14px;font-size:18px;cursor:pointer;flex-shrink:0">🔍</button>
+  </div>
 </div>
 <div class="tabs">
   <button class="tab active" data-f="all">전체</button>
@@ -452,6 +455,17 @@ function doLogout(){
 // ── 카메라 조회 (Tesseract 고인식률) ────────
 var camStream=null,camTimer=null,camBusy=false,camLast='';
 
+function toggleSearch(){
+  var inp=document.getElementById('inp');
+  if(!inp) return;
+  if(inp.style.display==='none'){
+    inp.style.display='';
+    inp.focus();
+  } else {
+    inp.style.display='none';
+  }
+}
+
 function openCamera(){
   var m=document.getElementById('camModal');
   m.style.display='flex'; m.style.flexDirection='column';
@@ -459,6 +473,11 @@ function openCamera(){
   document.getElementById('camManual').value='';
   document.getElementById('zoomSlider').value=1;
   document.getElementById('zoomVal').textContent='1.0x';
+  // 검색창 숨기고 아이콘만 표시
+  var inp=document.getElementById('inp');
+  var btn=document.getElementById('searchToggleBtn');
+  if(inp) inp.style.display='none';
+  if(btn) btn.style.display='block';
   camLast='';
   startCam();
 }
@@ -467,6 +486,11 @@ function closeCamera(){
   stopCam();
   document.getElementById('camVideo').style.transform='scale(1)';
   document.getElementById('camModal').style.display='none';
+  // 검색창 복원
+  var inp=document.getElementById('inp');
+  var btn=document.getElementById('searchToggleBtn');
+  if(inp) inp.style.display='';
+  if(btn) btn.style.display='none';
 }
 
 function startCam(){
