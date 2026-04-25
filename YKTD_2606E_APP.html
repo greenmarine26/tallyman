@@ -85,7 +85,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 
     <!-- 카메라 뷰 - 정사각형 -->
     <div style="position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000">
-      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
+      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.15s"></video>
       <canvas id="camCanvas" style="display:none"></canvas>
 
       <!-- 타이틀바 오버레이 -->
@@ -413,6 +413,7 @@ function openCamera(){
 
 function closeCamera(){
   stopCam();
+  document.getElementById('camVideo').style.transform='scale(1)';
   document.getElementById('camModal').style.display='none';
 }
 
@@ -513,8 +514,16 @@ function doOCR(callback){
   var el=document.getElementById('camResult');
   var guide=document.getElementById('camGuide');
   var vw=video.videoWidth, vh=video.videoHeight;
-  var cropX=Math.round(vw*0.05), cropW=Math.round(vw*0.90);
-  var cropY=Math.round(vh*0.39), cropH=Math.round(vh*0.22);
+  // CSS zoom 보정: scale이 크면 중앙 더 좁게 크롭
+  var cssScale=currentZoom||1;
+  var track=camStream&&camStream.getVideoTracks()[0];
+  var caps=track&&track.getCapabilities?track.getCapabilities():{};
+  if(caps.zoom&&currentZoom<=caps.zoom.max) cssScale=1;
+  var margin=Math.min(0.45, 0.05+(cssScale-1)*0.08);
+  var cropX=Math.round(vw*margin);
+  var cropW=Math.round(vw*(1-margin*2));
+  var cropY=Math.round(vh*(0.39+margin*0.5));
+  var cropH=Math.round(vh*Math.max(0.1, 0.22-(cssScale-1)*0.03));
   canvas.width=cropW; canvas.height=cropH;
   var ctx=canvas.getContext('2d');
   ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
@@ -585,15 +594,37 @@ function setZoom(val){
   var v=parseFloat(val);
   currentZoom=v;
   document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
-  if(!camStream) return;
+  var video=document.getElementById('camVideo');
+
+  if(!camStream){ 
+    // 하드웨어 없으면 CSS만
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
+    return;
+  }
   var track=camStream.getVideoTracks()[0];
-  if(!track) return;
-  // 하드웨어 줌 시도
-  var caps=track.getCapabilities ? track.getCapabilities() : {};
+  var caps=track && track.getCapabilities ? track.getCapabilities() : {};
+
   if(caps.zoom){
-    var min=caps.zoom.min, max=caps.zoom.max;
-    var z=min+(max-min)*((v-1)/29);
-    track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+    // 하드웨어 최대치 확인
+    var hwMax=caps.zoom.max;
+    var hwMin=caps.zoom.min;
+    if(v<=hwMax){
+      // 하드웨어 줌으로만 처리
+      var z=hwMin+(hwMax-hwMin)*((v-1)/29);
+      track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+      video.style.transform='scale(1)';
+    } else {
+      // 하드웨어 최대 + CSS 추가 확대
+      track.applyConstraints({advanced:[{zoom:hwMax}]}).catch(function(){});
+      var cssScale=v/hwMax;
+      video.style.transform='scale('+cssScale+')';
+      video.style.transformOrigin='center center';
+    }
+  } else {
+    // 하드웨어 줌 미지원 → CSS transform만
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
   }
 }
 
