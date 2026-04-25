@@ -94,16 +94,21 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
         <button onclick="closeCamera()" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;line-height:1">✕</button>
       </div>
 
-      <!-- 스캔 가이드 - 뷰 안에서 80% 정사각형 -->
+      <!-- 스캔 가이드 - 가로 직사각형 (번호 인식용) -->
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="position:relative;width:82%;aspect-ratio:1/1">
+        <!-- 어두운 오버레이 - 스캔 영역 밖 -->
+        <div style="position:absolute;inset:0;background:rgba(0,0,0,0.45)"></div>
+        <!-- 스캔 영역 - 밝게 뚫기 -->
+        <div id="scanBox" style="position:relative;width:90%;height:22%;background:transparent;z-index:2;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)">
           <!-- 모서리 4개 -->
-          <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:4px 0 0 0"></div>
-          <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 4px 0 0"></div>
-          <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:0 0 0 4px"></div>
-          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 0 4px 0"></div>
-          <!-- 스캔 라인 - 정사각형 안에서 좌우 꽉 -->
-          <div style="position:absolute;top:50%;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,#FFD700,transparent);animation:scanLine 2s ease-in-out infinite"></div>
+          <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:4px solid #FFD700;border-left:4px solid #FFD700"></div>
+          <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:4px solid #FFD700;border-right:4px solid #FFD700"></div>
+          <div style="position:absolute;bottom:0;left:0;width:24px;height:24px;border-bottom:4px solid #FFD700;border-left:4px solid #FFD700"></div>
+          <div style="position:absolute;bottom:0;right:0;width:24px;height:24px;border-bottom:4px solid #FFD700;border-right:4px solid #FFD700"></div>
+          <!-- 스캔 라인 -->
+          <div style="position:absolute;top:50%;left:0;right:0;height:2px;background:linear-gradient(to right,transparent,#FFD700,transparent);animation:scanLine 2s ease-in-out infinite"></div>
+          <!-- 안내 텍스트 -->
+          <div style="position:absolute;top:-22px;left:0;right:0;text-align:center;color:#FFD700;font-size:11px;font-weight:700;letter-spacing:1px">번호를 이 안에 맞추세요</div>
         </div>
       </div>
 
@@ -482,11 +487,18 @@ function doOCR(){
   var el=document.getElementById('camResult');
   var guide=document.getElementById('camGuide');
 
-  // 원본 캡처
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
+  var vw=video.videoWidth, vh=video.videoHeight;
+
+  // 스캔박스 영역만 크롭 (화면의 중앙 22% 높이, 90% 너비)
+  var cropX=Math.round(vw*0.05);
+  var cropW=Math.round(vw*0.90);
+  var cropY=Math.round(vh*0.39);  // 중앙 기준 위아래 11%
+  var cropH=Math.round(vh*0.22);
+
+  canvas.width=cropW;
+  canvas.height=cropH;
   var ctx=canvas.getContext('2d');
-  ctx.drawImage(video,0,0);
+  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
 
   // 전처리 캔버스 생성
   var processed=preprocessCanvas(canvas);
