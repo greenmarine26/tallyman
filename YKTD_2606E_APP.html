@@ -85,7 +85,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 
     <!-- 카메라 뷰 - 정사각형 -->
     <div style="position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000">
-      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
+      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block;transition:transform 0.2s;will-change:transform"></video>
       <canvas id="camCanvas" style="display:none"></canvas>
 
       <!-- 타이틀바 오버레이 -->
@@ -400,6 +400,9 @@ function openCamera(){
   m.style.display='flex'; m.style.flexDirection='column';
   document.getElementById('camResult').textContent='';
   document.getElementById('camManual').value='';
+  document.getElementById('zoomSlider').value=1;
+  document.getElementById('zoomVal').textContent='1.0x';
+  document.getElementById('camVideo').style.transform='scale(1)';
   camLast='';
   startCam();
 }
@@ -411,19 +414,9 @@ function closeCamera(){
 
 function startCam(){
   navigator.mediaDevices.getUserMedia({
-    video:{
-      facingMode:{ideal:'environment'},
-      width:{ideal:1920, min:1280},
-      height:{ideal:1080, min:720},
-      frameRate:{ideal:15}
-    }
+    video:{facingMode:{ideal:'environment'}}
   }).then(function(stream){
     camStream=stream;
-    // 화질 최적화 설정
-    var track=stream.getVideoTracks()[0];
-    if(track && track.applyConstraints){
-      track.applyConstraints({advanced:[{sharpness:100,contrast:100}]}).catch(function(){});
-    }
     var v=document.getElementById('camVideo');
     v.srcObject=stream;
     v.onloadedmetadata=function(){ v.play(); };
@@ -531,16 +524,12 @@ function handleFound(found,el,guide){
 }
 
 function setZoom(val){
-  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
-  if(!camStream) return;
-  var track=camStream.getVideoTracks()[0];
-  if(!track) return;
-  var caps=track.getCapabilities();
-  if(caps.zoom){
-    var min=caps.zoom.min, max=caps.zoom.max;
-    var z=min+(max-min)*((val-1)/9);
-    track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
-  }
+  var v=parseFloat(val);
+  document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
+  var video=document.getElementById('camVideo');
+  // CSS transform 줌 - 모든 폰 호환
+  video.style.transform='scale('+v+')';
+  video.style.transformOrigin='center center';
 }
 
 function captureNow(){
