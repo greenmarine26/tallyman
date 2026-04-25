@@ -693,9 +693,9 @@ function processVoiceInput(raw) {
     showVoiceToast('\u2705 ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | \u26A0XRAY':''));
     if (navigator.vibrate) navigator.vibrate([80,40,80]);
     if (isXray) {
-      speakThen('실번호 ' + r.seal + ' 입니다.', '엑스레이 대상입니다. 실 달아주세요.');
+      speakThen('실번호 ' + sealToSpeech(r.seal) + ' 입니다.', '엑스레이 대상입니다. 실 달아주세요.');
     } else {
-      speak('실번호 ' + r.seal + ' 입니다.');
+      speak('실번호 ' + sealToSpeech(r.seal) + ' 입니다.');
     }
     setTimeout(function(){ var c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); }, 300);
   } else {
@@ -714,6 +714,17 @@ function getFemaleVoice() {
     }
   }
   return pick;
+}
+function sealToSpeech(seal) {
+  // 숫자→한글 한글자씩, 영문→그대로, 0→공 으로 읽기
+  var numMap = {'0':'공','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+  var result = '';
+  for (var i=0; i<seal.length; i++) {
+    var c = seal[i];
+    if (numMap[c]) result += numMap[c] + ' ';
+    else result += c + ' ';
+  }
+  return result.trim();
 }
 function speak(text) {
   if (!window.speechSynthesis) return;
