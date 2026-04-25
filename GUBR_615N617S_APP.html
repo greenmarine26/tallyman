@@ -922,6 +922,13 @@ function camManualSearch(){
 }
 
 render();
+
+// ── 뒤로가기 방지 ──────────────────────────────
+history.pushState(null, null, location.href);
+window.addEventListener('popstate', function(){
+  history.pushState(null, null, location.href);
+});
+
 </script>
 </body>
 </html>
