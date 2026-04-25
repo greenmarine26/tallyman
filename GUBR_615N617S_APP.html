@@ -212,20 +212,16 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
     <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
     <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
     <span>|</span>
-    <span>🔶특수 <b>14</b></span>
-    <span>🧊RF <b>13</b></span>
-    <span>⚠XRAY <b>1</b></span>
+    <span>🔶특수 <b id="cntSP">277</b></span>
+    <span>🧊RF <b id="cntRF">277</b></span>
+    <span>⚠XRAY <b id="cntXR">2</b></span>
     <span>|</span>
-    <span>SKR <b>77</b></span>
-    <span>DJS <b>38</b></span>
-    <span>HAS <b>26</b></span>
-    <span>HSL <b>7</b></span>
-    <span>DYS <b>2</b></span>
+    <span>풀(F) <b id="cntF">289</b></span>
+    <span>엠티(E) <b id="cntE">39</b></span>
     <span>|</span>
-    <span>20DC <b>26</b></span>
-    <span>20RF <b>2</b></span>
-    <span>40HQ <b>111</b></span>
-    <span>40RF <b>11</b></span>
+    <span>40RF <b id="cntRFsz">277</b></span>
+    <span>40HC <b id="cntHC">50</b></span>
+    <span>20DC <b id="cntDC">1</b></span>
   </div>
 
   <div class="search-wrap">
@@ -240,13 +236,11 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
     <button class="tab" data-f="SP">🔶특수</button>
     <button class="tab" data-f="RF">🧊리퍼</button>
     <button class="tab" data-f="XRAY">⚠XRAY</button>
-    <button class="tab" data-f="20DC">20DC</button>
-    <button class="tab" data-f="20RF">20RF</button>
-    <button class="tab" data-f="40HQ">40HQ</button>
+    <button class="tab" data-f="FULL">풀(F)</button>
+    <button class="tab" data-f="EMPTY">엠티(E)</button>
     <button class="tab" data-f="40RF">40RF</button>
-    <button class="tab" data-f="SKR">SKR</button>
-    <button class="tab" data-f="DJS">DJS</button>
-    <button class="tab" data-f="HAS">HAS</button>
+    <button class="tab" data-f="40HC">40HC</button>
+    <button class="tab" data-f="20DC">20DC</button>
   </div>
 
   <div class="result-bar" id="rbar"></div>
@@ -358,6 +352,8 @@ function matches(r, q, f){
   if(f === 'done')   return !!r.checked;
   // 전체/기타 탭에서는 완료된 것 제외
   if(!!r.checked) return false;
+  if(f === 'FULL')  return r.fe === 'F';
+  if(f === 'EMPTY') return r.fe === 'E';
   if(f === 'SP')     return !!r.special;
   if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
   if(f === 'XRAY')   return r.special === 'XRAY';
@@ -486,12 +482,28 @@ function editPos(no){
 }
 
 function updateSumBar(){
-  var done = DATA.filter(function(r){ return !!r.checked; }).length;
+  var done   = DATA.filter(function(r){ return !!r.checked; }).length;
   var remain = DATA.length - done;
-  document.getElementById('sumDone').textContent = done;
+  document.getElementById('sumDone').textContent   = done;
   document.getElementById('sumRemain').textContent = remain;
-  var cntEl = document.getElementById('cntAll');
-  if(cntEl) cntEl.textContent = DATA.length;
+  var cntEl = document.getElementById('cntAll'); if(cntEl) cntEl.textContent = DATA.length;
+
+  var cntSP  = DATA.filter(function(r){ return !!r.special; }).length;
+  var cntRF  = DATA.filter(function(r){ return r.size==='40RF'; }).length;
+  var cntXR  = DATA.filter(function(r){ return !!r.xray; }).length;
+  var cntF   = DATA.filter(function(r){ return r.fe==='F'; }).length;
+  var cntE   = DATA.filter(function(r){ return r.fe==='E'; }).length;
+  var cntHC  = DATA.filter(function(r){ return r.size==='40HC'; }).length;
+  var cntDC  = DATA.filter(function(r){ return r.size==='20DC'; }).length;
+  var e; 
+  e=document.getElementById('cntSP');   if(e) e.textContent=cntSP;
+  e=document.getElementById('cntRF');   if(e) e.textContent=cntSP;
+  e=document.getElementById('cntXR');   if(e) e.textContent=cntXR;
+  e=document.getElementById('cntF');    if(e) e.textContent=cntF;
+  e=document.getElementById('cntE');    if(e) e.textContent=cntE;
+  e=document.getElementById('cntRFsz'); if(e) e.textContent=cntRF;
+  e=document.getElementById('cntHC');   if(e) e.textContent=cntHC;
+  e=document.getElementById('cntDC');   if(e) e.textContent=cntDC;
 }
 
 function render(){
