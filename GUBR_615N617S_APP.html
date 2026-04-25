@@ -263,6 +263,16 @@ var STAFF_DB = {
   '장문영':'210215','김판석':'240108','최관식':'240109','김홍규':'240617','한성호':'240708',
   '오종하':'250210','이인철':'250701','이종부':'250707','이종현':'250811','송제욱':'260421','최원형':'240710'
 };
+var ROLE_DB = {
+  '신성호':'대표이사','표인수':'상무이사','황창웅':'이사','최장욱':'실장',
+  '이현규':'부장·수석검수','김명보':'부장·수석검수','권수안':'차장',
+  '정영배':'차장','오승택':'차장·수석검수','성창모':'과장·수석검수',
+  '이강익':'과장·수석검수','김유신':'대리','김석':'대리',
+  '전우수':'대리·수석검수','김성일':'대리·부수석','장문영':'검수',
+  '김판석':'검수','최관식':'검수','김홍규':'검수','한성호':'검수',
+  '오종하':'검수','이인철':'검수','이종부':'검수','이종현':'검수',
+  '송제욱':'검수','최원형':'검수'
+};
 
 var currentUser = '';
 // GUBR 615N/617S 앱 - GAS URL 아래 설정
@@ -288,10 +298,7 @@ function showApp(name){
   currentUser = name;
   document.getElementById('loginWrap').style.display='none';
   document.getElementById('appWrap').style.display='block';
-  var role = STAFF_DB[name] === STAFF_DB[name] ? '검수원' : '검수';
-  // 직책 표시 (팀장은 별도)
-  var roleText = (name === '신성호') ? '검수팀장' : '검수원';
-  document.getElementById('hdrRole').textContent = roleText;
+  document.getElementById('hdrRole').textContent = '검수원';
   document.getElementById('hdrName').textContent = name;
 }
 
