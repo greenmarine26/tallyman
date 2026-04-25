@@ -639,10 +639,19 @@ function undoCheck(no){
 
 // ── Google Sheets 연동 ────────────────────────────
 function loadFromSheets(){
+  var btn = document.querySelector('.hdr-btn[title="새로고침"]');
+  if(btn){ btn.textContent='⏳'; btn.disabled=true; }
   var xhr = new XMLHttpRequest();
   xhr.open('GET', GAS_URL+'?action=getData&mode='+curMode, true);
+  xhr.timeout = 10000;
+  xhr.ontimeout = function(){
+    if(btn){ btn.textContent='🔄'; btn.disabled=false; }
+    alert('서버 응답 없음. 네트워크 확인하세요.');
+  };
   xhr.onreadystatechange = function(){
-    if(xhr.readyState !== 4 || xhr.status !== 200) return;
+    if(xhr.readyState !== 4) return;
+    if(btn){ btn.textContent='🔄'; btn.disabled=false; }
+    if(xhr.status !== 200){ alert('로드 실패 ('+xhr.status+')'); return; }
     try{
       var res = JSON.parse(xhr.responseText);
       if(res.data){
@@ -653,13 +662,15 @@ function loadFromSheets(){
               if(row.seal) DATA[j].seal = row.seal.trim();
               if(row.xray_seal !== undefined) DATA[j].xray_seal = row.xray_seal;
               if(row.checked) DATA[j].checked = row.checked;
+              if(row.pos) DATA[j].pos = row.pos;
               break;
             }
           }
         }
         render();
+        updateSumBar();
       }
-    } catch(e){ console.log('Sheets 로드 오류:',e); }
+    } catch(e){ alert('데이터 오류: '+e.message); }
   };
   xhr.send();
 }
