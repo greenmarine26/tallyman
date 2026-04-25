@@ -386,7 +386,7 @@ function doLogout(){
 
 // ── 카메라 조회 (Gemini API) ────────
 var GEMINI_KEY='AIzaSyDPRM3bRGusAwhyhjGGka2K1m2r6c5gJKY';
-var GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-04-17:generateContent?key='+GEMINI_KEY;
+var GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+GEMINI_KEY;
 var camStream=null,camTimer=null,camBusy=false,camLast='';
 
 function openCamera(){
