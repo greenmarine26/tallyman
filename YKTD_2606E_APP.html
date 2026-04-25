@@ -7,22 +7,19 @@
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color:#222}
-.hdr{background:linear-gradient(135deg,#1F3864,#2E75B6);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.3);display:flex;align-items:center;justify-content:space-between;gap:8px}
-.hdr-right{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0}
-.hdr-btns{display:flex;gap:6px}
-.hdr-btn{width:34px;height:34px;border-radius:50%;border:1.5px solid rgba(255,255,255,0.4);background:rgba(255,255,255,0.15);color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.hdr{background:linear-gradient(135deg,#1F3864,#2E75B6);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+.hdr-top{display:flex;align-items:center;justify-content:space-between;}
+.hdr-company{font-size:15px;font-weight:800;letter-spacing:.5px;}
+.hdr-ship{font-size:10px;opacity:.8;margin-top:2px;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
 .hdr-btn:active{opacity:0.7}
 .cam-btn{background:rgba(255,215,0,0.25);border-color:rgba(255,215,0,0.6)}
-.logout-btn{background:rgba(255,80,80,0.25);border-color:rgba(255,100,100,0.6)}
-.hdr-left{flex:1;min-width:0}
-.hdr h1{font-size:15px;font-weight:700;letter-spacing:.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hdr p{font-size:11px;opacity:.8;margin-top:2px}
-.hdr-user{text-align:right;flex-shrink:0;cursor:pointer}
-.user-team{font-size:13px;font-weight:900;letter-spacing:1.5px;background:linear-gradient(90deg,#7FFFD4,#FFD700,#FF8C69);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;filter:drop-shadow(0 0 6px rgba(255,215,0,.6));white-space:nowrap;margin-bottom:4px;text-align:right}
-.user-chip{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,0.13);border:1.5px solid rgba(255,215,0,0.6);border-radius:20px;padding:4px 12px;box-shadow:0 0 10px rgba(255,215,0,.3),inset 0 1px 0 rgba(255,255,255,.2)}
-.user-role{font-size:11px;color:rgba(255,255,255,.75);font-weight:700;white-space:nowrap}
-.user-divider{color:rgba(255,215,0,.5);font-size:11px;font-weight:300}
-.user-name{font-size:14px;font-weight:900;color:#FFD700;text-shadow:0 0 10px rgba(255,215,0,.8);white-space:nowrap;letter-spacing:.5px}
+.hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
+.hdr-user-info{display:flex;align-items:center;gap:8px;}
+.hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
+.hdr-name{font-size:13px;font-weight:700;}
+.logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
 /* 이름 입력 모달 */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center}
 .modal{background:#fff;border-radius:16px;padding:24px 20px;width:80%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
@@ -196,24 +193,22 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
   </div>
 </div>
 <div class="hdr">
-  <div class="hdr-left">
-    <h1>🚢 YOKOHAMA TRADER  2606E</h1>
-    <p>KRPTK (평택) | 총 150개 컨테이너</p>
-  </div>
-  <div class="hdr-right">
-    <div class="hdr-user" onclick="reEnterName()">
-      <div class="user-team">🟢 그린마린 검수팀</div>
-      <div class="user-chip">
-        <span class="user-role" id="userRoleDisp">-</span>
-        <span class="user-divider">|</span>
-        <span class="user-name" id="userNameDisp">-</span>
-      </div>
+  <div class="hdr-top">
+    <div class="hdr-title-wrap">
+      <div class="hdr-company">🚢 그린마린 검수팀</div>
+      <div class="hdr-ship">YKTD 2606E | KRPTK 평택 | 150개</div>
     </div>
     <div class="hdr-btns">
-      <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라 조회">📷</button>
+      <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
       <button class="hdr-btn" id="voiceBtn" onclick="toggleVoice()" title="음성 검색" style="background:rgba(0,200,100,0.25);border-color:rgba(0,200,100,0.6)">🎤</button>
-      <button class="hdr-btn logout-btn" onclick="doLogout()" title="로그아웃">⏏</button>
     </div>
+  </div>
+  <div class="hdr-user-row" onclick="reEnterName()" style="cursor:pointer">
+    <div class="hdr-user-info">
+      <span class="hdr-role" id="userRoleDisp">-</span>
+      <span class="hdr-name" id="userNameDisp">-</span>
+    </div>
+    <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
   </div>
 </div>
 <div class="search-wrap">
