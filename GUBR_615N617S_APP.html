@@ -651,17 +651,17 @@ function loadFromSheets(){
     try{
       var res = JSON.parse(xhr.responseText);
       if(res.data){
+        // no 대신 cntr로 매칭 (양하/선적 no가 겹치므로)
+        var cntrMap = {};
+        for(var j=0;j<DATA.length;j++) cntrMap[DATA[j].cntr] = j;
         for(var i=0;i<res.data.length;i++){
           var row = res.data[i];
-          for(var j=0;j<DATA.length;j++){
-            if(DATA[j].no === row.no){
-              if(row.seal) DATA[j].seal = row.seal.toString().trim();
-              if(row.xray_seal !== undefined) DATA[j].xray_seal = (row.xray_seal||'').toString();
-              if(row.checked) DATA[j].checked = row.checked.toString();
-              if(row.pos && row.pos.toString().trim()) DATA[j].pos = row.pos.toString().trim();
-              break;
-            }
-          }
+          var idx = (row.cntr !== undefined) ? cntrMap[row.cntr] : cntrMap[Object.keys(cntrMap).filter(function(k){ return DATA[cntrMap[k]].no==row.no; })[0]];
+          if(idx === undefined) continue;
+          if(row.seal) DATA[idx].seal = row.seal.toString().trim();
+          if(row.xray_seal !== undefined) DATA[idx].xray_seal = (row.xray_seal||'').toString();
+          if(row.checked) DATA[idx].checked = row.checked.toString();
+          if(row.pos && row.pos.toString().trim()) DATA[idx].pos = row.pos.toString().trim();
         }
         render();
         updateSumBar();
