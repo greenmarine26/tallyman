@@ -99,7 +99,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
         <!-- 어두운 오버레이 - 스캔 영역 밖 -->
         <div style="position:absolute;inset:0;background:rgba(0,0,0,0.45)"></div>
         <!-- 스캔 영역 - 밝게 뚫기 -->
-        <div id="scanBox" style="position:relative;width:90%;height:22%;background:transparent;z-index:2;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)">
+        <div id="scanBox" style="position:relative;width:96%;height:50%;background:transparent;z-index:2;box-shadow:0 0 0 9999px rgba(0,0,0,0.45)">
           <!-- 모서리 4개 -->
           <div style="position:absolute;top:0;left:0;width:24px;height:24px;border-top:4px solid #FFD700;border-left:4px solid #FFD700"></div>
           <div style="position:absolute;top:0;right:0;width:24px;height:24px;border-top:4px solid #FFD700;border-right:4px solid #FFD700"></div>
@@ -515,24 +515,14 @@ function doOCR(callback){
   var guide=document.getElementById('camGuide');
   var vw=video.videoWidth, vh=video.videoHeight;
   // CSS zoom 보정: scale이 크면 중앙 더 좁게 크롭
-  var cssScale=currentZoom||1;
-  var track=camStream&&camStream.getVideoTracks()[0];
-  var caps=track&&track.getCapabilities?track.getCapabilities():{};
-  if(caps.zoom&&currentZoom<=caps.zoom.max) cssScale=1;
-  var margin=Math.min(0.45, 0.05+(cssScale-1)*0.08);
-  var cropX=Math.round(vw*margin);
-  var cropW=Math.round(vw*(1-margin*2));
-  var cropY=Math.round(vh*(0.39+margin*0.5));
-  var cropH=Math.round(vh*Math.max(0.1, 0.22-(cssScale-1)*0.03));
+  var cropX=Math.round(vw*0.02);
+  var cropW=Math.round(vw*0.96);
+  var cropY=Math.round(vh*0.25);
+  var cropH=Math.round(vh*0.50);
   canvas.width=cropW; canvas.height=cropH;
   var ctx=canvas.getContext('2d');
   ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
   var processed=preprocessCanvas(canvas);
-
-  // S26 디버그: 캔버스 크기 표시
-  var el2=document.getElementById('camResult');
-  el2.style.color='#aaa';
-  el2.textContent='크기:'+processed.width+'x'+processed.height;
 
   Tesseract.recognize(processed,'eng',{
     logger:function(){},
@@ -541,8 +531,6 @@ function doOCR(callback){
     preserve_interword_spaces:'0'
   }).then(function(r){
     var nums=r.data.text.replace(/[^0-9]/g,'');
-    // 디버그: 인식된 숫자 표시
-    document.getElementById('camGuide').textContent='인식:'+nums+'('+nums.length+'자리)';
     var found=findByNumbers(nums);
     if(found){
       var match=DATA.find(function(d){return d.cntr===found;});
@@ -565,18 +553,26 @@ function doOCR(callback){
 
 function findByNumbers(nums){
   if(nums.length<4) return null;
+  // 7자리 슬라이딩 매칭 (숫자열 어느 위치든)
   if(nums.length>=7){
-    var last7=nums.slice(-7);
-    for(var i=0;i<DATA.length;i++){
-      if(DATA[i].cntr.slice(-7)===last7) return DATA[i].cntr;
+    for(var s=0;s<=nums.length-7;s++){
+      var sub7=nums.substr(s,7);
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-7)===sub7) return DATA[i].cntr;
+      }
     }
   }
-  var last4=nums.slice(-4);
-  var matches=[];
-  for(var i=0;i<DATA.length;i++){
-    if(DATA[i].cntr.slice(-4)===last4) matches.push(DATA[i].cntr);
+  // 4자리 슬라이딩 매칭
+  if(nums.length>=4){
+    for(var s=0;s<=nums.length-4;s++){
+      var sub4=nums.substr(s,4);
+      var matches=[];
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-4)===sub4) matches.push(DATA[i].cntr);
+      }
+      if(matches.length===1) return matches[0];
+    }
   }
-  if(matches.length===1) return matches[0];
   return null;
 }
 
