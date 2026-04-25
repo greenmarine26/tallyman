@@ -529,6 +529,11 @@ function doOCR(callback){
   ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
   var processed=preprocessCanvas(canvas);
 
+  // S26 디버그: 캔버스 크기 표시
+  var el2=document.getElementById('camResult');
+  el2.style.color='#aaa';
+  el2.textContent='크기:'+processed.width+'x'+processed.height;
+
   Tesseract.recognize(processed,'eng',{
     logger:function(){},
     tessedit_char_whitelist:'0123456789',
@@ -536,6 +541,8 @@ function doOCR(callback){
     preserve_interword_spaces:'0'
   }).then(function(r){
     var nums=r.data.text.replace(/[^0-9]/g,'');
+    // 디버그: 인식된 숫자 표시
+    document.getElementById('camGuide').textContent='인식:'+nums+'('+nums.length+'자리)';
     var found=findByNumbers(nums);
     if(found){
       var match=DATA.find(function(d){return d.cntr===found;});
