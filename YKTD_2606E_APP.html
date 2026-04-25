@@ -426,9 +426,8 @@ function stopCam(){
 }
 
 function startAutoScan(){
-  if(camTimer) clearInterval(camTimer);
-  document.getElementById('camGuide').textContent='🔍 자동 스캔 중... (Gemini)';
-  camTimer=setInterval(function(){ if(!camBusy) doOCR(); },2500);
+  // Gemini API - 자동스캔 없음, 📸 버튼 수동 호출만 사용 (429 방지)
+  document.getElementById('camGuide').textContent='📸 버튼을 눌러 스캔하세요';
 }
 
 function doOCR(){
