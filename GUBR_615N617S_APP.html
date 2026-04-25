@@ -195,7 +195,7 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
         <div class="hdr-ship">GUBR 615N/617S | KRPTK 평택</div>
       </div>
       <div class="hdr-btns">
-        <button class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
+        <button id="refreshBtn" class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
         <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
       </div>
     </div>
@@ -639,7 +639,7 @@ function undoCheck(no){
 
 // ── Google Sheets 연동 ────────────────────────────
 function loadFromSheets(){
-  var btn = document.querySelector('.hdr-btn[title="새로고침"]');
+  var btn = document.getElementById("refreshBtn");
   if(btn){ btn.style.opacity='0.4'; btn.disabled=true; }
   var xhr = new XMLHttpRequest();
   xhr.open('GET', GAS_URL+'?action=getData&mode='+curMode, true);
