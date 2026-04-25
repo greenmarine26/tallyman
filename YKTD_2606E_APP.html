@@ -114,6 +114,15 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
 .empty{text-align:center;padding:40px 20px;color:#aaa;}
 /* ── 완료탭 스타일 ── */
 .done-info{font-size:10px;color:#28a745;font-weight:700;margin-top:2px;}
+
+.hdr-top{display:flex;align-items:center;justify-content:space-between;}
+.hdr-company{font-size:15px;font-weight:800;letter-spacing:.5px;}
+.hdr-ship{font-size:10px;opacity:.8;margin-top:2px;}
+.hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
+.hdr-user-info{display:flex;align-items:center;gap:8px;}
+.hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
+.hdr-name{font-size:13px;font-weight:700;}
+.logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
 </style>
 </head>
 <body>
@@ -168,14 +177,23 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
 <!-- 메인 앱 (로그인 후 표시) -->
 <div id="appWrap" style="display:none">
   <div class="hdr">
-    <div class="hdr-row">
-      <h1>YKTD 2606E 양하 검수</h1>
+    <div class="hdr-top">
+      <div class="hdr-title-wrap">
+        <div class="hdr-company">🚢 그린마린 검수팀</div>
+        <div class="hdr-ship">YKTD 2606E 양하검수 | KRPTK 평택</div>
+      </div>
       <div class="hdr-btns">
         <button class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
         <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
       </div>
     </div>
-    <div class="hdr-user" id="hdrUser"></div>
+    <div class="hdr-user-row">
+      <div class="hdr-user-info">
+        <span class="hdr-role" id="hdrRole">-</span>
+        <span class="hdr-name" id="hdrName">-</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
+    </div>
   </div>
 
   <div class="sum-bar" id="sumBar">
@@ -246,13 +264,51 @@ function doLogin(){
   if(!name || !pw){ err.style.display='block'; err.textContent='이름과 패스워드를 입력하세요'; return; }
   if(STAFF_DB[name] !== pw){ err.style.display='block'; err.textContent='이름 또는 패스워드가 올바르지 않습니다'; return; }
   currentUser = name;
-  document.getElementById('loginWrap').style.display='none';
-  document.getElementById('appWrap').style.display='block';
-  document.getElementById('hdrUser').textContent = '👤 '+name+' 검수중';
+  // localStorage에 저장 (자동로그인)
+  localStorage.setItem('gm_2606e_user', JSON.stringify({name:name, pw:pw}));
+  showApp(name);
   err.style.display='none';
   setTimeout(function(){ loadFromSheets(); }, 800);
   render();
 }
+
+function showApp(name){
+  currentUser = name;
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  var role = STAFF_DB[name] === STAFF_DB[name] ? '검수원' : '검수';
+  // 직책 표시 (팀장은 별도)
+  var roleText = (name === '신성호') ? '검수팀장' : '검수원';
+  document.getElementById('hdrRole').textContent = roleText;
+  document.getElementById('hdrName').textContent = name;
+}
+
+function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  localStorage.removeItem('gm_2606e_user');
+  currentUser = '';
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginName').focus();
+}
+
+// 자동로그인 체크 (페이지 로드시)
+(function(){
+  var saved = localStorage.getItem('gm_2606e_user');
+  if(saved){
+    try{
+      var u = JSON.parse(saved);
+      if(u && u.name && STAFF_DB[u.name] && STAFF_DB[u.name] === u.pw){
+        showApp(u.name);
+        setTimeout(function(){ loadFromSheets(); }, 800);
+        render();
+      }
+    }catch(e){}
+  }
+})();
 document.getElementById('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
 
 // ── 데이터 ──────────────────────────────────────
