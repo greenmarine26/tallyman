@@ -655,10 +655,10 @@ function loadFromSheets(){
           var row = res.data[i];
           for(var j=0;j<DATA.length;j++){
             if(DATA[j].no === row.no){
-              if(row.seal) DATA[j].seal = row.seal.trim();
-              if(row.xray_seal !== undefined) DATA[j].xray_seal = row.xray_seal;
-              if(row.checked) DATA[j].checked = row.checked;
-              if(row.pos) DATA[j].pos = row.pos;
+              if(row.seal) DATA[j].seal = row.seal.toString().trim();
+              if(row.xray_seal !== undefined) DATA[j].xray_seal = (row.xray_seal||).toString();
+              if(row.checked) DATA[j].checked = row.checked.toString();
+              if(row.pos && row.pos.toString().trim()) DATA[j].pos = row.pos.toString().trim();
               break;
             }
           }
