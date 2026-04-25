@@ -659,6 +659,7 @@ function loadFromSheets(){
           var idx = (row.cntr !== undefined) ? cntrMap[row.cntr] : cntrMap[Object.keys(cntrMap).filter(function(k){ return DATA[cntrMap[k]].no==row.no; })[0]];
           if(idx === undefined) continue;
           if(row.seal) DATA[idx].seal = row.seal.toString().trim();
+          if(row.origSeal) { if(curMode==='out') origSealOut[DATA[idx].no]=row.origSeal; else origSealIn[DATA[idx].no]=row.origSeal; }
           if(row.xray_seal !== undefined) DATA[idx].xray_seal = (row.xray_seal||'').toString();
           if(row.checked) DATA[idx].checked = row.checked.toString();
           if(row.pos && row.pos.toString().trim()) DATA[idx].pos = row.pos.toString().trim();
