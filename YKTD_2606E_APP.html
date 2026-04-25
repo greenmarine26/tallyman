@@ -432,7 +432,7 @@ const STAFF_DB = {
 function setName(){
   const name=document.getElementById('nameInp').value.trim();
   if(!name){document.getElementById('nameInp').focus();return;}
-  const role=STAFF_DB[name]||'검수';
+  const role='검수원';
   localStorage.setItem('gm_user_2606e',JSON.stringify({name,role}));
   document.getElementById('userNameDisp').textContent=name;
   document.getElementById('userRoleDisp').textContent=role;
@@ -449,8 +449,7 @@ function updateRolePreview(name){
   const role=STAFF_DB[name];
   const el=document.getElementById('rolePreview');
   if(!el) return;
-  if(role) el.textContent='👤 '+role;
-  else el.textContent=name?'⚠ 등록되지 않은 이름':'';
+  el.textContent=name?'👤 '+name:'';
 }
 document.getElementById('nameInp').addEventListener('input',function(){updateRolePreview(this.value.trim());});
 document.getElementById('nameInp').addEventListener('keyup',function(e){if(e.key==='Enter')setName();});
@@ -458,7 +457,7 @@ document.getElementById('nameInp').addEventListener('keyup',function(e){if(e.key
   const saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'null');
   if(saved&&saved.name){
     document.getElementById('userNameDisp').textContent=saved.name;
-    document.getElementById('userRoleDisp').textContent=saved.role||STAFF_DB[saved.name]||'검수';
+    document.getElementById('userRoleDisp').textContent='검수원';
     document.getElementById('modalBg').style.display='none';
   }
 })();
