@@ -460,6 +460,7 @@ function doOCR(){
   xhr.setRequestHeader('Content-Type','application/json');
   xhr.onreadystatechange=function(){
     if(xhr.readyState!==4) return;
+    console.log("Gemini status:", xhr.status, xhr.responseText.substring(0,200));
     if(xhr.status===200){
       try{
         var res=JSON.parse(xhr.responseText);
@@ -494,6 +495,7 @@ function doOCR(){
     camBusy=false;
   };
   xhr.send(JSON.stringify(payload));
+  console.log("Gemini API 호출:", GEMINI_URL);
 }
 
 function captureNow(){
