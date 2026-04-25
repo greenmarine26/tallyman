@@ -1,0 +1,906 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>GUBR 615N/617S 검수</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
+/* ── 로그인 ── */
+#loginWrap{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.login-title{font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:24px;}
+.login-label{font-size:12px;color:#555;font-weight:700;margin-bottom:6px;display:block;}
+.login-inp{width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;}
+.login-inp:focus{border-color:#2e6da4;}
+.login-btn{width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;}
+.login-err{color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none;}
+/* ── 헤더 ── */
+.hdr{background:linear-gradient(135deg,#1a3a6b,#2e6da4);color:#fff;padding:10px 14px 8px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-size:14px;font-weight:700;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
+.hdr-user{font-size:10px;opacity:.8;margin-top:2px;}
+/* ── 통계바 ── */
+.sum-bar{background:#1a3a6b;color:#fff;padding:7px 12px;font-size:11px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;border-top:1px solid rgba(255,255,255,.1);}
+.sum-bar span{opacity:.9;}
+.sum-bar b{opacity:1;}
+.sum-bar .done-cnt{color:#7BFF7B;}
+.sum-bar .remain-cnt{color:#FFD700;}
+/* ── 검색창 ── */
+.search-wrap{padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:56px;z-index:99;display:flex;align-items:center;gap:8px;}
+#inp{flex:1;padding:10px 14px;font-size:18px;border:2px solid #2e6da4;border-radius:8px;outline:none;letter-spacing:2px;font-weight:700;text-align:center;}
+#searchIconBtn{display:none;background:#1F3864;border:none;color:#fff;border-radius:8px;padding:10px 14px;font-size:18px;cursor:pointer;flex-shrink:0;}
+/* ── 탭 ── */
+.tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e0e8f0;padding:0 8px;gap:4px;scrollbar-width:none;position:sticky;top:112px;z-index:98;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:7px 12px;font-size:12px;font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;border:none;background:transparent;color:#666;}
+.tab.active{background:#2e6da4;color:#fff;}
+/* ── 결과바 ── */
+.result-bar{padding:5px 12px;font-size:11px;color:#666;background:#f8fafc;border-bottom:1px solid #e8edf2;}
+/* ── 카드 ── */
+.list{padding:8px;}
+.card{border-radius:10px;margin-bottom:7px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);background:#fff;}
+.card.done-card{opacity:.6;}
+.card-main{display:flex;align-items:stretch;border-left:5px solid #2e6da4;cursor:pointer;}
+.card-main.xray-c{border-left-color:#cc0000;background:#fffef0;}
+.card-left{padding:8px 10px;flex:1;min-width:0;}
+.card-no{font-size:10px;color:#888;font-weight:600;}
+.card-cntr{font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
+.card-seal{font-size:13px;color:#1a3a6b;font-weight:700;margin-top:2px;font-family:monospace;}
+.card-seal.modified{color:#c05000;}
+.card-right{padding:8px 10px;text-align:right;display:flex;flex-direction:column;justify-content:space-between;min-width:100px;gap:4px;}
+.card-pos{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;background:#e8f0fb;border-radius:5px;padding:2px 6px;display:inline-block;}
+.card-oper{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#d9e1f2;color:#1a3a6b;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.tag.rf{background:#d4edda;color:#155724;}
+.tag.xray{background:#cc0000;color:#fff;}
+.tag.sp{background:#fff0d0;color:#7a4000;}
+/* ── 확인(완료) 버튼 ── */
+.chk-btn{background:#28a745;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:4px;}
+.chk-btn.done{background:#6c757d;}
+.done-badge{background:#28a745;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:4px;}
+.undo-btn{background:#dc3545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+/* ── 디테일 ── */
+.detail{display:none;padding:10px 14px;background:#f8fafc;border-top:1px dashed #ccd;}
+.detail table{width:100%;border-collapse:collapse;font-size:11px;}
+.detail td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:middle;}
+.detail td:first-child{color:#666;font-weight:600;width:80px;}
+/* ── 실번호 수정 ── */
+.seal-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.seal-val{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;}
+.seal-val.modified{color:#c05000;}
+.edit-btn{background:#fff;border:1px solid #2e6da4;color:#2e6da4;border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;}
+.edit-inp{display:none;align-items:center;gap:6px;margin-top:4px;}
+.seal-input{padding:6px 10px;border:2px solid #2e6da4;border-radius:6px;font-size:14px;font-family:monospace;width:160px;font-weight:700;}
+.save-btn{background:#2e6da4;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+.cancel-btn{background:#999;color:#fff;border:none;border-radius:5px;padding:6px 10px;font-size:12px;cursor:pointer;}
+.mod-badge{font-size:9px;background:#fff0d0;color:#7a4000;padding:1px 5px;border-radius:8px;font-weight:700;}
+/* ── XRAY 봉인SEAL ── */
+.xray-banner{background:#cc0000;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:700;}
+.xray-seal-box{background:#fff8f8;border:2px solid #cc0000;border-radius:8px;padding:10px;margin-top:8px;}
+.xray-seal-title{color:#cc0000;font-size:11px;font-weight:700;margin-bottom:6px;}
+.xray-seal-row{display:flex;align-items:center;gap:6px;}
+.xray-seal-inp{padding:6px 10px;border:2px solid #cc0000;border-radius:6px;font-size:13px;font-family:monospace;flex:1;font-weight:700;}
+.xray-save-btn{background:#cc0000;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+/* ── 카메라 모달 ── */
+#camModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);flex-direction:column;align-items:center;justify-content:center;padding:0;}
+.cam-wrap{width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.7);border:1.5px solid rgba(255,215,0,.35);}
+.cam-view{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000;}
+#camVideo{width:100%;height:100%;object-fit:cover;transition:transform .15s;}
+#camCanvas{display:none;}
+.cam-titlebar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);}
+.cam-scan-label{color:#FFD700;font-size:13px;font-weight:800;}
+.cam-close-btn{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;}
+.cam-guide-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cam-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.cam-scanbox{position:relative;z-index:1;width:92%;height:30%;border:2.5px solid #FFD700;border-radius:8px;box-shadow:0 0 0 2px rgba(255,215,0,.3);}
+.cam-bottom{background:#111;padding:12px 14px;}
+.cam-result{color:#FFD700;font-size:13px;font-weight:700;text-align:center;min-height:18px;margin-bottom:8px;}
+.cam-guide{color:#aaa;font-size:11px;text-align:center;margin-bottom:10px;}
+.cam-zoom-row{display:flex;align-items:center;gap:8px;}
+.cam-zoom-label{color:#fff;font-size:11px;font-weight:700;min-width:35px;}
+#zoomSlider{flex:1;height:4px;accent-color:#FFD700;}
+#zoomVal{color:#FFD700;font-size:11px;font-weight:700;min-width:38px;text-align:right;}
+.cam-manual-row{display:flex;gap:6px;margin-top:8px;}
+#camManual{flex:1;padding:8px 12px;border:1.5px solid #444;border-radius:8px;font-size:16px;background:#222;color:#fff;text-align:center;letter-spacing:2px;font-family:monospace;}
+.cam-manual-btn{background:#2e6da4;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-weight:700;}
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:40px 20px;color:#aaa;}
+/* ── 완료탭 스타일 ── */
+.done-info{font-size:10px;color:#28a745;font-weight:700;margin-top:2px;}
+
+.hdr-top{display:flex;align-items:center;justify-content:space-between;}
+.hdr-company{font-size:15px;font-weight:800;letter-spacing:.5px;}
+.hdr-ship{font-size:10px;opacity:.8;margin-top:2px;}
+.hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
+.hdr-user-info{display:flex;align-items:center;gap:8px;}
+.hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
+.hdr-name{font-size:13px;font-weight:700;}
+.logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
+
+.mode-switch{display:flex;gap:0;background:#0d2340;}
+.mode-btn{flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:#0d2340;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
+.mode-btn.active{background:#1F3864;color:#fff;border-bottom:3px solid #4fc3f7;}
+.pos-edit-btn{background:none;border:1px solid #aaa;border-radius:4px;padding:1px 4px;font-size:10px;cursor:pointer;margin-left:4px;}
+</style>
+
+<script type="application/json" id="JDATA_OUT">[{"no": 1, "cntr": "MNBU0407896", "seal": "", "size": "40RF", "fe": "E", "pos": "06-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 2, "cntr": "SUDU8035363", "seal": "", "size": "40RF", "fe": "E", "pos": "06-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 3, "cntr": "MNBU3326231", "seal": "", "size": "40RF", "fe": "E", "pos": "06-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 4, "cntr": "MNBU9161870", "seal": "", "size": "40RF", "fe": "E", "pos": "14-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 5, "cntr": "MNBU4056830", "seal": "", "size": "40RF", "fe": "E", "pos": "06-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 6, "cntr": "MNBU4586850", "seal": "", "size": "40RF", "fe": "E", "pos": "06-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 7, "cntr": "MNBU9147085", "seal": "", "size": "40RF", "fe": "E", "pos": "10-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 8, "cntr": "MNBU0437252", "seal": "", "size": "40RF", "fe": "E", "pos": "06-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 9, "cntr": "MNBU0148100", "seal": "", "size": "40RF", "fe": "E", "pos": "06-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 10, "cntr": "MNBU3245016", "seal": "", "size": "40RF", "fe": "E", "pos": "06-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 11, "cntr": "MNBU3641275", "seal": "", "size": "40RF", "fe": "E", "pos": "14-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 12, "cntr": "MNBU3328316", "seal": "", "size": "40RF", "fe": "E", "pos": "14-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 13, "cntr": "MNBU3841843", "seal": "", "size": "40RF", "fe": "E", "pos": "14-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 14, "cntr": "MNBU3904263", "seal": "", "size": "40RF", "fe": "E", "pos": "14-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 15, "cntr": "SUDU8204709", "seal": "", "size": "40RF", "fe": "E", "pos": "14-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 16, "cntr": "MNBU3123091", "seal": "", "size": "40RF", "fe": "E", "pos": "14-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 17, "cntr": "MNBU4220748", "seal": "", "size": "40RF", "fe": "E", "pos": "14-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 18, "cntr": "MSKU9308094", "seal": "", "size": "40HC", "fe": "E", "pos": "14-06-86", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 19, "cntr": "MSKU8654770", "seal": "", "size": "40HC", "fe": "E", "pos": "14-08-86", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 20, "cntr": "MNBU0643464", "seal": "", "size": "40RF", "fe": "E", "pos": "14-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 21, "cntr": "SUDU8072900", "seal": "", "size": "40RF", "fe": "E", "pos": "14-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 22, "cntr": "MNBU3551382", "seal": "", "size": "40RF", "fe": "E", "pos": "02-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 23, "cntr": "MNBU4281208", "seal": "", "size": "40RF", "fe": "E", "pos": "02-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 24, "cntr": "SUDU8071381", "seal": "", "size": "40RF", "fe": "E", "pos": "02-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 25, "cntr": "MNBU3589768", "seal": "", "size": "40RF", "fe": "E", "pos": "02-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 26, "cntr": "MMAU1070481", "seal": "", "size": "40RF", "fe": "E", "pos": "02-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 27, "cntr": "SUDU6122601", "seal": "", "size": "40RF", "fe": "E", "pos": "02-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 28, "cntr": "MNBU3661380", "seal": "", "size": "40RF", "fe": "E", "pos": "02-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 29, "cntr": "MMAU1180410", "seal": "", "size": "40RF", "fe": "E", "pos": "02-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 30, "cntr": "SUDU8053670", "seal": "", "size": "40RF", "fe": "E", "pos": "02-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 31, "cntr": "MNBU0173437", "seal": "", "size": "40RF", "fe": "E", "pos": "02-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 32, "cntr": "MNBU0307325", "seal": "", "size": "40RF", "fe": "E", "pos": "02-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 33, "cntr": "SUDU6160113", "seal": "", "size": "40RF", "fe": "E", "pos": "06-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 34, "cntr": "MNBU4100418", "seal": "", "size": "40RF", "fe": "E", "pos": "06-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 35, "cntr": "MNBU3039397", "seal": "", "size": "40RF", "fe": "E", "pos": "10-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 36, "cntr": "TTNU8755721", "seal": "", "size": "40RF", "fe": "E", "pos": "06-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 37, "cntr": "MNBU9101504", "seal": "", "size": "40RF", "fe": "E", "pos": "10-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 38, "cntr": "MNBU0286958", "seal": "", "size": "40RF", "fe": "E", "pos": "02-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 39, "cntr": "MNBU3103027", "seal": "", "size": "40RF", "fe": "E", "pos": "02-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 40, "cntr": "MNBU4339866", "seal": "", "size": "40RF", "fe": "E", "pos": "06-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 41, "cntr": "MNBU0594061", "seal": "", "size": "40RF", "fe": "E", "pos": "06-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 42, "cntr": "MNBU4304941", "seal": "", "size": "40RF", "fe": "E", "pos": "06-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 43, "cntr": "MNBU0529940", "seal": "", "size": "40RF", "fe": "E", "pos": "14-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 44, "cntr": "MNBU3765379", "seal": "", "size": "40RF", "fe": "E", "pos": "18-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 45, "cntr": "MNBU3085915", "seal": "", "size": "40RF", "fe": "E", "pos": "18-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 46, "cntr": "MNBU4221195", "seal": "", "size": "40RF", "fe": "E", "pos": "18-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 47, "cntr": "MMAU1386340", "seal": "", "size": "40RF", "fe": "E", "pos": "14-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 48, "cntr": "MNBU4366460", "seal": "", "size": "40RF", "fe": "E", "pos": "18-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 49, "cntr": "MNBU4369921", "seal": "", "size": "40RF", "fe": "E", "pos": "38-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 50, "cntr": "MNBU0073823", "seal": "", "size": "40RF", "fe": "E", "pos": "38-10-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 51, "cntr": "MNBU3190119", "seal": "", "size": "40RF", "fe": "E", "pos": "18-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 52, "cntr": "MNBU4424422", "seal": "", "size": "40RF", "fe": "E", "pos": "18-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 53, "cntr": "MNBU3258230", "seal": "", "size": "40RF", "fe": "E", "pos": "18-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 54, "cntr": "MNBU4124847", "seal": "", "size": "40RF", "fe": "E", "pos": "14-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 55, "cntr": "MNBU4127595", "seal": "", "size": "40RF", "fe": "E", "pos": "14-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 56, "cntr": "SUDU8027748", "seal": "", "size": "40RF", "fe": "E", "pos": "14-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 57, "cntr": "MNBU3677600", "seal": "", "size": "40RF", "fe": "E", "pos": "38-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 58, "cntr": "SUDU6189550", "seal": "", "size": "40RF", "fe": "E", "pos": "14-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 59, "cntr": "MNBU0485923", "seal": "", "size": "40RF", "fe": "E", "pos": "38-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 60, "cntr": "MMAU1284478", "seal": "", "size": "40RF", "fe": "E", "pos": "14-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 61, "cntr": "MNBU0115153", "seal": "", "size": "40RF", "fe": "E", "pos": "14-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 62, "cntr": "MNBU4329750", "seal": "", "size": "40RF", "fe": "E", "pos": "14-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 63, "cntr": "MNBU0656630", "seal": "", "size": "40RF", "fe": "E", "pos": "14-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 64, "cntr": "MNBU3808676", "seal": "", "size": "40RF", "fe": "E", "pos": "14-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 65, "cntr": "MNBU9007210", "seal": "", "size": "40RF", "fe": "E", "pos": "14-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 66, "cntr": "MNBU3207870", "seal": "", "size": "40RF", "fe": "E", "pos": "14-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 67, "cntr": "MSKU9115855", "seal": "", "size": "40HC", "fe": "E", "pos": "14-10-86", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 68, "cntr": "TLLU1193071", "seal": "", "size": "40RF", "fe": "E", "pos": "38-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 69, "cntr": "MMAU1149586", "seal": "", "size": "40RF", "fe": "E", "pos": "14-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 70, "cntr": "MNBU9122301", "seal": "", "size": "40RF", "fe": "E", "pos": "14-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 71, "cntr": "MNBU3003075", "seal": "", "size": "40RF", "fe": "E", "pos": "14-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 72, "cntr": "MNBU4180429", "seal": "", "size": "40RF", "fe": "E", "pos": "14-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 73, "cntr": "MMAU1442104", "seal": "", "size": "40RF", "fe": "E", "pos": "14-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 74, "cntr": "MNBU3739596", "seal": "", "size": "40RF", "fe": "E", "pos": "14-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 75, "cntr": "MNBU4072851", "seal": "", "size": "40RF", "fe": "E", "pos": "14-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 76, "cntr": "MNBU4225185", "seal": "", "size": "40RF", "fe": "E", "pos": "18-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 77, "cntr": "MNBU0182383", "seal": "", "size": "40RF", "fe": "E", "pos": "18-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 78, "cntr": "MNBU0363057", "seal": "", "size": "40RF", "fe": "E", "pos": "18-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 79, "cntr": "MNBU4342860", "seal": "", "size": "40RF", "fe": "E", "pos": "38-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 80, "cntr": "MNBU9083566", "seal": "", "size": "40RF", "fe": "E", "pos": "38-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 81, "cntr": "MNBU0382273", "seal": "", "size": "40RF", "fe": "E", "pos": "38-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 82, "cntr": "MNBU9144635", "seal": "", "size": "40RF", "fe": "E", "pos": "14-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 83, "cntr": "MNBU0489024", "seal": "", "size": "40RF", "fe": "E", "pos": "14-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 84, "cntr": "MNBU4131574", "seal": "", "size": "40RF", "fe": "E", "pos": "38-12-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 85, "cntr": "MSKU8925609", "seal": "", "size": "40HC", "fe": "E", "pos": "14-12-86", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 86, "cntr": "MMAU1087822", "seal": "", "size": "40RF", "fe": "E", "pos": "18-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 87, "cntr": "MNBU3687321", "seal": "", "size": "40RF", "fe": "E", "pos": "18-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 88, "cntr": "MNBU9103976", "seal": "", "size": "40RF", "fe": "E", "pos": "18-12-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 89, "cntr": "MNBU4273537", "seal": "", "size": "40RF", "fe": "E", "pos": "38-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 90, "cntr": "MNBU3146158", "seal": "", "size": "40RF", "fe": "E", "pos": "38-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 91, "cntr": "MNBU4429194", "seal": "", "size": "40RF", "fe": "E", "pos": "18-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 92, "cntr": "MNBU3973618", "seal": "", "size": "40RF", "fe": "E", "pos": "18-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 93, "cntr": "MNBU3103080", "seal": "", "size": "40RF", "fe": "E", "pos": "38-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 94, "cntr": "MNBU4323495", "seal": "", "size": "40RF", "fe": "E", "pos": "38-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 95, "cntr": "MNBU4610324", "seal": "", "size": "40RF", "fe": "E", "pos": "18-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 96, "cntr": "SUDU8222180", "seal": "", "size": "40RF", "fe": "E", "pos": "18-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 97, "cntr": "MNBU4643821", "seal": "", "size": "40RF", "fe": "E", "pos": "18-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 98, "cntr": "MNBU4318760", "seal": "", "size": "40RF", "fe": "E", "pos": "38-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 99, "cntr": "MSKU9397701", "seal": "", "size": "40HC", "fe": "E", "pos": "18-11-82", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 100, "cntr": "MNBU3994689", "seal": "", "size": "40RF", "fe": "E", "pos": "18-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 101, "cntr": "MNBU4131770", "seal": "", "size": "40RF", "fe": "E", "pos": "18-10-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 102, "cntr": "MNBU3193329", "seal": "", "size": "40RF", "fe": "E", "pos": "38-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 103, "cntr": "SUDU6160345", "seal": "", "size": "40RF", "fe": "E", "pos": "38-06-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 104, "cntr": "SUDU8146520", "seal": "", "size": "40RF", "fe": "E", "pos": "22-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 105, "cntr": "MMAU1429000", "seal": "", "size": "40RF", "fe": "E", "pos": "38-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 106, "cntr": "MNBU4307982", "seal": "", "size": "40RF", "fe": "E", "pos": "38-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 107, "cntr": "MNBU4472098", "seal": "", "size": "40RF", "fe": "E", "pos": "38-08-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 108, "cntr": "MNBU3011609", "seal": "", "size": "40RF", "fe": "E", "pos": "22-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 109, "cntr": "SUDU6180906", "seal": "", "size": "40RF", "fe": "E", "pos": "34-02-06", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 110, "cntr": "MMAU1177084", "seal": "", "size": "40RF", "fe": "E", "pos": "34-02-02", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 111, "cntr": "MNBU3514856", "seal": "", "size": "40RF", "fe": "E", "pos": "30-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 112, "cntr": "MNBU4391709", "seal": "", "size": "40RF", "fe": "E", "pos": "34-02-08", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 113, "cntr": "SUDU6080928", "seal": "", "size": "40RF", "fe": "E", "pos": "30-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 114, "cntr": "MNBU4647051", "seal": "", "size": "40RF", "fe": "E", "pos": "34-01-10", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 115, "cntr": "MNBU3545498", "seal": "", "size": "40RF", "fe": "E", "pos": "30-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 116, "cntr": "MNBU9093040", "seal": "", "size": "40RF", "fe": "E", "pos": "30-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 117, "cntr": "MNBU3863307", "seal": "", "size": "40RF", "fe": "E", "pos": "30-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 118, "cntr": "MNBU0070260", "seal": "", "size": "40RF", "fe": "E", "pos": "30-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 119, "cntr": "MNBU4367718", "seal": "", "size": "40RF", "fe": "E", "pos": "34-02-04", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 120, "cntr": "MNBU3668907", "seal": "", "size": "40RF", "fe": "E", "pos": "34-01-04", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 121, "cntr": "MNBU0256969", "seal": "", "size": "40RF", "fe": "E", "pos": "30-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 122, "cntr": "MNBU4612688", "seal": "", "size": "40RF", "fe": "E", "pos": "34-01-06", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 123, "cntr": "MNBU3916789", "seal": "", "size": "40RF", "fe": "E", "pos": "30-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 124, "cntr": "MRFU0004378", "seal": "", "size": "40RF", "fe": "E", "pos": "30-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 125, "cntr": "MNBU0626791", "seal": "", "size": "40RF", "fe": "E", "pos": "30-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 126, "cntr": "MNBU9124583", "seal": "", "size": "40RF", "fe": "E", "pos": "34-01-08", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 127, "cntr": "MNBU0407725", "seal": "", "size": "40RF", "fe": "E", "pos": "34-02-10", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 128, "cntr": "MNBU3346686", "seal": "", "size": "40RF", "fe": "E", "pos": "30-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 129, "cntr": "MNBU9123653", "seal": "", "size": "40RF", "fe": "E", "pos": "30-06-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 130, "cntr": "MNBU4173820", "seal": "", "size": "40RF", "fe": "E", "pos": "30-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 131, "cntr": "MNBU4081067", "seal": "", "size": "40RF", "fe": "E", "pos": "38-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 132, "cntr": "MNBU3875165", "seal": "", "size": "40RF", "fe": "E", "pos": "22-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 133, "cntr": "MNBU3892178", "seal": "", "size": "40RF", "fe": "E", "pos": "38-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 134, "cntr": "MNBU0110531", "seal": "", "size": "40RF", "fe": "E", "pos": "38-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 135, "cntr": "SZLU5005060", "seal": "", "size": "40RF", "fe": "E", "pos": "22-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 136, "cntr": "MNBU0521229", "seal": "", "size": "40RF", "fe": "E", "pos": "22-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 137, "cntr": "MNBU4470135", "seal": "", "size": "40RF", "fe": "E", "pos": "22-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 138, "cntr": "MNBU3665282", "seal": "", "size": "40RF", "fe": "E", "pos": "22-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 139, "cntr": "TEMU9256880", "seal": "", "size": "40RF", "fe": "E", "pos": "22-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 140, "cntr": "MMAU1198111", "seal": "", "size": "40RF", "fe": "E", "pos": "22-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 141, "cntr": "MNBU3217035", "seal": "", "size": "40RF", "fe": "E", "pos": "22-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 142, "cntr": "MNBU0313523", "seal": "", "size": "40RF", "fe": "E", "pos": "38-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 143, "cntr": "MMAU1425982", "seal": "", "size": "40RF", "fe": "E", "pos": "38-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 144, "cntr": "SUDU8029714", "seal": "", "size": "40RF", "fe": "E", "pos": "38-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 145, "cntr": "SUDU6208412", "seal": "", "size": "40RF", "fe": "E", "pos": "38-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 146, "cntr": "MNBU4642717", "seal": "", "size": "40RF", "fe": "E", "pos": "38-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 147, "cntr": "MNBU0395732", "seal": "", "size": "40RF", "fe": "E", "pos": "38-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 148, "cntr": "MNBU4487035", "seal": "", "size": "40RF", "fe": "E", "pos": "38-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 149, "cntr": "MNBU9116947", "seal": "", "size": "40RF", "fe": "E", "pos": "38-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 150, "cntr": "MNBU4161305", "seal": "", "size": "40RF", "fe": "E", "pos": "38-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 151, "cntr": "MNBU9119653", "seal": "", "size": "40RF", "fe": "E", "pos": "38-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 152, "cntr": "MMAU1274551", "seal": "", "size": "40RF", "fe": "E", "pos": "38-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 153, "cntr": "MNBU4457679", "seal": "", "size": "40RF", "fe": "E", "pos": "22-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 154, "cntr": "MNBU9078298", "seal": "", "size": "40RF", "fe": "E", "pos": "18-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 155, "cntr": "MNBU4254645", "seal": "", "size": "40RF", "fe": "E", "pos": "18-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 156, "cntr": "MNBU0085758", "seal": "", "size": "40RF", "fe": "E", "pos": "18-06-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 157, "cntr": "MNBU0022024", "seal": "", "size": "40RF", "fe": "E", "pos": "18-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 158, "cntr": "MNBU4634809", "seal": "", "size": "40RF", "fe": "E", "pos": "18-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 159, "cntr": "MNBU3853309", "seal": "", "size": "40RF", "fe": "E", "pos": "18-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 160, "cntr": "SUDU8015808", "seal": "", "size": "40RF", "fe": "E", "pos": "18-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 161, "cntr": "MNBU0551542", "seal": "", "size": "40RF", "fe": "E", "pos": "18-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 162, "cntr": "MNBU4469509", "seal": "", "size": "40RF", "fe": "E", "pos": "18-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 163, "cntr": "MNBU4669338", "seal": "", "size": "40RF", "fe": "E", "pos": "18-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 164, "cntr": "PONU8142521", "seal": "", "size": "40HC", "fe": "E", "pos": "18-09-82", "wgt": 3940, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 165, "cntr": "MNBU3283079", "seal": "", "size": "40RF", "fe": "E", "pos": "22-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 166, "cntr": "MNBU4291063", "seal": "", "size": "40RF", "fe": "E", "pos": "22-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 167, "cntr": "MNBU4158493", "seal": "", "size": "40RF", "fe": "E", "pos": "22-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 168, "cntr": "MNBU0386598", "seal": "", "size": "40RF", "fe": "E", "pos": "38-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 169, "cntr": "MNBU3511651", "seal": "", "size": "40RF", "fe": "E", "pos": "38-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 170, "cntr": "MCAU6001610", "seal": "", "size": "40RF", "fe": "E", "pos": "22-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 171, "cntr": "MNBU9166296", "seal": "", "size": "40RF", "fe": "E", "pos": "18-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 172, "cntr": "MRFU0027692", "seal": "", "size": "40RF", "fe": "E", "pos": "18-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 173, "cntr": "MNBU3839975", "seal": "", "size": "40RF", "fe": "E", "pos": "18-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 174, "cntr": "MNBU3912839", "seal": "", "size": "40RF", "fe": "E", "pos": "38-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 175, "cntr": "MNBU4225328", "seal": "", "size": "40RF", "fe": "E", "pos": "18-08-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 176, "cntr": "MNBU4060110", "seal": "", "size": "40RF", "fe": "E", "pos": "30-10-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 177, "cntr": "MNBU9081305", "seal": "", "size": "40RF", "fe": "E", "pos": "10-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 178, "cntr": "MNBU4288049", "seal": "", "size": "40RF", "fe": "E", "pos": "10-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 179, "cntr": "MNBU0226368", "seal": "", "size": "40RF", "fe": "E", "pos": "10-06-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 180, "cntr": "MNBU0221561", "seal": "", "size": "40RF", "fe": "E", "pos": "10-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 181, "cntr": "MNBU0318989", "seal": "", "size": "40RF", "fe": "E", "pos": "10-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 182, "cntr": "MSWU1035163", "seal": "", "size": "40RF", "fe": "E", "pos": "10-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 183, "cntr": "MNBU4647961", "seal": "", "size": "40RF", "fe": "E", "pos": "10-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 184, "cntr": "MNBU0443609", "seal": "", "size": "40RF", "fe": "E", "pos": "10-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 185, "cntr": "MNBU0218090", "seal": "", "size": "40RF", "fe": "E", "pos": "10-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 186, "cntr": "MNBU0590533", "seal": "", "size": "40RF", "fe": "E", "pos": "10-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 187, "cntr": "MWCU5327687", "seal": "", "size": "40RF", "fe": "E", "pos": "10-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 188, "cntr": "MNBU3866456", "seal": "", "size": "40RF", "fe": "E", "pos": "26-06-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 189, "cntr": "MNBU0480222", "seal": "", "size": "40RF", "fe": "E", "pos": "26-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 190, "cntr": "MMAU1165355", "seal": "", "size": "40RF", "fe": "E", "pos": "26-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 191, "cntr": "MNBU0346379", "seal": "", "size": "40RF", "fe": "E", "pos": "26-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 192, "cntr": "MMAU1240504", "seal": "", "size": "40RF", "fe": "E", "pos": "26-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 193, "cntr": "MNBU4426195", "seal": "", "size": "40RF", "fe": "E", "pos": "26-08-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 194, "cntr": "MNBU4183520", "seal": "", "size": "40RF", "fe": "E", "pos": "10-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 195, "cntr": "MNBU0413991", "seal": "", "size": "40RF", "fe": "E", "pos": "10-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 196, "cntr": "MNBU0438080", "seal": "", "size": "40RF", "fe": "E", "pos": "26-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 197, "cntr": "MNBU4182102", "seal": "", "size": "40RF", "fe": "E", "pos": "26-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 198, "cntr": "MNBU4334587", "seal": "", "size": "40RF", "fe": "E", "pos": "26-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 199, "cntr": "MNBU3418615", "seal": "", "size": "40RF", "fe": "E", "pos": "10-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 200, "cntr": "MNBU3748601", "seal": "", "size": "40RF", "fe": "E", "pos": "10-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 201, "cntr": "MNBU4583928", "seal": "", "size": "40RF", "fe": "E", "pos": "10-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 202, "cntr": "MNBU0321534", "seal": "", "size": "40RF", "fe": "E", "pos": "10-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 203, "cntr": "MMAU1396631", "seal": "", "size": "40RF", "fe": "E", "pos": "10-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 204, "cntr": "MNBU3455774", "seal": "", "size": "40RF", "fe": "E", "pos": "10-08-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 205, "cntr": "MNBU3098949", "seal": "", "size": "40RF", "fe": "E", "pos": "10-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 206, "cntr": "MNBU0607410", "seal": "", "size": "40RF", "fe": "E", "pos": "02-06-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 207, "cntr": "MMAU1256060", "seal": "", "size": "40RF", "fe": "E", "pos": "02-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 208, "cntr": "MNBU0345578", "seal": "", "size": "40RF", "fe": "E", "pos": "02-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 209, "cntr": "MNBU9073275", "seal": "", "size": "40RF", "fe": "E", "pos": "10-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 210, "cntr": "MNBU3601673", "seal": "", "size": "40RF", "fe": "E", "pos": "10-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 211, "cntr": "MRFU0026720", "seal": "", "size": "40RF", "fe": "E", "pos": "10-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 212, "cntr": "MNBU4023836", "seal": "", "size": "40RF", "fe": "E", "pos": "10-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 213, "cntr": "MNBU9086483", "seal": "", "size": "40RF", "fe": "E", "pos": "10-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 214, "cntr": "MMAU1158865", "seal": "", "size": "40RF", "fe": "E", "pos": "10-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 215, "cntr": "MNBU3238110", "seal": "", "size": "40RF", "fe": "E", "pos": "10-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 216, "cntr": "MNBU9150284", "seal": "", "size": "40RF", "fe": "E", "pos": "10-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 217, "cntr": "SUDU8246474", "seal": "", "size": "40RF", "fe": "E", "pos": "10-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 218, "cntr": "MNBU3767108", "seal": "", "size": "40RF", "fe": "E", "pos": "10-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 219, "cntr": "MNBU0531320", "seal": "", "size": "40RF", "fe": "E", "pos": "10-12-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 220, "cntr": "MNBU3376443", "seal": "", "size": "40RF", "fe": "E", "pos": "10-10-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 221, "cntr": "MNBU3214993", "seal": "", "size": "40RF", "fe": "E", "pos": "10-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 222, "cntr": "MNBU3156011", "seal": "", "size": "40RF", "fe": "E", "pos": "30-09-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 223, "cntr": "MNBU4017896", "seal": "", "size": "40RF", "fe": "E", "pos": "26-12-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 224, "cntr": "MMAU1199798", "seal": "", "size": "40RF", "fe": "E", "pos": "30-08-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 225, "cntr": "MNBU9186902", "seal": "", "size": "40RF", "fe": "E", "pos": "30-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 226, "cntr": "MNBU3770610", "seal": "", "size": "40RF", "fe": "E", "pos": "30-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 227, "cntr": "SUDU6256318", "seal": "", "size": "40RF", "fe": "E", "pos": "26-04-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 228, "cntr": "MNBU0256130", "seal": "", "size": "40RF", "fe": "E", "pos": "26-04-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 229, "cntr": "MNBU4286719", "seal": "", "size": "40RF", "fe": "E", "pos": "26-05-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 230, "cntr": "MNBU0193285", "seal": "", "size": "40RF", "fe": "E", "pos": "26-03-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 231, "cntr": "SUDU6188168", "seal": "", "size": "40RF", "fe": "E", "pos": "26-04-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 232, "cntr": "SUDU8216802", "seal": "", "size": "40RF", "fe": "E", "pos": "26-03-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 233, "cntr": "MNBU0372423", "seal": "", "size": "40RF", "fe": "E", "pos": "30-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 234, "cntr": "MNBU4182083", "seal": "", "size": "40RF", "fe": "E", "pos": "30-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 235, "cntr": "SUDU8102923", "seal": "", "size": "40RF", "fe": "E", "pos": "34-01-02", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 236, "cntr": "MNBU4533038", "seal": "", "size": "40RF", "fe": "E", "pos": "30-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 237, "cntr": "MNBU4426560", "seal": "", "size": "40RF", "fe": "E", "pos": "30-12-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 238, "cntr": "MNBU3365747", "seal": "", "size": "40RF", "fe": "E", "pos": "30-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 239, "cntr": "MNBU0220122", "seal": "", "size": "40RF", "fe": "E", "pos": "30-07-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 240, "cntr": "MCAU6065277", "seal": "", "size": "40RF", "fe": "E", "pos": "30-08-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 241, "cntr": "MMAU1373240", "seal": "", "size": "40RF", "fe": "E", "pos": "30-07-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 242, "cntr": "MNBU3871236", "seal": "", "size": "40RF", "fe": "E", "pos": "30-07-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 243, "cntr": "MMAU1170011", "seal": "", "size": "40RF", "fe": "E", "pos": "30-08-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 244, "cntr": "MNBU3093736", "seal": "", "size": "40RF", "fe": "E", "pos": "26-06-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 245, "cntr": "MNBU0405698", "seal": "", "size": "40RF", "fe": "E", "pos": "26-09-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 246, "cntr": "TLLU1200144", "seal": "", "size": "40RF", "fe": "E", "pos": "26-10-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 247, "cntr": "MNBU3619076", "seal": "", "size": "40RF", "fe": "E", "pos": "26-10-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 248, "cntr": "MNBU0154268", "seal": "", "size": "40RF", "fe": "E", "pos": "26-02-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 249, "cntr": "MNBU3715531", "seal": "", "size": "40RF", "fe": "E", "pos": "26-10-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 250, "cntr": "MNBU4435181", "seal": "", "size": "40RF", "fe": "E", "pos": "26-11-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 251, "cntr": "MNBU0371263", "seal": "", "size": "40RF", "fe": "E", "pos": "26-11-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 252, "cntr": "MNBU3434452", "seal": "", "size": "40RF", "fe": "E", "pos": "26-09-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 253, "cntr": "MNBU9045313", "seal": "", "size": "40RF", "fe": "E", "pos": "26-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 254, "cntr": "MNBU3410110", "seal": "", "size": "40RF", "fe": "E", "pos": "26-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 255, "cntr": "MNBU3664840", "seal": "", "size": "40RF", "fe": "E", "pos": "26-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 256, "cntr": "MNBU3422343", "seal": "", "size": "40RF", "fe": "E", "pos": "22-12-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 257, "cntr": "MNBU0155618", "seal": "", "size": "40RF", "fe": "E", "pos": "26-01-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 258, "cntr": "MNBU0147417", "seal": "", "size": "40RF", "fe": "E", "pos": "26-03-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 259, "cntr": "MNBU4138286", "seal": "", "size": "40RF", "fe": "E", "pos": "26-05-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 260, "cntr": "MNBU3154641", "seal": "", "size": "40RF", "fe": "E", "pos": "26-05-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 261, "cntr": "MNBU4272145", "seal": "", "size": "40RF", "fe": "E", "pos": "22-11-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 262, "cntr": "MNBU3269825", "seal": "", "size": "40RF", "fe": "E", "pos": "26-02-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 263, "cntr": "TLLU1227470", "seal": "", "size": "40RF", "fe": "E", "pos": "26-01-86", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 264, "cntr": "MNBU4451140", "seal": "", "size": "40RF", "fe": "E", "pos": "26-02-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 265, "cntr": "TLLU1218626", "seal": "", "size": "40RF", "fe": "E", "pos": "22-12-82", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 266, "cntr": "MNBU0517949", "seal": "", "size": "40RF", "fe": "E", "pos": "26-01-84", "wgt": 6000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}]</script>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">🚢 GUBR 615N/617S 검수</div>
+    <div class="login-sub">그린마린 검수팀</div>
+    <label class="login-label">이름</label>
+    <input class="login-inp" id="loginName" type="text" placeholder="이름 입력" autocomplete="off">
+    <label class="login-label">패스워드 (입사년월일 6자리)</label>
+    <input class="login-inp" id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr">이름 또는 패스워드가 올바르지 않습니다</div>
+  </div>
+</div>
+
+<!-- 카메라 모달 -->
+<div id="camModal">
+  <div class="cam-wrap">
+    <div class="cam-view">
+      <video id="camVideo" autoplay playsinline></video>
+      <canvas id="camCanvas"></canvas>
+      <div class="cam-titlebar">
+        <div class="cam-scan-label">🔍 자동 스캔중</div>
+        <button class="cam-close-btn" onclick="closeCamera()">✕</button>
+      </div>
+      <div class="cam-guide-wrap">
+        <div class="cam-overlay"></div>
+        <div class="cam-scanbox">
+          <div style="position:absolute;inset:-1px;border:1px dashed rgba(255,215,0,.4);border-radius:7px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cam-bottom">
+      <div class="cam-result" id="camResult"></div>
+      <div class="cam-guide" id="camGuide">컨테이너 번호를 박스 안에 맞춰주세요</div>
+      <div class="cam-zoom-row">
+        <span class="cam-zoom-label">줌</span>
+        <input type="range" id="zoomSlider" min="1" max="30" step="0.5" value="1" oninput="setZoom(this.value)">
+        <span id="zoomVal">1.0x</span>
+      </div>
+      <div class="cam-manual-row">
+        <input id="camManual" type="tel" placeholder="끝 4자리 직접입력" maxlength="4" inputmode="numeric">
+        <button class="cam-manual-btn" onclick="camManualSearch()">검색</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 앱 (로그인 후 표시) -->
+<div id="appWrap" style="display:none">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title-wrap">
+        <div class="hdr-company">🚢 그린마린 검수팀</div>
+        <div class="hdr-ship">GUBR 615N/617S | KRPTK 평택</div>
+      </div>
+      <div class="hdr-btns">
+        <button class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
+        <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
+      </div>
+    </div>
+    <div class="hdr-user-row">
+      <div class="hdr-user-info">
+        <span class="hdr-role" id="hdrRole">-</span>
+        <span class="hdr-name" id="hdrName">-</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
+    </div>
+  </div>
+
+  <div class="mode-switch">
+  <button class="mode-btn active" id="btnIn"  onclick="switchMode('in')">🚢 양하 615N <b>328</b></button>
+  <button class="mode-btn"        id="btnOut" onclick="switchMode('out')">📦 선적 617S <b>266</b></button>
+</div>
+<div class="sum-bar" id="sumBar">
+    <span id="modeLabel" style="font-weight:800;color:#4fc3f7">615N 양하</span> <span>전체 <b id="cntAll">328</b></span>
+    <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
+    <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
+    <span>|</span>
+    <span>🔶특수 <b>14</b></span>
+    <span>🧊RF <b>13</b></span>
+    <span>⚠XRAY <b>1</b></span>
+    <span>|</span>
+    <span>SKR <b>77</b></span>
+    <span>DJS <b>38</b></span>
+    <span>HAS <b>26</b></span>
+    <span>HSL <b>7</b></span>
+    <span>DYS <b>2</b></span>
+    <span>|</span>
+    <span>20DC <b>26</b></span>
+    <span>20RF <b>2</b></span>
+    <span>40HQ <b>111</b></span>
+    <span>40RF <b>11</b></span>
+  </div>
+
+  <div class="search-wrap">
+    <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric" maxlength="4">
+    <button id="searchIconBtn" onclick="toggleSearchInput()">🔍</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-f="all">전체</button>
+    <button class="tab" data-f="remain">잔여</button>
+    <button class="tab" data-f="done">✅완료</button>
+    <button class="tab" data-f="SP">🔶특수</button>
+    <button class="tab" data-f="RF">🧊리퍼</button>
+    <button class="tab" data-f="XRAY">⚠XRAY</button>
+    <button class="tab" data-f="20DC">20DC</button>
+    <button class="tab" data-f="20RF">20RF</button>
+    <button class="tab" data-f="40HQ">40HQ</button>
+    <button class="tab" data-f="40RF">40RF</button>
+    <button class="tab" data-f="SKR">SKR</button>
+    <button class="tab" data-f="DJS">DJS</button>
+    <button class="tab" data-f="HAS">HAS</button>
+  </div>
+
+  <div class="result-bar" id="rbar"></div>
+  <div class="list" id="list"></div>
+</div>
+
+<script type="application/json" id="JDATA">[{"no": 1, "cntr": "BSIU9456560", "seal": "PH0278005", "size": "40HC", "fe": "F", "pos": "18-08-02", "wgt": 27340, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 2, "cntr": "SUDU9311851", "seal": "PH0275605", "size": "40RF", "fe": "F", "pos": "18-08-10", "wgt": 24660, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 3, "cntr": "MRSU6608231", "seal": "PH0278048", "size": "40HC", "fe": "F", "pos": "18-06-02", "wgt": 26560, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 4, "cntr": "TLLU5978648", "seal": "PH0278003", "size": "40HC", "fe": "F", "pos": "18-04-02", "wgt": 29290, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 5, "cntr": "MNBU3084884", "seal": "PH0278227", "size": "40RF", "fe": "F", "pos": "18-06-06", "wgt": 23110, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 6, "cntr": "MNBU4016483", "seal": "PH0278102", "size": "40RF", "fe": "F", "pos": "18-08-04", "wgt": 22280, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 7, "cntr": "MNBU3764140", "seal": "PH0267082", "size": "40RF", "fe": "F", "pos": "18-10-06", "wgt": 23920, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 8, "cntr": "MNBU9060597", "seal": "PH0264978", "size": "40RF", "fe": "F", "pos": "18-10-08", "wgt": 24200, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 9, "cntr": "MNBU4588257", "seal": "PH0264979", "size": "40RF", "fe": "F", "pos": "18-06-10", "wgt": 24040, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 10, "cntr": "MMAU1310767", "seal": "PH0267078", "size": "40RF", "fe": "F", "pos": "18-08-06", "wgt": 24010, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 11, "cntr": "MRSU4790168", "seal": "PH0278026", "size": "40HC", "fe": "F", "pos": "18-01-02", "wgt": 25740, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 12, "cntr": "MNBU4040710", "seal": "PH0275670", "size": "40RF", "fe": "F", "pos": "18-04-10", "wgt": 24410, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 13, "cntr": "MCAU5001494", "seal": "PH0278152", "size": "40RF", "fe": "F", "pos": "18-02-06", "wgt": 21580, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 14, "cntr": "MRKU4244800", "seal": "PH0278113", "size": "40HC", "fe": "F", "pos": "18-02-02", "wgt": 27200, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 15, "cntr": "MNBU3017660", "seal": "PH0043292", "size": "40RF", "fe": "F", "pos": "18-04-04", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 16, "cntr": "MNBU3160480", "seal": "PH0043438", "size": "40RF", "fe": "F", "pos": "18-02-08", "wgt": 28670, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 17, "cntr": "MNBU3626033", "seal": "PH0267128", "size": "40RF", "fe": "F", "pos": "18-02-04", "wgt": 24460, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 18, "cntr": "MNBU3170642", "seal": "PH0264915", "size": "40RF", "fe": "F", "pos": "18-04-08", "wgt": 24030, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 19, "cntr": "TLLU1165953", "seal": "PH0267123", "size": "40RF", "fe": "F", "pos": "18-04-06", "wgt": 24310, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 20, "cntr": "MNBU3914852", "seal": "PH0267107", "size": "40RF", "fe": "F", "pos": "18-02-10", "wgt": 23980, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 21, "cntr": "MNBU9063960", "seal": "PH0275539", "size": "40RF", "fe": "F", "pos": "18-01-04", "wgt": 27490, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 22, "cntr": "MNBU4284104", "seal": "PH0053644", "size": "40RF", "fe": "F", "pos": "18-01-10", "wgt": 29150, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 23, "cntr": "MNBU3551823", "seal": "PH0278177", "size": "40RF", "fe": "F", "pos": "18-01-06", "wgt": 22340, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 24, "cntr": "MRSU3199295", "seal": "PH0278130", "size": "40HC", "fe": "F", "pos": "18-03-02", "wgt": 26520, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 25, "cntr": "MNBU4678582", "seal": "PH0267036", "size": "40RF", "fe": "F", "pos": "18-05-06", "wgt": 21780, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 26, "cntr": "MNBU0457876", "seal": "PH0275678", "size": "40RF", "fe": "F", "pos": "18-03-08", "wgt": 26880, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 27, "cntr": "TCNU1454209", "seal": "PH0278027", "size": "40HC", "fe": "F", "pos": "18-05-02", "wgt": 26590, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 28, "cntr": "MSKU1117960", "seal": "PH0278101", "size": "40HC", "fe": "F", "pos": "18-07-02", "wgt": 27080, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 29, "cntr": "MMAU1243674", "seal": "PH0267061", "size": "40RF", "fe": "F", "pos": "18-03-04", "wgt": 24070, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 30, "cntr": "MNBU4445180", "seal": "PH0237226", "size": "40RF", "fe": "F", "pos": "18-03-10", "wgt": 24250, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 31, "cntr": "MNBU3867940", "seal": "PH0267114", "size": "40RF", "fe": "F", "pos": "18-05-04", "wgt": 23790, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 32, "cntr": "MNBU0373543", "seal": "PH0264922", "size": "40RF", "fe": "F", "pos": "18-03-06", "wgt": 24000, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 33, "cntr": "MNBU3214226", "seal": "PH0275675", "size": "40RF", "fe": "F", "pos": "18-09-04", "wgt": 24420, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 34, "cntr": "MNBU0295883", "seal": "PH0043311", "size": "40RF", "fe": "F", "pos": "18-07-06", "wgt": 28680, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 35, "cntr": "MNBU3705169", "seal": "PH0267008", "size": "40RF", "fe": "F", "pos": "18-09-06", "wgt": 24170, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 36, "cntr": "SZLU5004526", "seal": "PH0267108", "size": "40RF", "fe": "F", "pos": "18-07-08", "wgt": 24200, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 37, "cntr": "MNBU0470395", "seal": "PH0267127", "size": "40RF", "fe": "F", "pos": "18-07-10", "wgt": 23660, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 38, "cntr": "MNBU4096262", "seal": "PH0264959", "size": "40RF", "fe": "F", "pos": "38-07-82", "wgt": 22510, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 39, "cntr": "MNBU0426303", "seal": "PH0267142", "size": "40RF", "fe": "F", "pos": "38-09-84", "wgt": 24180, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 40, "cntr": "TLLU1176897", "seal": "PH0267040", "size": "40RF", "fe": "F", "pos": "38-09-82", "wgt": 24130, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 41, "cntr": "TLLU1166311", "seal": "PH0262075", "size": "40RF", "fe": "F", "pos": "38-07-84", "wgt": 25210, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 42, "cntr": "MNBU3498360", "seal": "PH0146545", "size": "40RF", "fe": "F", "pos": "38-04-86", "wgt": 22900, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 43, "cntr": "MNBU4284125", "seal": "PH0267064", "size": "40RF", "fe": "F", "pos": "38-04-84", "wgt": 24100, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 44, "cntr": "MNBU3697910", "seal": "PH0267249", "size": "40RF", "fe": "F", "pos": "38-03-86", "wgt": 23850, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 45, "cntr": "MNBU0387022", "seal": "PH0023907", "size": "40RF", "fe": "F", "pos": "38-01-82", "wgt": 25400, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 46, "cntr": "MMAU1175380", "seal": "PH0262061", "size": "40RF", "fe": "F", "pos": "38-04-82", "wgt": 25430, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 47, "cntr": "MNBU4215947", "seal": "PH0262092", "size": "40RF", "fe": "F", "pos": "38-02-82", "wgt": 25440, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 48, "cntr": "MNBU0432939", "seal": "PH0267130", "size": "40RF", "fe": "F", "pos": "38-06-82", "wgt": 24110, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 49, "cntr": "MNBU3990425", "seal": "PH0267081", "size": "40RF", "fe": "F", "pos": "38-06-84", "wgt": 23830, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 50, "cntr": "MNBU4602761", "seal": "PH0264974", "size": "40RF", "fe": "F", "pos": "38-10-82", "wgt": 24170, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 51, "cntr": "MNBU4293934", "seal": "PH0275727", "size": "40RF", "fe": "F", "pos": "38-08-82", "wgt": 25290, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 52, "cntr": "MNBU3986750", "seal": "PH0267089", "size": "40RF", "fe": "F", "pos": "38-08-84", "wgt": 24070, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 53, "cntr": "MNBU0243431", "seal": "PH0267085", "size": "40RF", "fe": "F", "pos": "38-10-84", "wgt": 24340, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 54, "cntr": "MRKU6381269", "seal": "", "size": "40HC", "fe": "E", "pos": "22-10-02", "wgt": 3810, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 55, "cntr": "CAAU6748909", "seal": "", "size": "40HC", "fe": "E", "pos": "22-08-02", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 56, "cntr": "MNBU3966291", "seal": "PH0278221", "size": "40RF", "fe": "F", "pos": "22-10-08", "wgt": 21760, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 57, "cntr": "MNBU4654390", "seal": "PH0267003", "size": "40RF", "fe": "F", "pos": "22-06-08", "wgt": 23570, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 58, "cntr": "TRHU6935860", "seal": "PH9278008", "size": "40HC", "fe": "F", "pos": "22-06-02", "wgt": 26900, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 59, "cntr": "MNBU0528331", "seal": "PH0267049", "size": "40RF", "fe": "F", "pos": "22-08-08", "wgt": 24260, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 60, "cntr": "MNBU3121740", "seal": "PH0262094", "size": "40RF", "fe": "F", "pos": "22-08-04", "wgt": 25310, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 61, "cntr": "MNBU4258790", "seal": "PH0267045", "size": "40RF", "fe": "F", "pos": "22-06-10", "wgt": 24130, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 62, "cntr": "MNBU4263396", "seal": "PH0267072", "size": "40RF", "fe": "F", "pos": "22-08-10", "wgt": 24340, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 63, "cntr": "MNBU3259597", "seal": "PH0262099", "size": "40RF", "fe": "F", "pos": "22-06-04", "wgt": 25270, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 64, "cntr": "MRSU5485678", "seal": "PH0043396", "size": "40HC", "fe": "F", "pos": "22-05-02", "wgt": 27220, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 65, "cntr": "MNBU0393787", "seal": "PH0267208", "size": "40RF", "fe": "F", "pos": "22-05-08", "wgt": 24300, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 66, "cntr": "MNBU4198048", "seal": "PH0267217", "size": "40RF", "fe": "F", "pos": "22-05-10", "wgt": 24090, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 67, "cntr": "UETU8350054", "seal": "PH0275638", "size": "40HC", "fe": "F", "pos": "22-07-02", "wgt": 7520, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 68, "cntr": "MRKU3047854", "seal": "", "size": "40HC", "fe": "E", "pos": "22-09-02", "wgt": 3790, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 69, "cntr": "MNBU4295686", "seal": "PH0267202", "size": "40RF", "fe": "F", "pos": "22-09-08", "wgt": 24070, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 70, "cntr": "MNBU3375468", "seal": "PH0058178", "size": "40RF", "fe": "F", "pos": "22-07-08", "wgt": 25370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 71, "cntr": "MMAU1242050", "seal": "PH0267230", "size": "40RF", "fe": "F", "pos": "22-07-10", "wgt": 24820, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 72, "cntr": "SUDU8236331", "seal": "PH0262088", "size": "40RF", "fe": "F", "pos": "22-09-04", "wgt": 25650, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 73, "cntr": "MNBU3693366", "seal": "PH0262143", "size": "40RF", "fe": "F", "pos": "22-09-06", "wgt": 25750, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 74, "cntr": "MMAU1170201", "seal": "PH0267090", "size": "40RF", "fe": "F", "pos": "14-07-82", "wgt": 24460, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 75, "cntr": "MNBU3110324", "seal": "PH0267180", "size": "40RF", "fe": "F", "pos": "10-07-84", "wgt": 24590, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 76, "cntr": "SUDU8000135", "seal": "PH0267112", "size": "40RF", "fe": "F", "pos": "10-09-86", "wgt": 24200, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 77, "cntr": "MNBU4670703", "seal": "PH0044364", "size": "40RF", "fe": "F", "pos": "10-07-86", "wgt": 22630, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 78, "cntr": "MNBU0558790", "seal": "PH0067141", "size": "40RF", "fe": "F", "pos": "10-07-82", "wgt": 24380, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 79, "cntr": "SUDU6019194", "seal": "PH0278155", "size": "40RF", "fe": "F", "pos": "10-03-84", "wgt": 22680, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 80, "cntr": "MNBU3431242", "seal": "PH0267001", "size": "40RF", "fe": "F", "pos": "10-03-82", "wgt": 24040, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 81, "cntr": "MNBU4508610", "seal": "PH0267092", "size": "40RF", "fe": "F", "pos": "10-05-84", "wgt": 24040, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 82, "cntr": "MMAU1367295", "seal": "PH0262111", "size": "40RF", "fe": "F", "pos": "10-05-86", "wgt": 24580, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 83, "cntr": "MNBU3269574", "seal": "PH0045444", "size": "40RF", "fe": "F", "pos": "10-03-86", "wgt": 24740, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 84, "cntr": "MMAU1116094", "seal": "PH0275665", "size": "40RF", "fe": "F", "pos": "10-05-82", "wgt": 25810, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 85, "cntr": "MNBU3937307", "seal": "PH0267026", "size": "40RF", "fe": "F", "pos": "10-01-82", "wgt": 23970, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 86, "cntr": "MNBU3233524", "seal": "PH0267028", "size": "40RF", "fe": "F", "pos": "10-02-84", "wgt": 24150, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 87, "cntr": "MNBU3530857", "seal": "PH0045422", "size": "40RF", "fe": "F", "pos": "10-02-82", "wgt": 24010, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 88, "cntr": "MNBU4133915", "seal": "PH0262070", "size": "40RF", "fe": "F", "pos": "10-01-84", "wgt": 25530, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 89, "cntr": "MNBU4309558", "seal": "PH0023874", "size": "40RF", "fe": "F", "pos": "10-02-86", "wgt": 25580, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 90, "cntr": "MNBU4318293", "seal": "PH0264957", "size": "40RF", "fe": "F", "pos": "10-08-82", "wgt": 21760, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 91, "cntr": "MNBU9145061", "seal": "PH0267111", "size": "40RF", "fe": "F", "pos": "10-04-82", "wgt": 24060, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 92, "cntr": "MNBU0472248", "seal": "PH0267083", "size": "40RF", "fe": "F", "pos": "10-06-82", "wgt": 24280, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 93, "cntr": "MNBU0066212", "seal": "PH0278174", "size": "40RF", "fe": "F", "pos": "10-08-84", "wgt": 22620, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 94, "cntr": "MNBU4304664", "seal": "PH0267147", "size": "40RF", "fe": "F", "pos": "10-04-86", "wgt": 24090, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 95, "cntr": "SUDU8229008", "seal": "PH0262145", "size": "40RF", "fe": "F", "pos": "10-08-86", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 96, "cntr": "MNBU3870327", "seal": "PH0043494", "size": "40RF", "fe": "F", "pos": "10-06-84", "wgt": 28860, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 97, "cntr": "MNBU3797150", "seal": "PH0042810", "size": "40RF", "fe": "F", "pos": "10-10-84", "wgt": 25130, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 98, "cntr": "MNBU9165113", "seal": "PH0278231", "size": "40RF", "fe": "F", "pos": "10-10-82", "wgt": 22400, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 99, "cntr": "MNBU3062205", "seal": "PH0262241", "size": "40RF", "fe": "F", "pos": "10-10-86", "wgt": 25290, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 100, "cntr": "HASU4117096", "seal": "", "size": "40HC", "fe": "E", "pos": "34-04-02", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 101, "cntr": "MNBU0564283", "seal": "PH0264951", "size": "40RF", "fe": "F", "pos": "30-10-06", "wgt": 24040, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 102, "cntr": "MMAU1283018", "seal": "PH0262238", "size": "40RF", "fe": "F", "pos": "26-06-82", "wgt": 25180, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 103, "cntr": "MNBU4461576", "seal": "PH0267115", "size": "40RF", "fe": "F", "pos": "30-10-04", "wgt": 23970, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 104, "cntr": "MRSU4996035", "seal": "", "size": "40HC", "fe": "E", "pos": "30-08-02", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 105, "cntr": "HASU4866556", "seal": "", "size": "40HC", "fe": "E", "pos": "30-06-02", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 106, "cntr": "MMAU1284307", "seal": "PH0267013", "size": "40RF", "fe": "F", "pos": "30-08-04", "wgt": 24100, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 107, "cntr": "SUDU8011058", "seal": "PH0267132", "size": "40RF", "fe": "F", "pos": "30-08-06", "wgt": 24160, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 108, "cntr": "MNBU3784194", "seal": "PH0275709", "size": "40RF", "fe": "F", "pos": "30-08-08", "wgt": 24000, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 109, "cntr": "MNBU3657029", "seal": "PH0067149", "size": "40RF", "fe": "F", "pos": "30-06-04", "wgt": 23830, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 110, "cntr": "MNBU0406441", "seal": "PH0067097", "size": "40RF", "fe": "F", "pos": "30-06-06", "wgt": 24160, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 111, "cntr": "MNBU0343451", "seal": "PH0278156", "size": "40RF", "fe": "F", "pos": "30-06-08", "wgt": 22120, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 112, "cntr": "SUDU8039179", "seal": "PH0058117", "size": "40RF", "fe": "F", "pos": "14-06-82", "wgt": 25520, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 113, "cntr": "MNBU4475610", "seal": "PH0271199", "size": "40RF", "fe": "F", "pos": "30-06-10", "wgt": 25000, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 114, "cntr": "MNBU0109232", "seal": "PH0067245", "size": "40RF", "fe": "F", "pos": "22-08-82", "wgt": 24230, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 115, "cntr": "TEMU9785939", "seal": "PH0262018", "size": "40RF", "fe": "F", "pos": "14-07-84", "wgt": 25370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 116, "cntr": "SUDU6226118", "seal": "PH0262044", "size": "40RF", "fe": "F", "pos": "14-09-86", "wgt": 25640, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 117, "cntr": "MNBU3323905", "seal": "PH0275730", "size": "40RF", "fe": "F", "pos": "22-08-84", "wgt": 24160, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 118, "cntr": "MCAU6028988", "seal": "PH0267207", "size": "40RF", "fe": "F", "pos": "22-10-84", "wgt": 24230, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 119, "cntr": "BMOU4109901", "seal": "", "size": "40HC", "fe": "E", "pos": "30-07-02", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 120, "cntr": "MNBU3390462", "seal": "PH0278120", "size": "40RF", "fe": "F", "pos": "30-07-04", "wgt": 22310, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 121, "cntr": "MNBU3902466", "seal": "PH0267109", "size": "40RF", "fe": "F", "pos": "30-09-06", "wgt": 24110, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 122, "cntr": "MNBU4243194", "seal": "PH0267074", "size": "40RF", "fe": "F", "pos": "30-07-10", "wgt": 24290, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 123, "cntr": "MRFU0000433", "seal": "PH0278213", "size": "40RF", "fe": "F", "pos": "30-07-08", "wgt": 22290, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 124, "cntr": "MNBU0638405", "seal": "PH0267126", "size": "40RF", "fe": "F", "pos": "22-06-84", "wgt": 24260, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 125, "cntr": "MNBU0269483", "seal": "PH0026145", "size": "40RF", "fe": "F", "pos": "30-07-06", "wgt": 24020, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 126, "cntr": "MNBU4303225", "seal": "PH0023854", "size": "40RF", "fe": "F", "pos": "22-06-82", "wgt": 25510, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 127, "cntr": "MNBU3590223", "seal": "PH0267125", "size": "40RF", "fe": "F", "pos": "30-09-08", "wgt": 24090, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 128, "cntr": "MRSU5797172", "seal": "", "size": "40HC", "fe": "E", "pos": "30-05-02", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 129, "cntr": "MNBU9045606", "seal": "PH0267066", "size": "40RF", "fe": "F", "pos": "22-05-84", "wgt": 23940, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 130, "cntr": "MNBU3714535", "seal": "PH0267051", "size": "40RF", "fe": "F", "pos": "30-05-10", "wgt": 24150, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 131, "cntr": "MNBU3082201", "seal": "PH0267104", "size": "40RF", "fe": "F", "pos": "30-05-06", "wgt": 24120, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 132, "cntr": "MNBU9051620", "seal": "PH0278162", "size": "40RF", "fe": "F", "pos": "30-05-04", "wgt": 22060, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 133, "cntr": "MNBU4168568", "seal": "PH0070085", "size": "40RF", "fe": "F", "pos": "30-05-08", "wgt": 10740, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 134, "cntr": "MNBU9113505", "seal": "PH0264943", "size": "40RF", "fe": "F", "pos": "22-05-82", "wgt": 23270, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 135, "cntr": "MNBU4068759", "seal": "PH0267077", "size": "40RF", "fe": "F", "pos": "22-07-84", "wgt": 24090, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 136, "cntr": "MNBU4427490", "seal": "PH0278183", "size": "40RF", "fe": "F", "pos": "22-07-82", "wgt": 21180, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 137, "cntr": "MNBU3515298", "seal": "PH0046718", "size": "40RF", "fe": "F", "pos": "22-09-84", "wgt": 25550, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 138, "cntr": "MNBU3667897", "seal": "PH0267144", "size": "40RF", "fe": "F", "pos": "18-08-84", "wgt": 24030, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 139, "cntr": "SUDU6206240", "seal": "PH0070076", "size": "40RF", "fe": "F", "pos": "18-06-82", "wgt": 24680, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 140, "cntr": "MNBU0343322", "seal": "PH0267122", "size": "40RF", "fe": "F", "pos": "18-06-84", "wgt": 24060, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 141, "cntr": "MNBU0669279", "seal": "PH0267050", "size": "40RF", "fe": "F", "pos": "18-08-82", "wgt": 24220, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 142, "cntr": "MMAU1050700", "seal": "PH0070024", "size": "40RF", "fe": "F", "pos": "18-06-86", "wgt": 25600, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 143, "cntr": "MNBU4221472", "seal": "PH0023884", "size": "40RF", "fe": "F", "pos": "18-04-82", "wgt": 25370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 144, "cntr": "MNBU4164109", "seal": "PH0278176", "size": "40RF", "fe": "F", "pos": "18-02-84", "wgt": 22380, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 145, "cntr": "SUDU8114077", "seal": "PH0023880", "size": "40RF", "fe": "F", "pos": "18-01-82", "wgt": 25560, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 146, "cntr": "MNBU3864854", "seal": "PH0058139", "size": "40RF", "fe": "F", "pos": "18-01-84", "wgt": 25690, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 147, "cntr": "SUDU8067740", "seal": "PH0262065", "size": "40RF", "fe": "F", "pos": "18-02-86", "wgt": 25310, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 148, "cntr": "MNBU3657230", "seal": "PH0022039", "size": "40RF", "fe": "F", "pos": "18-04-84", "wgt": 25420, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 149, "cntr": "MMAU1157200", "seal": "PH0262133", "size": "40RF", "fe": "F", "pos": "18-01-86", "wgt": 24590, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 150, "cntr": "MNBU3085540", "seal": "PH0262130", "size": "40RF", "fe": "F", "pos": "18-04-86", "wgt": 22520, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 151, "cntr": "MMAU1153781", "seal": "PH0262108", "size": "40RF", "fe": "F", "pos": "18-02-82", "wgt": 25620, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 152, "cntr": "TIIU5219357", "seal": "", "size": "40HC", "fe": "E", "pos": "34-03-02", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 153, "cntr": "CAAU8946903", "seal": "", "size": "40HC", "fe": "E", "pos": "34-01-02", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 154, "cntr": "MNBU3411760", "seal": "PH0278233", "size": "40RF", "fe": "F", "pos": "18-05-82", "wgt": 22380, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 155, "cntr": "MNBU4025037", "seal": "PH0267079", "size": "40RF", "fe": "F", "pos": "18-03-82", "wgt": 24350, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 156, "cntr": "MMAU1248151", "seal": "PH0058136", "size": "40RF", "fe": "F", "pos": "34-03-08", "wgt": 25570, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 157, "cntr": "MNBU3048505", "seal": "PH0262021", "size": "40RF", "fe": "F", "pos": "18-05-84", "wgt": 25540, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 158, "cntr": "MNBU3776809", "seal": "PH0267231", "size": "40RF", "fe": "F", "pos": "34-03-06", "wgt": 24400, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 159, "cntr": "MNBU4530466", "seal": "PH0262073", "size": "40RF", "fe": "F", "pos": "18-07-84", "wgt": 24740, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 160, "cntr": "MNBU4132400", "seal": "PH0070032", "size": "40RF", "fe": "F", "pos": "34-03-10", "wgt": 25550, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 161, "cntr": "MNBU9118451", "seal": "PH0267096", "size": "40RF", "fe": "F", "pos": "34-03-04", "wgt": 24180, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 162, "cntr": "MNBU3789088", "seal": "PH0267146", "size": "40RF", "fe": "F", "pos": "18-07-82", "wgt": 23870, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 163, "cntr": "MNBU4369618", "seal": "PH0264965", "size": "40RF", "fe": "F", "pos": "18-03-86", "wgt": 24070, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 164, "cntr": "MNBU3940229", "seal": "PH0070096", "size": "40RF", "fe": "F", "pos": "18-03-84", "wgt": 25180, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 165, "cntr": "MRSU8631816", "seal": "", "size": "40HC", "fe": "E", "pos": "34-02-02", "wgt": 3750, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 166, "cntr": "SUDU8213995", "seal": "PH0023883", "size": "40RF", "fe": "F", "pos": "22-06-06", "wgt": 25620, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 167, "cntr": "MNBU0392944", "seal": "PH0070102", "size": "40RF", "fe": "F", "pos": "34-01-10", "wgt": 24630, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 168, "cntr": "MNBU4518199", "seal": "PH0070216", "size": "40RF", "fe": "F", "pos": "22-05-06", "wgt": 24370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 169, "cntr": "MNBU3678660", "seal": "PH0058132", "size": "40RF", "fe": "F", "pos": "34-02-08", "wgt": 25230, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 170, "cntr": "MNBU0124833", "seal": "PH0023754", "size": "40RF", "fe": "F", "pos": "22-05-04", "wgt": 25090, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 171, "cntr": "SUDU6176341", "seal": "PH0023781", "size": "40RF", "fe": "F", "pos": "22-10-04", "wgt": 25230, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 172, "cntr": "MNBU3023003", "seal": "PH0058120", "size": "40RF", "fe": "F", "pos": "34-01-08", "wgt": 25730, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 173, "cntr": "MMAU1328088", "seal": "PH0267118", "size": "40RF", "fe": "F", "pos": "34-01-06", "wgt": 23860, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 174, "cntr": "MNBU0311789", "seal": "PH0070048", "size": "40RF", "fe": "F", "pos": "34-02-04", "wgt": 25590, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 175, "cntr": "MNBU9104925", "seal": "PH0070090", "size": "40RF", "fe": "F", "pos": "22-10-06", "wgt": 25410, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 176, "cntr": "TTNU8757257", "seal": "PH0264914", "size": "40RF", "fe": "F", "pos": "34-04-04", "wgt": 24370, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 177, "cntr": "MMAU1117824", "seal": "PH0023773", "size": "40RF", "fe": "F", "pos": "18-10-04", "wgt": 25310, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 178, "cntr": "MNBU4089345", "seal": "PH0022079", "size": "40RF", "fe": "F", "pos": "22-07-06", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 179, "cntr": "MNBU9198858", "seal": "PH0267220", "size": "40RF", "fe": "F", "pos": "30-09-82", "wgt": 24110, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 180, "cntr": "MNBU9022215", "seal": "PH0262175", "size": "40RF", "fe": "F", "pos": "34-04-06", "wgt": 25330, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 181, "cntr": "SUDU5252302", "seal": "PH0023938", "size": "40RF", "fe": "F", "pos": "18-06-04", "wgt": 25510, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 182, "cntr": "MNBU0197871", "seal": "PH0023940", "size": "40RF", "fe": "F", "pos": "22-07-04", "wgt": 25790, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 183, "cntr": "MNBU4591780", "seal": "PH0267136", "size": "40RF", "fe": "F", "pos": "34-02-10", "wgt": 24450, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 184, "cntr": "MNBU4213667", "seal": "PH0267143", "size": "40RF", "fe": "F", "pos": "34-04-08", "wgt": 24160, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 185, "cntr": "MNBU4259293", "seal": "PH0058220", "size": "40RF", "fe": "F", "pos": "34-04-10", "wgt": 23810, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 186, "cntr": "MNBU9010148", "seal": "PH0262074", "size": "40RF", "fe": "F", "pos": "18-07-04", "wgt": 25430, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 187, "cntr": "MNBU3784419", "seal": "PH0267007", "size": "40RF", "fe": "F", "pos": "30-07-82", "wgt": 24020, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 188, "cntr": "MNBU4574124", "seal": "PH0023919", "size": "40RF", "fe": "F", "pos": "30-05-82", "wgt": 24830, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 189, "cntr": "MNBU0659218", "seal": "PH0267065", "size": "40RF", "fe": "F", "pos": "30-05-84", "wgt": 24130, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 190, "cntr": "MNBU4601580", "seal": "PH0267219", "size": "40RF", "fe": "F", "pos": "30-07-84", "wgt": 24190, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 191, "cntr": "MNBU3823290", "seal": "PH0023862", "size": "40RF", "fe": "F", "pos": "18-05-08", "wgt": 25530, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 192, "cntr": "MNBU4518630", "seal": "PH0267204", "size": "40RF", "fe": "F", "pos": "30-09-84", "wgt": 24120, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 193, "cntr": "MRSU6130116", "seal": "", "size": "40HC", "fe": "E", "pos": "26-04-02", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 194, "cntr": "CAAU6642645", "seal": "", "size": "40HC", "fe": "E", "pos": "26-02-02", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 195, "cntr": "MNBU9079822", "seal": "PH0262142", "size": "40RF", "fe": "F", "pos": "26-04-10", "wgt": 25380, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 196, "cntr": "CIPU5002636", "seal": "", "size": "40HC", "fe": "E", "pos": "26-01-02", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 197, "cntr": "MNBU4336527", "seal": "PH0262084", "size": "40RF", "fe": "F", "pos": "26-02-10", "wgt": 25190, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 198, "cntr": "MNBU3917321", "seal": "PH0046677", "size": "40RF", "fe": "F", "pos": "30-08-10", "wgt": 25530, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 199, "cntr": "MNBU4156171", "seal": "PH0058054", "size": "40RF", "fe": "F", "pos": "26-01-10", "wgt": 25660, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 200, "cntr": "MNBU0553102", "seal": "PH0262188", "size": "40RF", "fe": "F", "pos": "26-02-08", "wgt": 25560, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 201, "cntr": "MRSU4943251", "seal": "", "size": "40HC", "fe": "E", "pos": "26-03-02", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 202, "cntr": "MNBU0187370", "seal": "PH0262164", "size": "40RF", "fe": "F", "pos": "26-03-10", "wgt": 25480, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 203, "cntr": "MNBU3656450", "seal": "PH0262167", "size": "40RF", "fe": "F", "pos": "26-03-04", "wgt": 25420, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 204, "cntr": "MNBU4391801", "seal": "PH0275508", "size": "40RF", "fe": "F", "pos": "26-03-08", "wgt": 25130, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 205, "cntr": "MRKU5635780", "seal": "", "size": "40HC", "fe": "E", "pos": "14-12-84", "wgt": 3810, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 206, "cntr": "MSKU0103323", "seal": "", "size": "40HC", "fe": "E", "pos": "14-12-82", "wgt": 4000, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 207, "cntr": "MNBU0563604", "seal": "PH0275668", "size": "40RF", "fe": "F", "pos": "30-10-84", "wgt": 24480, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 208, "cntr": "MNBU0574189", "seal": "PH0070129", "size": "40RF", "fe": "F", "pos": "30-06-82", "wgt": 25430, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 209, "cntr": "MNBU3980690", "seal": "PH0267103", "size": "40RF", "fe": "F", "pos": "30-06-84", "wgt": 23810, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 210, "cntr": "MNBU3601518", "seal": "PH0278147", "size": "40RF", "fe": "F", "pos": "14-10-84", "wgt": 22420, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 211, "cntr": "MNBU3550067", "seal": "PH0267058", "size": "40RF", "fe": "F", "pos": "30-10-82", "wgt": 24280, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 212, "cntr": "MNBU3797988", "seal": "PH0267101", "size": "40RF", "fe": "F", "pos": "30-08-82", "wgt": 23940, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 213, "cntr": "MNBU4644160", "seal": "PH0267117", "size": "40RF", "fe": "F", "pos": "30-08-84", "wgt": 23850, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 214, "cntr": "MRKU4638701", "seal": "", "size": "40HC", "fe": "E", "pos": "18-12-82", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 215, "cntr": "MRKU2927639", "seal": "", "size": "40HC", "fe": "E", "pos": "18-11-82", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 216, "cntr": "MIEU0025168", "seal": "", "size": "40HC", "fe": "E", "pos": "18-11-84", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 217, "cntr": "SEKU4630378", "seal": "", "size": "40HC", "fe": "E", "pos": "18-12-84", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 218, "cntr": "MNBU3496243", "seal": "PH0046665", "size": "40RF", "fe": "F", "pos": "14-08-84", "wgt": 25450, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 219, "cntr": "MNBU4256735", "seal": "PH0262182", "size": "40RF", "fe": "F", "pos": "14-10-86", "wgt": 24510, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 220, "cntr": "MNBU0554813", "seal": "PH0042820", "size": "40RF", "fe": "F", "pos": "14-06-84", "wgt": 11520, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 221, "cntr": "SUDU6256848", "seal": "PH0262213", "size": "40RF", "fe": "F", "pos": "30-10-08", "wgt": 25470, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 222, "cntr": "MNBU4604743", "seal": "PH0267140", "size": "40RF", "fe": "F", "pos": "26-07-82", "wgt": 24070, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 223, "cntr": "MNBU0069802", "seal": "PH0262068", "size": "40RF", "fe": "F", "pos": "14-07-86", "wgt": 25350, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 224, "cntr": "MNBU4421418", "seal": "PH0262184", "size": "40RF", "fe": "F", "pos": "14-08-86", "wgt": 25370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 225, "cntr": "MNBU3980622", "seal": "PH0262201", "size": "40RF", "fe": "F", "pos": "26-05-84", "wgt": 25440, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 226, "cntr": "MMAU1244536", "seal": "PH0262082", "size": "40RF", "fe": "F", "pos": "26-09-84", "wgt": 25740, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 227, "cntr": "MNBU3197730", "seal": "PH0023848", "size": "40RF", "fe": "F", "pos": "14-06-86", "wgt": 25160, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 228, "cntr": "MNBU0536070", "seal": "PH0042863", "size": "40RF", "fe": "F", "pos": "26-03-82", "wgt": 25500, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 229, "cntr": "SUDU8108768", "seal": "PH0262180", "size": "40RF", "fe": "F", "pos": "26-03-86", "wgt": 25230, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 230, "cntr": "MNBU0388163", "seal": "PH0262224", "size": "40RF", "fe": "F", "pos": "14-05-84", "wgt": 25490, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 231, "cntr": "MNBU3189273", "seal": "PH0262029", "size": "40RF", "fe": "F", "pos": "26-09-82", "wgt": 25570, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 232, "cntr": "MNBU9123191", "seal": "PH0058118", "size": "40RF", "fe": "F", "pos": "26-02-82", "wgt": 25530, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 233, "cntr": "SUDU8014020", "seal": "PH0262126", "size": "40RF", "fe": "F", "pos": "26-01-82", "wgt": 25560, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 234, "cntr": "MNBU4093129", "seal": "PH0046722", "size": "40RF", "fe": "F", "pos": "26-03-84", "wgt": 23810, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 235, "cntr": "MNBU3929282", "seal": "PH0262160", "size": "40RF", "fe": "F", "pos": "26-02-84", "wgt": 24760, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 236, "cntr": "MNBU3516308", "seal": "PH0262048", "size": "40RF", "fe": "F", "pos": "26-04-84", "wgt": 25560, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 237, "cntr": "MNBU3423210", "seal": "PH0070051", "size": "40RF", "fe": "F", "pos": "26-04-82", "wgt": 25480, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 238, "cntr": "MNBU4184189", "seal": "PH0262129", "size": "40RF", "fe": "F", "pos": "26-01-84", "wgt": 12870, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 239, "cntr": "MNBU4088842", "seal": "PH0023853", "size": "40RF", "fe": "F", "pos": "26-01-04", "wgt": 25430, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 240, "cntr": "SUDU6299140", "seal": "PH0058148", "size": "40RF", "fe": "F", "pos": "26-04-04", "wgt": 25420, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 241, "cntr": "SUDU8141200", "seal": "PH0022038", "size": "40RF", "fe": "F", "pos": "26-02-06", "wgt": 25430, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 242, "cntr": "MNBU9105665", "seal": "PH0058189", "size": "40RF", "fe": "F", "pos": "26-01-06", "wgt": 25580, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 243, "cntr": "MNBU0324615", "seal": "PH0262066", "size": "40RF", "fe": "F", "pos": "26-02-04", "wgt": 25540, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 244, "cntr": "MNBU3693094", "seal": "PH0262100", "size": "40RF", "fe": "F", "pos": "26-06-84", "wgt": 25450, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 245, "cntr": "SUDU6296440", "seal": "PH0070091", "size": "40RF", "fe": "F", "pos": "26-01-08", "wgt": 25440, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 246, "cntr": "MNBU3744170", "seal": "PH0262104", "size": "40RF", "fe": "F", "pos": "38-03-84", "wgt": 25280, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 247, "cntr": "SZLU5007063", "seal": "PH0058134", "size": "40RF", "fe": "F", "pos": "26-04-08", "wgt": 25510, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 248, "cntr": "SUDU6271272", "seal": "PH0044226", "size": "40RF", "fe": "F", "pos": "26-10-82", "wgt": 23750, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 249, "cntr": "MMAU1282557", "seal": "PH0262155", "size": "40RF", "fe": "F", "pos": "38-05-82", "wgt": 25240, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 250, "cntr": "MNBU3797458", "seal": "PH0070004", "size": "40RF", "fe": "F", "pos": "26-08-84", "wgt": 25360, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 251, "cntr": "MNBU9136727", "seal": "PH0023768", "size": "40RF", "fe": "F", "pos": "38-01-84", "wgt": 25710, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 252, "cntr": "MNBU0142626", "seal": "PH0022092", "size": "40RF", "fe": "F", "pos": "38-02-84", "wgt": 25310, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 253, "cntr": "MNBU3152438", "seal": "PH0046705", "size": "40RF", "fe": "F", "pos": "38-01-86", "wgt": 25290, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 254, "cntr": "MNBU4302208", "seal": "PH0262012", "size": "40RF", "fe": "F", "pos": "22-08-06", "wgt": 23940, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 255, "cntr": "MNBU3946382", "seal": "PH0023861", "size": "40RF", "fe": "F", "pos": "38-02-86", "wgt": 25570, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 256, "cntr": "MMAU1342609", "seal": "PH0267139", "size": "40RF", "fe": "F", "pos": "18-06-08", "wgt": 23620, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 257, "cntr": "MNBU3760079", "seal": "PH0267150", "size": "40RF", "fe": "F", "pos": "18-08-08", "wgt": 23890, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 258, "cntr": "MNBU4645146", "seal": "PH0264920", "size": "40RF", "fe": "F", "pos": "18-05-10", "wgt": 23920, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 259, "cntr": "MNBU0458403", "seal": "PH0042798", "size": "40RF", "fe": "F", "pos": "10-09-84", "wgt": 25850, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 260, "cntr": "MNBU0539470", "seal": "PH0070146", "size": "40RF", "fe": "F", "pos": "10-04-84", "wgt": 25480, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 261, "cntr": "MNBU0610368", "seal": "PH0058082", "size": "40RF", "fe": "F", "pos": "14-09-82", "wgt": 25410, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 262, "cntr": "MNBU4584307", "seal": "PH0070131", "size": "40RF", "fe": "F", "pos": "26-01-86", "wgt": 23930, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 263, "cntr": "MMAU1430865", "seal": "PH0264913", "size": "40RF", "fe": "F", "pos": "26-04-86", "wgt": 23340, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 264, "cntr": "MNBU3536578", "seal": "PH0058070", "size": "40RF", "fe": "F", "pos": "26-02-86", "wgt": 25390, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 265, "cntr": "MNBU0647650", "seal": "PH0058110", "size": "40RF", "fe": "F", "pos": "26-05-82", "wgt": 25250, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 266, "cntr": "HASU5115821", "seal": "", "size": "40HC", "fe": "E", "pos": "02-07-82", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 267, "cntr": "MSKU9132277", "seal": "", "size": "40HC", "fe": "E", "pos": "02-07-84", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 268, "cntr": "MSKU0319159", "seal": "", "size": "40HC", "fe": "E", "pos": "02-05-84", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 269, "cntr": "MRKU3267252", "seal": "", "size": "40HC", "fe": "E", "pos": "02-05-82", "wgt": 3880, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 270, "cntr": "TRHU4264335", "seal": "", "size": "40HC", "fe": "E", "pos": "02-03-82", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 271, "cntr": "HASU4333670", "seal": "", "size": "40HC", "fe": "E", "pos": "02-01-84", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 272, "cntr": "MRSU4951508", "seal": "", "size": "40HC", "fe": "E", "pos": "02-03-84", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 273, "cntr": "HASU4031897", "seal": "", "size": "40HC", "fe": "E", "pos": "02-01-82", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 274, "cntr": "TCKU6426951", "seal": "", "size": "40HC", "fe": "E", "pos": "02-02-82", "wgt": 3800, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 275, "cntr": "UETU8041991", "seal": "", "size": "40HC", "fe": "E", "pos": "02-04-84", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 276, "cntr": "MRSU6543655", "seal": "", "size": "40HC", "fe": "E", "pos": "02-02-84", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 277, "cntr": "MRSU4345630", "seal": "", "size": "40HC", "fe": "E", "pos": "02-04-82", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 278, "cntr": "MRSU6079230", "seal": "", "size": "40HC", "fe": "E", "pos": "02-06-82", "wgt": 3720, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 279, "cntr": "MRSU3399246", "seal": "", "size": "40HC", "fe": "E", "pos": "02-06-84", "wgt": 3810, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 280, "cntr": "MRKU6168021", "seal": "", "size": "40HC", "fe": "E", "pos": "02-08-82", "wgt": 3810, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 281, "cntr": "CAAU7694900", "seal": "", "size": "40HC", "fe": "E", "pos": "02-08-84", "wgt": 3700, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 282, "cntr": "MRKU9918520", "seal": "PH0043254", "size": "20DC", "fe": "F", "pos": "03-10-82", "wgt": 12890, "oper": "MAE", "gui": "MAE", "special": "", "xray": true}, {"no": 283, "cntr": "MNBU0528218", "seal": "PH0063899", "size": "40RF", "fe": "F", "pos": "34-03-82", "wgt": 25440, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 284, "cntr": "MNBU0360823", "seal": "PH0043456", "size": "40RF", "fe": "F", "pos": "34-01-82", "wgt": 28130, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": true}, {"no": 285, "cntr": "MNBU3754836", "seal": "PH0262196", "size": "40RF", "fe": "F", "pos": "34-07-84", "wgt": 25450, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 286, "cntr": "MNBU3637300", "seal": "PH0023911", "size": "40RF", "fe": "F", "pos": "34-03-84", "wgt": 25280, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 287, "cntr": "SUDU8115073", "seal": "PH0262274", "size": "40RF", "fe": "F", "pos": "34-05-82", "wgt": 25570, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 288, "cntr": "MNBU0120340", "seal": "PH0262215", "size": "40RF", "fe": "F", "pos": "34-02-84", "wgt": 25590, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 289, "cntr": "MNBU4337400", "seal": "PH0052418", "size": "40RF", "fe": "F", "pos": "14-08-82", "wgt": 25300, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 290, "cntr": "TLLU1213481", "seal": "PH0262010", "size": "40RF", "fe": "F", "pos": "26-03-06", "wgt": 25490, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 291, "cntr": "MMAU1061330", "seal": "PH0262052", "size": "40RF", "fe": "F", "pos": "34-08-82", "wgt": 25720, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 292, "cntr": "MNBU3291834", "seal": "PH0037157", "size": "40RF", "fe": "F", "pos": "34-06-84", "wgt": 25640, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 293, "cntr": "MNBU3433353", "seal": "PH0070026", "size": "40RF", "fe": "F", "pos": "34-04-82", "wgt": 25530, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 294, "cntr": "MNBU3737417", "seal": "PH0262177", "size": "40RF", "fe": "F", "pos": "34-02-06", "wgt": 25420, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 295, "cntr": "MNBU0098170", "seal": "PH0070101", "size": "40RF", "fe": "F", "pos": "10-06-86", "wgt": 25360, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 296, "cntr": "MNBU4315519", "seal": "PH0275519", "size": "40RF", "fe": "F", "pos": "14-10-82", "wgt": 25000, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 297, "cntr": "MNBU4181132", "seal": "PH0022063", "size": "40RF", "fe": "F", "pos": "34-05-84", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 298, "cntr": "SUDU8211272", "seal": "PH0275676", "size": "40RF", "fe": "F", "pos": "18-09-08", "wgt": 25000, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 299, "cntr": "MRSU3260841", "seal": "", "size": "40HC", "fe": "E", "pos": "14-11-84", "wgt": 3810, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 300, "cntr": "MNBU3976962", "seal": "PH0023909", "size": "40RF", "fe": "F", "pos": "38-05-84", "wgt": 25710, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 301, "cntr": "MNBU3614670", "seal": "PH0070071", "size": "40RF", "fe": "F", "pos": "34-04-84", "wgt": 24890, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 302, "cntr": "MNBU4309603", "seal": "PH0267037", "size": "40RF", "fe": "F", "pos": "22-10-82", "wgt": 24170, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 303, "cntr": "MMAU1218650", "seal": "PH0262064", "size": "40RF", "fe": "F", "pos": "34-07-82", "wgt": 25420, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 304, "cntr": "MNBU3383653", "seal": "PH0264934", "size": "40RF", "fe": "F", "pos": "34-02-82", "wgt": 22780, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 305, "cntr": "HASU4178105", "seal": "", "size": "40HC", "fe": "E", "pos": "14-11-82", "wgt": 3860, "oper": "MAE", "gui": "MAE", "special": "", "xray": false}, {"no": 306, "cntr": "MNBU3736088", "seal": "PH0058196", "size": "40RF", "fe": "F", "pos": "34-09-82", "wgt": 10580, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 307, "cntr": "MNBU4651853", "seal": "PH0262102", "size": "40RF", "fe": "F", "pos": "34-06-82", "wgt": 25310, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 308, "cntr": "MNBU9088803", "seal": "PH0046744", "size": "40RF", "fe": "F", "pos": "34-10-82", "wgt": 25590, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 309, "cntr": "MNBU3480972", "seal": "PH0042922", "size": "40RF", "fe": "F", "pos": "34-09-84", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 310, "cntr": "SUDU8024287", "seal": "PH0264924", "size": "40RF", "fe": "F", "pos": "34-10-84", "wgt": 24180, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 311, "cntr": "MNBU4251625", "seal": "PH0058113", "size": "40RF", "fe": "F", "pos": "26-10-84", "wgt": 25460, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 312, "cntr": "MNBU3386040", "seal": "PH0046714", "size": "40RF", "fe": "F", "pos": "34-08-84", "wgt": 25670, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 313, "cntr": "MNBU0559800", "seal": "PH0267131", "size": "40RF", "fe": "F", "pos": "14-09-84", "wgt": 22000, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 314, "cntr": "MNBU3459281", "seal": "PH0063872", "size": "40RF", "fe": "F", "pos": "18-10-84", "wgt": 25260, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 315, "cntr": "MNBU3468880", "seal": "PH0058084", "size": "40RF", "fe": "F", "pos": "14-05-86", "wgt": 25450, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 316, "cntr": "MNBU3372279", "seal": "PH0262013", "size": "40RF", "fe": "F", "pos": "26-08-82", "wgt": 25370, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 317, "cntr": "TLLU1169075", "seal": "PH0044229", "size": "40RF", "fe": "F", "pos": "26-04-06", "wgt": 25680, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 318, "cntr": "SUDU6221461", "seal": "PH0070005", "size": "40RF", "fe": "F", "pos": "34-01-84", "wgt": 25490, "oper": "MAE", "gui": "MAE", "special": "RF 13.0C", "xray": false}, {"no": 319, "cntr": "MNBU0269797", "seal": "PH0278160", "size": "40RF", "fe": "F", "pos": "18-09-84", "wgt": 21580, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 320, "cntr": "MNBU3667270", "seal": "PH0267095", "size": "40RF", "fe": "F", "pos": "10-09-82", "wgt": 24300, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 321, "cntr": "MNBU4631116", "seal": "PH0267020", "size": "40RF", "fe": "F", "pos": "30-09-04", "wgt": 23850, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 322, "cntr": "MNBU3870950", "seal": "PH0267087", "size": "40RF", "fe": "F", "pos": "34-01-04", "wgt": 24480, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 323, "cntr": "MMAU1053587", "seal": "PH0267005", "size": "40RF", "fe": "F", "pos": "22-09-82", "wgt": 24210, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 324, "cntr": "MNBU0066594", "seal": "PH0267055", "size": "40RF", "fe": "F", "pos": "14-05-82", "wgt": 24220, "oper": "MAE", "gui": "MAE", "special": "RF 14.0C", "xray": false}, {"no": 325, "cntr": "MNBU0585141", "seal": "PH0275671", "size": "40RF", "fe": "F", "pos": "18-01-08", "wgt": 27000, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 326, "cntr": "SUDU8234220", "seal": "PH0262095", "size": "40RF", "fe": "F", "pos": "38-03-82", "wgt": 24630, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 327, "cntr": "MNBU9100154", "seal": "PH0278198", "size": "40RF", "fe": "F", "pos": "18-10-82", "wgt": 22360, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}, {"no": 328, "cntr": "MNBU4382820", "seal": "PH0278194", "size": "40RF", "fe": "F", "pos": "18-09-82", "wgt": 22540, "oper": "MAE", "gui": "MAE", "special": "RF 7.0C", "xray": false}]</script>
+<script>
+// ── 패스워드 DB ──────────────────────────────────
+var STAFF_DB = {
+  '신성호':'630101','표인수':'101001','황창웅':'041001','최장욱':'010301','이현규':'220620',
+  '김명보':'241209','권수안':'230901','정영배':'020314','오승택':'140401','성창모':'150121',
+  '이강익':'240508','김유신':'200713','김석':'201102','전우수':'240801','김성일':'240902',
+  '장문영':'210215','김판석':'240108','최관식':'240109','김홍규':'240617','한성호':'240708',
+  '오종하':'250210','이인철':'250701','이종부':'250707','이종현':'250811','송제욱':'260421','최원형':'240710'
+};
+
+var currentUser = '';
+// GUBR 615N/617S 앱 - GAS URL 아래 설정
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbzhFbRVV-0jgECbpulHDRSzvo9ZO-R8m_47n-hKZwdnEbBVkU7cx6gXusKCq5KtxWKD/exec';
+
+// ── 로그인 ──────────────────────────────────────
+function doLogin(){
+  var name = document.getElementById('loginName').value.trim();
+  var pw   = document.getElementById('loginPw').value.trim();
+  var err  = document.getElementById('loginErr');
+  if(!name || !pw){ err.style.display='block'; err.textContent='이름과 패스워드를 입력하세요'; return; }
+  if(STAFF_DB[name] !== pw){ err.style.display='block'; err.textContent='이름 또는 패스워드가 올바르지 않습니다'; return; }
+  currentUser = name;
+  // localStorage에 저장 (자동로그인)
+  localStorage.setItem('gm_gubr615_user', JSON.stringify({name:name, pw:pw}));
+  showApp(name);
+  err.style.display='none';
+  setTimeout(function(){ loadFromSheets(); }, 800);
+  render();
+}
+
+function showApp(name){
+  currentUser = name;
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  var role = STAFF_DB[name] === STAFF_DB[name] ? '검수원' : '검수';
+  // 직책 표시 (팀장은 별도)
+  var roleText = (name === '신성호') ? '검수팀장' : '검수원';
+  document.getElementById('hdrRole').textContent = roleText;
+  document.getElementById('hdrName').textContent = name;
+}
+
+function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  localStorage.removeItem('gm_gubr615_user');
+  currentUser = '';
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginName').focus();
+}
+
+// 자동로그인 체크 (페이지 로드시)
+(function(){
+  var saved = localStorage.getItem('gm_gubr615_user');
+  if(saved){
+    try{
+      var u = JSON.parse(saved);
+      if(u && u.name && STAFF_DB[u.name] && STAFF_DB[u.name] === u.pw){
+        showApp(u.name);
+        setTimeout(function(){ loadFromSheets(); }, 800);
+        render();
+      }
+    }catch(e){}
+  }
+})();
+document.getElementById('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+// ── 데이터 ──────────────────────────────────────
+var DATA_IN  = JSON.parse(document.getElementById('JDATA').textContent);
+var DATA_OUT = JSON.parse(document.getElementById('JDATA_OUT').textContent);
+var DATA = DATA_IN;
+var curMode = 'in';
+
+function switchMode(mode){
+  curMode = mode;
+  DATA = (mode === 'in') ? DATA_IN : DATA_OUT;
+  document.getElementById('btnIn').className  = 'mode-btn' + (mode==='in'?' active':'');
+  document.getElementById('btnOut').className = 'mode-btn' + (mode==='out'?' active':'');
+  curFilter = 'all'; curQuery = '';
+  document.getElementById('inp').value = '';
+  // 탭 초기화
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelector('.tab[data-f="all"]').classList.add('active');
+  // sum-bar 텍스트 변경
+  document.getElementById('modeLabel').textContent = mode==='in' ? '615N 양하' : '617S 선적';
+  render();
+  updateSumBar();
+}
+var origSeal = {};
+DATA.forEach(function(r){ origSeal[r.no] = r.seal; }); // 베이플랜 원본 고정
+
+var curFilter = 'all', curQuery = '';
+
+function isModified(r){ return r.seal !== origSeal[r.no]; }
+
+function matches(r, q, f){
+  if(q.length > 0 && r.cntr.slice(-4) !== q) return false;
+  if(f === 'all')    return true;
+  if(f === 'remain') return !r.checked;
+  if(f === 'done')   return !!r.checked;
+  // 전체/기타 탭에서는 완료된 것 제외
+  if(!!r.checked) return false;
+  if(f === 'SP')     return !!r.special;
+  if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
+  if(f === 'XRAY')   return r.special === 'XRAY';
+  if(f === '20DC')   return r.size === '20DC';
+  if(f === '20RF')   return r.size === '20RF';
+  if(f === '40HQ')   return r.size === '40HQ';
+  if(f === '40RF')   return r.size === '40RF';
+  if(f === 'SKR')    return r.oper === 'SKR';
+  if(f === 'DJS')    return r.oper === 'DJS';
+  if(f === 'HAS')    return r.oper === 'HAS';
+  return true;
+}
+
+function fmtWgt(w){ if(!w) return '-'; return parseInt(w).toLocaleString()+'kg'; }
+
+// ── 카드 렌더 ────────────────────────────────────
+function renderCard(r){
+  var isDone = !!r.checked;
+  var isXray = r.special === 'XRAY';
+  var isRf   = r.special && r.special.indexOf('RF') === 0;
+  var mod    = isModified(r);
+  var xraySeal = r.xray_seal || '';
+
+  var mainCls = 'card-main' + (isXray ? ' xray-c' : '');
+  var cardCls = 'card' + (isDone ? ' done-card' : '');
+
+  // 태그
+  var tags = '<span class="tag" style="background:#e8f4e8;color:#2d7a2d">'+r.size+'</span>';
+  if(isXray) tags += '<span class="tag xray">⚠ XRAY</span>';
+  else if(isRf) tags += '<span class="tag rf">🧊 '+r.special+'</span>';
+  else if(r.special) tags += '<span class="tag sp">'+r.special+'</span>';
+
+  var xrayBanner = isXray ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
+
+  var doneInfo = isDone ? '<div class="done-info">✅ 완료: '+r.checked+'</div>' : '';
+
+  // 확인버튼
+  var chkBtnHtml;
+  if(isDone){
+    chkBtnHtml = '<button class="chk-btn done" onclick="undoCheck('+r.no+');event.stopPropagation()">완료취소</button>';
+  } else {
+    chkBtnHtml = '<button class="chk-btn" onclick="doCheck('+r.no+');event.stopPropagation()">✔ 확인</button>';
+  }
+
+  // XRAY 봉인SEAL
+  var xraySealBox = isXray ? (
+    '<div class="xray-seal-box">'+
+    '<div class="xray-seal-title">🔴 세관봉인 실번호 입력</div>'+
+    '<div id="xsv'+r.no+'" class="seal-wrap">'+
+      '<span class="seal-val" style="color:#C00000" id="xsval'+r.no+'">'+( xraySeal || '미입력'  )+'</span>'+
+      (xraySeal ? '<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>' : '')+
+      '<button class="edit-btn" style="border-color:#C00000;color:#C00000" onclick="startXraySeal('+r.no+');event.stopPropagation()">✏️</button>'+
+    '</div>'+
+    '<div id="xse'+r.no+'" class="edit-inp">'+
+      '<input id="xsi'+r.no+'" type="text" placeholder="봉인SEAL 번호" class="seal-input" style="border-color:#C00000" onclick="event.stopPropagation()">'+
+      '<button class="save-btn" style="background:#C00000" onclick="saveXraySeal('+r.no+');event.stopPropagation()">저장</button>'+
+      '<button class="cancel-btn" onclick="cancelXraySeal('+r.no+');event.stopPropagation()">취소</button>'+
+    '</div>'+
+    '</div>'
+  ) : '';
+
+  return '<div class="'+cardCls+'" id="card'+r.no+'">'+
+    xrayBanner+
+    '<div class="'+mainCls+'" onclick="tog('+r.no+')">'+
+      '<div class="card-left">'+
+        '<div class="card-no">No.'+r.no+(mod?'<span class="mod-badge" style="margin-left:4px">수정됨</span>':'')+(isDone?'<span class="done-badge">✅완료</span>':'')+'</div>'+
+        '<div class="card-cntr">'+r.cntr+'</div>'+
+        '<div class="card-seal'+(mod?' modified':'')+'">'+r.seal+'</div>'+
+        doneInfo+
+        '<div class="tags">'+tags+'</div>'+
+      '</div>'+
+      '<div class="card-right">'+
+        '<div class="card-pos">'+
+          (curMode==='out'
+            ? (r.pos||'-')+'<button class="pos-edit-btn" onclick="editPos('+r.no+');event.stopPropagation()">✏️</button>'
+            : (r.pos||'-')
+          )+'</div>'+
+        '<div class="card-oper">'+r.oper+'</div>'+
+        chkBtnHtml+
+      '</div>'+
+    '</div>'+
+    '<div class="detail" id="d'+r.no+'">'+
+      '<table>'+
+        '<tr><td>컨테이너</td><td style="font-family:monospace;font-weight:700">'+r.cntr+'</td></tr>'+
+        '<tr><td>실 번호</td><td>'+
+          '<div class="seal-wrap" id="sv'+r.no+'">'+
+            '<span class="seal-val'+(mod?' modified':'')+'" id="sval'+r.no+'">'+r.seal+'</span>'+
+            (mod ? '<span class="mod-badge">수정됨</span>':'') +
+            '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️ 수정</button>'+
+          '</div>'+
+          '<div class="edit-inp" id="se'+r.no+'">'+
+            '<input id="si'+r.no+'" type="text" value="'+r.seal+'" class="seal-input" onclick="event.stopPropagation()">'+
+            '<button class="save-btn" onclick="saveSeal('+r.no+')">저장</button>'+
+            '<button class="cancel-btn" onclick="cancelEdit('+r.no+')">취소</button>'+
+          '</div>'+
+        '</td></tr>'+
+        '<tr><td>규격</td><td>'+r.size+'</td></tr>'+
+        '<tr><td>F/E</td><td>'+(r.fe==='F'?'FULL (화물)':'EMPTY')+'</td></tr>'+
+        '<tr><td>선내위치</td><td style="font-family:monospace;font-size:14px;font-weight:700;color:#1a3a6b">'+( r.pos||'-' )+'</td></tr>'+
+        '<tr><td>중량</td><td>'+fmtWgt(r.wgt)+'</td></tr>'+
+        '<tr><td>오퍼레이터</td><td>'+r.oper+'</td></tr>'+
+        (r.special?'<tr><td>특수화물</td><td style="color:#b00;font-weight:600">'+r.special+'</td></tr>':'')+
+        (r.checked?'<tr><td>검수완료</td><td style="color:#28a745;font-weight:700">'+r.checked+'</td></tr>':'')+
+      '</table>'+
+      xraySealBox+
+    '</div>'+
+  '</div>';
+}
+
+// ── 렌더 ────────────────────────────────────────
+function editPos(no){
+  var r = DATA.find(function(x){ return x.no===no; });
+  if(!r) return;
+  var newPos = prompt('선내위치 수정 (현재: '+r.pos+')', r.pos);
+  if(newPos === null) return;
+  newPos = newPos.trim().toUpperCase();
+  if(!newPos) return;
+  r.pos = newPos;
+  var card = document.getElementById('card'+no);
+  if(card){
+    var wasOpen = document.getElementById('d'+no).style.display==='block';
+    card.outerHTML = renderCard(r);
+    if(wasOpen) document.getElementById('d'+no).style.display='block';
+  }
+  saveToSheets(no, 'pos', newPos);
+}
+
+function updateSumBar(){
+  var done = DATA.filter(function(r){ return !!r.checked; }).length;
+  var remain = DATA.length - done;
+  document.getElementById('sumDone').textContent = done;
+  document.getElementById('sumRemain').textContent = remain;
+  var cntEl = document.getElementById('cntAll');
+  if(cntEl) cntEl.textContent = DATA.length;
+}
+
+function render(){
+  var filtered = DATA.filter(function(r){ return matches(r, curQuery, curFilter); });
+  document.getElementById('rbar').textContent =
+    (curQuery || curFilter !== 'all') ? ('검색결과: '+filtered.length+'개') : ('전체 '+filtered.length+'개');
+  if(!filtered.length){
+    document.getElementById('list').innerHTML = '<div class="empty">🔍 검색 결과가 없습니다</div>';
+  } else {
+    document.getElementById('list').innerHTML = filtered.map(renderCard).join('');
+  }
+  updateSumBar();
+}
+
+// ── 토글 ────────────────────────────────────────
+function tog(no){
+  var el = document.getElementById('d'+no);
+  if(el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── 실번호 수정 ──────────────────────────────────
+function startEdit(no){
+  document.getElementById('sv'+no).style.display = 'none';
+  document.getElementById('se'+no).style.display = 'flex';
+  document.getElementById('si'+no).focus();
+}
+function cancelEdit(no){
+  document.getElementById('se'+no).style.display = 'none';
+  document.getElementById('sv'+no).style.display = 'flex';
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(r) document.getElementById('si'+no).value = r.seal;
+}
+function saveSeal(no){
+  var v = document.getElementById('si'+no).value.trim().toUpperCase();
+  if(!v){ alert('실번호를 입력하세요'); return; }
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.seal = v;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  saveToSheets(no, 'seal', v);
+}
+
+// ── XRAY 봉인SEAL ────────────────────────────────
+function startXraySeal(no){
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(sv) sv.style.display = 'none';
+  if(se) se.style.display = 'flex';
+  var inp = document.getElementById('xsi'+no);
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(inp && r) inp.value = r.xray_seal || '';
+  if(inp) inp.focus();
+}
+function cancelXraySeal(no){
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(se) se.style.display = 'none';
+  if(sv) sv.style.display = 'flex';
+}
+function saveXraySeal(no){
+  var inp = document.getElementById('xsi'+no);
+  if(!inp) return;
+  var v = inp.value.trim().toUpperCase();
+  // 공백도 저장 가능 (교대 시 초기화 용도)
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.xray_seal = v;
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(se) se.style.display = 'none';
+  if(sv){
+    sv.style.display = 'flex';
+    document.getElementById('xsval'+no).textContent = v;
+    sv.innerHTML = sv.innerHTML;
+  }
+  // 카드 재렌더
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  saveToSheets(no, 'xray_seal', v);
+}
+
+// ── 확인(완료처리) ────────────────────────────────
+function doCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  var now = new Date();
+  var ts = now.getFullYear()+'.'+(now.getMonth()+1)+'.'+(now.getDate())+' '
+           +('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  r.checked = currentUser + ' ' + ts;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', r.checked);
+}
+function undoCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.checked = '';
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', '');
+}
+
+// ── Google Sheets 연동 ────────────────────────────
+function loadFromSheets(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?action=getData&mode='+curMode, true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4 || xhr.status !== 200) return;
+    try{
+      var res = JSON.parse(xhr.responseText);
+      if(res.data){
+        for(var i=0;i<res.data.length;i++){
+          var row = res.data[i];
+          for(var j=0;j<DATA.length;j++){
+            if(DATA[j].no === row.no){
+              if(row.seal) DATA[j].seal = row.seal.trim();
+              if(row.xray_seal !== undefined) DATA[j].xray_seal = row.xray_seal;
+              if(row.checked) DATA[j].checked = row.checked;
+              break;
+            }
+          }
+        }
+        render();
+      }
+    } catch(e){ console.log('Sheets 로드 오류:',e); }
+  };
+  xhr.send();
+}
+
+function saveToSheets(no, field, value){
+  var params = 'action=updateSeal&mode='+curMode+'&no='+no+'&field='+field+'&value='+encodeURIComponent(value)+'&user='+encodeURIComponent(currentUser);
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?'+params, true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4) return;
+    console.log('Sheets 저장:', field, '=', value);
+  };
+  xhr.send();
+}
+
+// ── 탭/검색 ─────────────────────────────────────
+var tabs = document.querySelectorAll('.tab');
+for(var ti=0;ti<tabs.length;ti++){
+  (function(t){
+    t.addEventListener('click', function(){
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+      t.classList.add('active');
+      curFilter = t.getAttribute('data-f');
+      render();
+    });
+  })(tabs[ti]);
+}
+
+var inp = document.getElementById('inp');
+var lastVal = '';
+function checkInput(){
+  var v = inp.value.replace(/\D/g,'').slice(-4);
+  if(v !== lastVal){ lastVal = v; curQuery = v; render(); }
+}
+inp.addEventListener('input', checkInput);
+inp.addEventListener('keyup', checkInput);
+setInterval(checkInput, 100);
+
+// ── 검색창 토글 (카메라 열릴때) ──────────────────
+function toggleSearchInput(){
+  var inp2 = document.getElementById('inp');
+  if(inp2.style.display === 'none'){
+    inp2.style.display = '';
+    inp2.focus();
+  } else {
+    inp2.style.display = 'none';
+  }
+}
+
+// ── 카메라 ──────────────────────────────────────
+var camStream = null, camTimer = null, camBusy = false, camLast = '', currentZoom = 1;
+
+function openCamera(){
+  var m = document.getElementById('camModal');
+  m.style.display = 'flex'; m.style.flexDirection = 'column';
+  document.getElementById('camResult').textContent = '';
+  document.getElementById('camManual').value = '';
+  document.getElementById('zoomSlider').value = 1;
+  document.getElementById('zoomVal').textContent = '1.0x';
+  camLast = '';
+  // 검색창 숨기고 아이콘 표시
+  document.getElementById('inp').style.display = 'none';
+  document.getElementById('searchIconBtn').style.display = 'block';
+  startCam();
+}
+
+function closeCamera(){
+  stopCam();
+  document.getElementById('camVideo').style.transform = 'scale(1)';
+  document.getElementById('camModal').style.display = 'none';
+  // 검색창 복원
+  document.getElementById('inp').style.display = '';
+  document.getElementById('searchIconBtn').style.display = 'none';
+}
+
+function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 미지원';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+  }).then(function(stream){
+    camStream = stream;
+    var v = document.getElementById('camVideo');
+    v.srcObject = stream;
+    v.onloadedmetadata = function(){ v.play(); };
+    v.onplaying = function(){ startAutoScan(); };
+    setTimeout(function(){ if(!camTimer) startAutoScan(); }, 3000);
+  }).catch(function(err){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
+  });
+}
+
+function stopCam(){
+  if(camTimer){ clearInterval(camTimer); camTimer=null; }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  camBusy = false;
+}
+
+function startAutoScan(){
+  if(camTimer) clearInterval(camTimer);
+  var guide = document.getElementById('camGuide');
+  if(typeof Tesseract === 'undefined'){
+    guide.textContent = '⏳ OCR 로딩 중...';
+    var wait = setInterval(function(){
+      if(typeof Tesseract !== 'undefined'){
+        clearInterval(wait);
+        guide.textContent = '🔍 자동 스캔 중...';
+        camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+      }
+    }, 500);
+    return;
+  }
+  guide.textContent = '🔍 자동 스캔 중...';
+  camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+}
+
+function preprocessCanvas(srcCanvas){
+  var w=srcCanvas.width, h=srcCanvas.height;
+  var dst=document.createElement('canvas');
+  var maxW=1200;
+  var scale=w>maxW?maxW/w:1;
+  dst.width=Math.round(w*scale);
+  dst.height=Math.round(h*scale);
+  var ctx=dst.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  var z=currentZoom||1;
+  var contrast,brightness,saturate;
+  if(z<=3){contrast=1.3;brightness=1.0;saturate=1.0;}
+  else if(z<=10){contrast=1.6;brightness=1.05;saturate=0.8;}
+  else{contrast=2.0;brightness=1.1;saturate=0.5;}
+  ctx.filter='contrast('+contrast+') brightness('+brightness+') saturate('+saturate+')';
+  ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
+  ctx.filter='none';
+  if(z>=10){
+    var imgData=ctx.getImageData(0,0,dst.width,dst.height);
+    var d=imgData.data;
+    for(var i=0;i<d.length;i+=4){
+      var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      var bin=gray>128?255:0;
+      d[i]=d[i+1]=d[i+2]=bin;
+      d[i+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+  return dst;
+}
+
+function doOCR(){
+  var video=document.getElementById('camVideo');
+  var canvas=document.getElementById('camCanvas');
+  if(!video.srcObject||video.paused||video.videoWidth===0){ return; }
+  camBusy=true;
+  var el=document.getElementById('camResult');
+  var guide=document.getElementById('camGuide');
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var cropX=Math.round(vw*0.02);
+  var cropW=Math.round(vw*0.96);
+  var cropY=Math.round(vh*0.25);
+  var cropH=Math.round(vh*0.50);
+  canvas.width=cropW; canvas.height=cropH;
+  var ctx=canvas.getContext('2d');
+  ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
+  var processed=preprocessCanvas(canvas);
+  Tesseract.recognize(processed,'eng',{
+    logger:function(){},
+    tessedit_char_whitelist:'0123456789',
+    tessedit_pageseg_mode:'7',
+    preserve_interword_spaces:'0'
+  }).then(function(r){
+    var nums=r.data.text.replace(/[^0-9]/g,'');
+    var found=findByNumbers(nums);
+    if(found){
+      var match=null;
+      for(var i=0;i<DATA.length;i++){ if(DATA[i].cntr===found){ match=DATA[i]; break; } }
+      if(match && found!==camLast){
+        camLast=found;
+        el.textContent='✅ '+match.cntr+' 인식됨!';
+        el.style.color='#FFD700';
+        guide.textContent='✅ 찾았습니다!';
+        if(navigator.vibrate) navigator.vibrate([80,40,80]);
+        setTimeout(function(){ applySearch(match.cntr); closeCamera(); }, 700);
+      }
+    } else {
+      el.textContent='';
+      guide.textContent='🔍 자동 스캔 중...';
+    }
+    camBusy=false;
+  }).catch(function(){ camBusy=false; });
+}
+
+function findByNumbers(nums){
+  if(nums.length<4) return null;
+  if(nums.length>=7){
+    for(var s=0;s<=nums.length-7;s++){
+      var sub7=nums.substr(s,7);
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-7)===sub7) return DATA[i].cntr;
+      }
+    }
+  }
+  if(nums.length>=4){
+    for(var s=0;s<=nums.length-4;s++){
+      var sub4=nums.substr(s,4);
+      var matches=[];
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-4)===sub4) matches.push(DATA[i].cntr);
+      }
+      if(matches.length===1) return matches[0];
+    }
+  }
+  return null;
+}
+
+function setZoom(val){
+  var v=parseFloat(val);
+  currentZoom=v;
+  document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
+  var video=document.getElementById('camVideo');
+  if(!camStream){ video.style.transform='scale('+v+')'; video.style.transformOrigin='center center'; return; }
+  var track=camStream.getVideoTracks()[0];
+  var caps=track&&track.getCapabilities?track.getCapabilities():{};
+  if(caps.zoom){
+    var hwMax=caps.zoom.max, hwMin=caps.zoom.min;
+    if(v<=hwMax){
+      var z=hwMin+(hwMax-hwMin)*((v-1)/29);
+      track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+      video.style.transform='scale(1)';
+    } else {
+      track.applyConstraints({advanced:[{zoom:hwMax}]}).catch(function(){});
+      var cssScale=v/hwMax;
+      video.style.transform='scale('+cssScale+')';
+      video.style.transformOrigin='center center';
+    }
+  } else {
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
+  }
+}
+
+function applySearch(cntr){
+  var last4=cntr.slice(-4);
+  document.getElementById('inp').value=last4;
+  curQuery=last4; render();
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
+}
+
+function camManualSearch(){
+  var v=document.getElementById('camManual').value.replace(/\D/g,'').slice(-4);
+  if(v.length<4){ alert('끝 4자리를 입력하세요'); return; }
+  closeCamera();
+  document.getElementById('inp').value=v;
+  curQuery=v; render();
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
+}
+
+render();
+</script>
+</body>
+</html>
