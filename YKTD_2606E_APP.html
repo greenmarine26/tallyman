@@ -76,7 +76,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .sum-bar span{opacity:.85}
 .sum-bar b{color:#FFD966}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+
 </head>
 <body>
 <!-- 카메라 조회 모달 - 상단 카드형 -->
@@ -385,6 +385,7 @@ function doLogout(){
 }
 
 // ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
+const VISION_API_KEY='AIzaSyCsNbPjONCBpvw6YYGoJ_wlIUyK06kF774';
 let camStream=null,camTimer=null,camBusy=false,camLast='';
 
 function openCamera(){
@@ -427,20 +428,7 @@ function stopCam(){
 
 function startAutoScan(){
   if(camTimer) clearInterval(camTimer);
-  const guide=document.getElementById('camGuide');
-  if(typeof Tesseract==='undefined'){
-    guide.textContent='⏳ OCR 로딩 중...';
-    // Tesseract 로딩 기다리기
-    const wait=setInterval(()=>{
-      if(typeof Tesseract!=='undefined'){
-        clearInterval(wait);
-        guide.textContent='🔍 자동 스캔 중...';
-        camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
-      }
-    },500);
-    return;
-  }
-  guide.textContent='🔍 자동 스캔 중...';
+  document.getElementById('camGuide').textContent='🔍 자동 스캔 중...';
   camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
 }
 
@@ -450,40 +438,59 @@ function doOCR(){
   if(!video.srcObject||video.paused||video.videoWidth===0) return;
   camBusy=true;
 
-  // 전처리 없이 원본 그대로 — Tesseract가 컬러 이미지를 더 잘 인식
+  // 캡처
   canvas.width=video.videoWidth;
   canvas.height=video.videoHeight;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(video,0,0);
+  canvas.getContext('2d').drawImage(video,0,0);
 
-  const el=document.getElementById('camResult');
-  const guide=document.getElementById('camGuide');
+  // base64로 변환 (JPEG, 품질 0.9)
+  const base64=canvas.toDataURL('image/jpeg',0.9).split(',')[1];
 
-  Tesseract.recognize(canvas,'eng',{
-    logger:()=>{},
-    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode:'11'  // 낱글자 모드 - 흩어진 텍스트에 강함
-  }).then(({data:{text}})=>{
-    const found=parseCntr(text);
-    if(found){
-      const match=DATA.find(r=>r.cntr===found);
-      if(match&&found!==camLast){
-        camLast=found;
-        el.textContent='✅  '+match.cntr+'  인식됨!';
-        el.style.color='#FFD700';
-        guide.textContent='✅ 찾았습니다!';
-        if(navigator.vibrate) navigator.vibrate([80,40,80]);
-        setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
-      } else if(!match){
-        el.textContent='⚠ '+found+' — 목록에 없음';
-        el.style.color='#FFA500';
+  // Google Vision API 호출
+  fetch('https://vision.googleapis.com/v1/images:annotate?key='+VISION_API_KEY,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({
+      requests:[{
+        image:{content:base64},
+        features:[{type:'TEXT_DETECTION',maxResults:10}]
+      }]
+    })
+  })
+  .then(r=>r.json())
+  .then(data=>{
+    const el=document.getElementById('camResult');
+    const guide=document.getElementById('camGuide');
+    const texts=data.responses&&data.responses[0]&&data.responses[0].textAnnotations;
+    if(texts&&texts.length>0){
+      const fullText=texts[0].description||'';
+      const found=parseCntr(fullText);
+      if(found){
+        const match=DATA.find(r=>r.cntr===found);
+        if(match&&found!==camLast){
+          camLast=found;
+          el.textContent='✅  '+match.cntr+'  인식됨!';
+          el.style.color='#FFD700';
+          guide.textContent='✅ 찾았습니다!';
+          if(navigator.vibrate) navigator.vibrate([80,40,80]);
+          setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
+        } else if(!match){
+          el.textContent='⚠ '+found+' — 목록에 없음';
+          el.style.color='#FFA500';
+        } else {
+          guide.textContent='🔍 자동 스캔 중...';
+          el.textContent='';
+        }
+      } else {
+        guide.textContent='🔍 자동 스캔 중...';
+        el.textContent='';
       }
     } else {
       guide.textContent='🔍 자동 스캔 중...';
-      el.textContent='';
     }
     camBusy=false;
-  }).catch(()=>{ camBusy=false; });
+  })
+  .catch(()=>{ camBusy=false; });
 }
 function captureNow(){
   camBusy=false;
