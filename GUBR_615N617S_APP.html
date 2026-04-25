@@ -999,9 +999,12 @@ function processVoiceInput(raw) {
     var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
     showVoiceToast('✅ ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | ⚠XRAY':''));
     if (navigator.vibrate) navigator.vibrate([80,40,80]);
-    var msg = '실번호 ' + r.seal;
-    if (isXray) msg += '. 엑스레이 대상입니다. 실 달아주세요.';
-    speak(msg);
+    var msg = '실번호 ' + r.seal + ' 입니다.';
+    if (isXray) {
+      speakThen(msg, '엑스레이 대상입니다. 실 달아주세요.');
+    } else {
+      speak(msg);
+    }
     setTimeout(function(){ var c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); }, 300);
   } else {
     showVoiceToast('❌ ' + last4 + ' — 목록에 없습니다');
@@ -1032,6 +1035,31 @@ function speak(text) {
     var v = getFemaleVoice();
     if (v) u.voice = v;
     window.speechSynthesis.speak(u);
+  };
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
+  }
+}
+function speakThen(first, second) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  var u1 = new SpeechSynthesisUtterance(first);
+  u1.lang = 'ko-KR'; u1.rate = 0.88; u1.pitch = 1.25; u1.volume = 1.0;
+  u1.onend = function() {
+    setTimeout(function() {
+      var u2 = new SpeechSynthesisUtterance(second);
+      u2.lang = 'ko-KR'; u2.rate = 0.88; u2.pitch = 1.25; u2.volume = 1.0;
+      var v = getFemaleVoice();
+      if (v) u2.voice = v;
+      window.speechSynthesis.speak(u2);
+    }, 300);
+  };
+  var doSpeak = function() {
+    var v = getFemaleVoice();
+    if (v) u1.voice = v;
+    window.speechSynthesis.speak(u1);
   };
   if (window.speechSynthesis.getVoices().length > 0) {
     doSpeak();
