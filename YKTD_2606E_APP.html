@@ -413,9 +413,9 @@ function startCam(){
   navigator.mediaDevices.getUserMedia({
     video:{
       facingMode:{ideal:'environment'},
-      width:{ideal:3840, min:1280},
-      height:{ideal:2160, min:720},
-      frameRate:{ideal:30}
+      width:{ideal:1920, min:1280},
+      height:{ideal:1080, min:720},
+      frameRate:{ideal:15}
     }
   }).then(function(stream){
     camStream=stream;
@@ -450,69 +450,31 @@ function startAutoScan(){
       if(typeof Tesseract!=='undefined'){
         clearInterval(wait);
         guide.textContent='📸 버튼 또는 자동인식 대기중...';
-        camTimer=setInterval(function(){ if(!camBusy) doOCR(); },2000);
+        camTimer=setInterval(function(){ if(!camBusy) doOCR(); },3000);
       }
     },500);
     return;
   }
   guide.textContent='📸 버튼 또는 자동인식 대기중...';
-  camTimer=setInterval(function(){ if(!camBusy) doOCR(); },2000);
+  camTimer=setInterval(function(){ if(!camBusy) doOCR(); },3000);
 }
 
-// 이미지 전처리 - 샤프닝 + 적응형 이진화
+// 이미지 전처리 - 경량 버전 (폰 최적화)
 function preprocessCanvas(srcCanvas){
   var w=srcCanvas.width, h=srcCanvas.height;
   var dst=document.createElement('canvas');
-  dst.width=w*2; dst.height=h*2;
+  // 고정 크기로 제한 (너무 크면 느림)
+  var maxW=1200;
+  var scale=w>maxW ? maxW/w : 1;
+  dst.width=Math.round(w*scale);
+  dst.height=Math.round(h*scale);
   var ctx=dst.getContext('2d');
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  ctx.drawImage(srcCanvas,0,0,w*2,h*2);
-
-  var imgData=ctx.getImageData(0,0,dst.width,dst.height);
-  var d=imgData.data;
-  var W=dst.width, H=dst.height;
-
-  // 1단계: 그레이스케일 변환
-  var gray=new Uint8ClampedArray(W*H);
-  for(var i=0;i<W*H;i++){
-    gray[i]=Math.round(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]);
-  }
-
-  // 2단계: 샤프닝 (언샵 마스크)
-  var sharp=new Uint8ClampedArray(W*H);
-  var kernel=[-1,-1,-1,-1,9,-1,-1,-1,-1];
-  for(var y=1;y<H-1;y++){
-    for(var x=1;x<W-1;x++){
-      var sum=0;
-      for(var ky=-1;ky<=1;ky++){
-        for(var kx=-1;kx<=1;kx++){
-          sum+=gray[(y+ky)*W+(x+kx)]*kernel[(ky+1)*3+(kx+1)];
-        }
-      }
-      sharp[y*W+x]=Math.max(0,Math.min(255,sum));
-    }
-  }
-
-  // 3단계: 적응형 이진화 (15x15 블록 평균)
-  var block=15;
-  for(var y=0;y<H;y++){
-    for(var x=0;x<W;x++){
-      var sum=0, cnt=0;
-      for(var dy=-block;dy<=block;dy++){
-        for(var dx=-block;dx<=block;dx++){
-          var ny=y+dy, nx=x+dx;
-          if(ny>=0&&ny<H&&nx>=0&&nx<W){sum+=sharp[ny*W+nx];cnt++;}
-        }
-      }
-      var thresh=sum/cnt-5;
-      var bin=sharp[y*W+x]>thresh?255:0;
-      var idx=(y*W+x)*4;
-      d[idx]=d[idx+1]=d[idx+2]=bin;
-      d[idx+3]=255;
-    }
-  }
-  ctx.putImageData(imgData,0,0);
+  // Canvas 필터로 샤프닝 (GPU 가속, 빠름)
+  ctx.filter='contrast(1.4) brightness(1.05)';
+  ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
+  ctx.filter='none';
   return dst;
 }
 
@@ -539,29 +501,15 @@ function doOCR(){
   Tesseract.recognize(processed,'eng',{
     logger:function(){},
     tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode:'6',
+    tessedit_pageseg_mode:'11',
     preserve_interword_spaces:'0'
   }).then(function(r1){
     var found=parseCntr(r1.data.text);
     if(found){
       handleFound(found,el,guide);
     } else {
-      // PSM 11로 재시도
-      return Tesseract.recognize(processed,'eng',{
-        logger:function(){},
-        tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-        tessedit_pageseg_mode:'11',
-        preserve_interword_spaces:'0'
-      }).then(function(r2){
-        var found2=parseCntr(r2.data.text);
-        if(found2){
-          handleFound(found2,el,guide);
-        } else {
-          guide.textContent='📸 버튼 또는 자동인식 대기중...';
-          el.textContent='';
-        }
-        camBusy=false;
-      });
+      guide.textContent='📸 버튼 또는 자동인식 대기중...';
+      el.textContent='';
     }
     camBusy=false;
   }).catch(function(){ camBusy=false; });
