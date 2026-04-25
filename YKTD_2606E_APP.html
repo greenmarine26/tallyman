@@ -80,7 +80,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 </head>
 <body>
 <!-- 카메라 조회 모달 - 상단 카드형 -->
-<div id="camModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 4% 0">
+<div id="camModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);flex-direction:column;align-items:center;justify-content:center;padding:0">
   <div style="width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:1.5px solid rgba(255,215,0,0.35);position:relative">
 
     <!-- 카메라 뷰 - 정사각형 -->
@@ -339,6 +339,45 @@ function saveSeal(no){
   const card=document.getElementById('card'+no);
   if(card){const wasOpen=document.getElementById('d'+no).style.display==='block';card.outerHTML=renderCard(r);if(wasOpen)document.getElementById('d'+no).style.display='block';}
   saveToSheets(no,'seal',v);
+}
+
+function startXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  var si=document.getElementById('xsi'+no);
+  if(sv) sv.style.display='none';
+  if(se) se.style.display='flex';
+  var r=DATA.find(function(x){return x.no===no;});
+  if(si && r) si.value=r.xray_seal||'';
+  if(si) si.focus();
+}
+
+function cancelXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  if(se) se.style.display='none';
+  if(sv) sv.style.display='flex';
+}
+
+function saveXraySeal(no){
+  var si=document.getElementById('xsi'+no);
+  if(!si) return;
+  var v=si.value.trim().toUpperCase();
+  if(!v){alert('봉인SEAL 번호를 입력해주세요');return;}
+  var r=DATA.find(function(x){return x.no===no;});
+  if(!r) return;
+  r.xray_seal=v;
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  if(se) se.style.display='none';
+  if(sv){
+    sv.style.display='flex';
+    sv.innerHTML=
+      '<span class="seal-val seal-big" id="xsval'+no+'" style="color:#C00000">'+v+'</span>'+
+      '<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>'+
+      '<button class="edit-btn" style="border-color:#C00000;color:#C00000" onclick="startXraySeal('+no+');event.stopPropagation()">✏️</button>';
+  }
+  saveToSheets(no,'xray_seal',v);
 }
 
 document.querySelectorAll('.tab').forEach(t=>{
