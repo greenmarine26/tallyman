@@ -79,35 +79,53 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 </head>
 <body>
-<!-- 카메라 조회 모달 -->
-<div class="modal-bg" id="camModal" style="display:none">
-  <div class="modal" style="padding:20px;max-width:340px;width:90%">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-      <div style="font-size:15px;font-weight:800;color:#1F3864">📷 카메라 조회</div>
-      <button onclick="closeCamera()" style="border:none;background:none;font-size:20px;cursor:pointer;color:#888">✕</button>
-    </div>
-    <div style="position:relative;border-radius:12px;overflow:hidden;background:#000;aspect-ratio:4/3">
-      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover"></video>
+<!-- 카메라 조회 모달 - 상단 카드형 -->
+<div id="camModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 4% 0">
+  <div style="width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:1.5px solid rgba(255,215,0,0.35);position:relative">
+
+    <!-- 카메라 뷰 - 정사각형 -->
+    <div style="position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000">
+      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
       <canvas id="camCanvas" style="display:none"></canvas>
-      <!-- 조준선 -->
+
+      <!-- 타이틀바 오버레이 -->
+      <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,0.75),transparent)">
+        <div style="color:#FFD700;font-size:13px;font-weight:800;letter-spacing:.5px">📷 컨테이너 번호 스캔</div>
+        <button onclick="closeCamera()" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;line-height:1">✕</button>
+      </div>
+
+      <!-- 스캔 가이드 - 뷰 안에서 80% 정사각형 -->
       <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="width:80%;height:40%;border:2px solid #FFD700;border-radius:8px;box-shadow:0 0 0 1000px rgba(0,0,0,0.3)">
-          <div style="position:absolute;top:-1px;left:50%;transform:translateX(-50%);background:#FFD700;color:#000;font-size:10px;font-weight:700;padding:1px 8px;border-radius:0 0 6px 6px">컨테이너번호를 박스 안에</div>
+        <div style="position:relative;width:82%;aspect-ratio:1/1">
+          <!-- 모서리 4개 -->
+          <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:4px 0 0 0"></div>
+          <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 4px 0 0"></div>
+          <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:0 0 0 4px"></div>
+          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 0 4px 0"></div>
+          <!-- 스캔 라인 - 정사각형 안에서 좌우 꽉 -->
+          <div style="position:absolute;top:50%;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,#FFD700,transparent);animation:scanLine 2s ease-in-out infinite"></div>
         </div>
       </div>
+
+      <!-- 안내 + 결과 오버레이 (하단) -->
+      <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
+        <div id="camResult" style="text-align:center;min-height:18px;font-size:13px;font-weight:800;letter-spacing:.5px;color:#FFD700"></div>
+        <div id="camGuide" style="text-align:center;color:rgba(255,255,255,0.55);font-size:10px;margin-top:2px">자동 스캔 중 · 📸 즉시 촬영</div>
+      </div>
     </div>
-    <div style="margin-top:12px;text-align:center">
-      <button onclick="captureAndSearch()" style="background:linear-gradient(135deg,#1F3864,#2E75B6);color:#fff;border:none;border-radius:12px;padding:12px 32px;font-size:15px;font-weight:700;cursor:pointer;width:100%">🔍 촬영 & 조회</button>
-    </div>
-    <div id="camResult" style="margin-top:10px;min-height:24px;text-align:center;font-size:13px;font-weight:700;color:#1F3864"></div>
-    <div style="margin-top:8px;text-align:center">
-      <input id="camManual" type="text" placeholder="직접 입력 (끝 4자리)" maxlength="11"
-        style="width:100%;padding:8px 12px;border:2px solid #2E75B6;border-radius:10px;font-size:15px;text-align:center;outline:none;font-weight:700;letter-spacing:1px"
-        oninput="camManualSearch(this.value)">
+
+    <!-- 하단 입력 컨트롤 -->
+    <div style="padding:10px 12px 14px;background:#1a1a2e">
+      <div style="display:flex;gap:8px;align-items:center">
+        <input id="camManual" type="text" placeholder="직접 입력 (번호 또는 끝 4자리)"
+          style="flex:1;padding:9px 12px;border:1.5px solid rgba(255,215,0,0.55);border-radius:10px;font-size:14px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,0.1);color:#fff;outline:none;text-align:center"
+          oninput="camManualSearch(this.value)">
+        <button onclick="captureNow()" style="background:#FFD700;border:none;border-radius:10px;padding:9px 14px;font-size:20px;cursor:pointer">📸</button>
+      </div>
     </div>
   </div>
 </div>
-
+<style>@keyframes scanLine{0%,100%{opacity:.3;transform:scaleX(.5)}50%{opacity:1;transform:scaleX(1)}}</style>
 <!-- 이름 입력 모달 -->
 <div class="modal-bg" id="modalBg">
   <div class="modal" style="text-align:center;padding:30px 24px">
@@ -366,13 +384,15 @@ function doLogout(){
   setTimeout(()=>document.getElementById('nameInp').focus(),100);
 }
 
-// ── 카메라 조회 ────────────────────────────────
-let camStream=null;
+// ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
+let camStream=null,camTimer=null,camBusy=false,camLast='';
 
 function openCamera(){
-  document.getElementById('camModal').style.display='flex';
+  const m=document.getElementById('camModal');
+  m.style.display='flex'; m.style.flexDirection='column';
   document.getElementById('camResult').textContent='';
   document.getElementById('camManual').value='';
+  camLast='';
   startCam();
 }
 
@@ -382,90 +402,119 @@ function closeCamera(){
 }
 
 function startCam(){
-  const constraints={video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}}};
-  navigator.mediaDevices.getUserMedia(constraints)
-    .then(stream=>{
-      camStream=stream;
-      document.getElementById('camVideo').srcObject=stream;
-    })
-    .catch(err=>{
-      document.getElementById('camResult').textContent='📵 카메라 접근 불가: '+err.message;
-    });
+  navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}
+  }).then(stream=>{
+    camStream=stream;
+    const v=document.getElementById('camVideo');
+    v.srcObject=stream;
+    v.onloadedmetadata=()=>startAutoScan();
+  }).catch(err=>{
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
+  });
 }
 
 function stopCam(){
+  if(camTimer){clearInterval(camTimer);camTimer=null;}
   if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
-  const v=document.getElementById('camVideo');
-  if(v) v.srcObject=null;
+  camBusy=false;
 }
 
-function captureAndSearch(){
+function startAutoScan(){
+  if(camTimer) clearInterval(camTimer);
+  camTimer=setInterval(()=>{if(!camBusy&&typeof Tesseract!=='undefined') doOCR();},1800);
+}
+
+function doOCR(){
   const video=document.getElementById('camVideo');
   const canvas=document.getElementById('camCanvas');
-  if(!video.srcObject){document.getElementById('camResult').textContent='카메라가 시작되지 않았습니다';return;}
+  if(!video.srcObject||video.paused||video.videoWidth===0) return;
+  camBusy=true;
+
+  // 전체 화면 캡처
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-  canvas.getContext('2d').drawImage(video,0,0);
+  const ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0);
 
-  // Tesseract OCR로 텍스트 인식
-  const el=document.getElementById('camResult');
-  el.textContent='🔍 인식 중...';
-
-  // canvas에서 이미지 추출 후 OCR
-  if(typeof Tesseract!=='undefined'){
-    Tesseract.recognize(canvas,'eng',{logger:m=>{}})
-      .then(({data:{text}})=>{
-        const matched=parseContainerNo(text);
-        if(matched){
-          el.textContent='✅ 인식: '+matched;
-          el.style.color='#00B050';
-          closeCamera();
-          // 검색창에 끝4자리 입력 후 검색
-          const last4=matched.slice(-4);
-          document.getElementById('inp').value=last4;
-          curQuery=last4; render();
-          // 결과 스크롤
-          setTimeout(()=>document.querySelector('.card')&&document.querySelector('.card').scrollIntoView({behavior:'smooth'}),300);
-        } else {
-          el.textContent='❌ 컨테이너번호를 인식하지 못했습니다. 직접 입력해주세요.';
-          el.style.color='#C00000';
-        }
-      }).catch(()=>{
-        el.textContent='OCR 오류. 직접 입력해주세요.';
-        el.style.color='#C00000';
-      });
-  } else {
-    el.textContent='📝 OCR 미지원. 끝 4자리를 직접 입력해주세요.';
-    el.style.color='#888';
+  // 흑백 대비 강화 → 영문+숫자 인식률 향상
+  const img=ctx.getImageData(0,0,canvas.width,canvas.height);
+  const d=img.data;
+  for(let i=0;i<d.length;i+=4){
+    const g=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+    const v=g>140?255:0;
+    d[i]=d[i+1]=d[i+2]=v;
   }
+  ctx.putImageData(img,0,0);
+
+  Tesseract.recognize(canvas,'eng',{
+    logger:()=>{},
+    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+  }).then(({data:{text}})=>{
+    const found=parseCntr(text);
+    const el=document.getElementById('camResult');
+    const guide=document.getElementById('camGuide');
+    if(found){
+      // DB에 실제 있는지 확인
+      const match=DATA.find(r=>r.cntr===found||r.cntr.slice(-4)===found.slice(-4));
+      if(match&&found!==camLast){
+        camLast=found;
+        el.textContent='✅  '+match.cntr+'  인식됨!';
+        el.style.color='#FFD700';
+        guide.textContent='✅ 찾았습니다!';
+        if(navigator.vibrate) navigator.vibrate([80,40,80]);
+        setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
+      } else if(!match) {
+        el.textContent='⚠ '+found+' — 목록에 없음';
+        el.style.color='#FFA500';
+      }
+    } else {
+      if(camLast==='') guide.textContent='카메라를 컨테이너 번호에 가까이 대주세요';
+    }
+    camBusy=false;
+  }).catch(()=>{ camBusy=false; });
 }
 
-function parseContainerNo(text){
-  // 컨테이너 번호 패턴: 알파벳4자 + 숫자7자 (ABCD1234567)
-  const matches=text.toUpperCase().replace(/\s/g,'').match(/[A-Z]{4}[0-9]{7}/g);
-  if(matches&&matches.length>0) return matches[0];
+function captureNow(){
+  camBusy=false;
+  document.getElementById('camGuide').textContent='🔍 인식 중...';
+  doOCR();
+}
+
+function applySearch(cntr){
+  const last4=cntr.slice(-4);
+  document.getElementById('inp').value=last4;
+  curQuery=last4; render();
+  setTimeout(()=>{ const c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); },300);
+}
+
+function parseCntr(text){
+  // 1순위: 완전한 패턴 ABCD1234567
+  let m=text.toUpperCase().replace(/[^A-Z0-9]/g,'').match(/[A-Z]{4}[0-9]{7}/g);
+  if(m) return m[0];
+  // 2순위: 공백 허용 느슨한 패턴
+  m=text.toUpperCase().replace(/[^A-Z0-9]+/g,' ').trim().replace(/ /g,'').match(/[A-Z]{4}[0-9]{7}/g);
+  if(m) return m[0];
   return null;
 }
 
 function camManualSearch(val){
   const v=val.replace(/\s/g,'').toUpperCase();
-  if(v.length>=4){
-    const last4=v.slice(-4);
-    const found=DATA.filter(r=>r.cntr.slice(-4)===last4||r.cntr.includes(v));
-    const el=document.getElementById('camResult');
-    if(found.length>0){
-      el.textContent='✅ '+found.length+'개 찾음: '+found.map(r=>r.cntr).join(', ');
-      el.style.color='#00B050';
-    } else {
-      el.textContent=v.length>=4?'❌ 없음':'';
-      el.style.color='#C00000';
+  const el=document.getElementById('camResult');
+  if(v.length<2){el.textContent='';return;}
+  const found=DATA.filter(r=>r.cntr.includes(v)||r.cntr.slice(-4)===v.slice(-4));
+  if(found.length>0){
+    el.textContent='✅  '+found[0].cntr;
+    el.style.color='#FFD700';
+    if(v.length>=4){
+      if(navigator.vibrate) navigator.vibrate(80);
+      setTimeout(()=>{ applySearch(found[0].cntr); closeCamera(); },600);
     }
+  } else {
+    el.textContent=v.length>=3?'❌ 없음':'';
+    el.style.color='#FF6B6B';
   }
 }
-
-// ── 카메라 모달 닫기 (배경 클릭) ─────────────
-document.getElementById('camModal').addEventListener('click',function(e){
-  if(e.target===this) closeCamera();
-});
 
 render();
 </script>
