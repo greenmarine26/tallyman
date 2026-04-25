@@ -116,6 +116,14 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 
     <!-- 하단 입력 컨트롤 -->
     <div style="padding:10px 12px 14px;background:#1a1a2e">
+      <!-- 줌 슬라이더 -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <span style="color:#FFD700;font-size:13px;white-space:nowrap">🔍 줌</span>
+        <input id="zoomSlider" type="range" min="1" max="5" step="0.1" value="1"
+          style="flex:1;accent-color:#FFD700;height:4px;cursor:pointer"
+          oninput="setZoom(this.value)">
+        <span id="zoomVal" style="color:#FFD700;font-size:13px;font-weight:700;min-width:28px;text-align:right">1x</span>
+      </div>
       <div style="display:flex;gap:8px;align-items:center">
         <input id="camManual" type="text" placeholder="직접 입력 (번호 또는 끝 4자리)"
           style="flex:1;padding:9px 12px;border:1.5px solid rgba(255,215,0,0.55);border-radius:10px;font-size:14px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,0.1);color:#fff;outline:none;text-align:center"
@@ -538,6 +546,19 @@ function handleFound(found,el,guide){
   } else if(!match){
     el.textContent='⚠ '+found+' — 목록에 없음';
     el.style.color='#FFA500';
+  }
+}
+
+function setZoom(val){
+  document.getElementById('zoomVal').textContent=parseFloat(val).toFixed(1)+'x';
+  if(!camStream) return;
+  var track=camStream.getVideoTracks()[0];
+  if(!track) return;
+  var caps=track.getCapabilities();
+  if(caps.zoom){
+    var min=caps.zoom.min, max=caps.zoom.max;
+    var z=min+(max-min)*((val-1)/4);
+    track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
   }
 }
 
