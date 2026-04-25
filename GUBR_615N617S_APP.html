@@ -338,12 +338,13 @@ function switchMode(mode){
   render();
   updateSumBar();
 }
-var origSeal = {};
-DATA.forEach(function(r){ origSeal[r.no] = r.seal; }); // 베이플랜 원본 고정
+var origSealIn = {}, origSealOut = {};
+DATA_IN.forEach(function(r){ origSealIn[r.no] = r.seal; });
+DATA_OUT.forEach(function(r){ origSealOut[r.no] = r.seal; });
 
 var curFilter = 'all', curQuery = '';
 
-function isModified(r){ return r.seal !== origSeal[r.no]; }
+function isModified(r){ var os = (curMode==='out') ? origSealOut : origSealIn; return r.seal !== os[r.no]; }
 
 function matches(r, q, f){
   if(q.length > 0 && r.cntr.slice(-4) !== q) return false;
@@ -356,7 +357,7 @@ function matches(r, q, f){
   if(f === 'EMPTY') return r.fe === 'E';
   if(f === 'SP')     return !!r.special;
   if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
-  if(f === 'XRAY')   return r.special === 'XRAY';
+  if(f === 'XRAY')   return !!r.xray;
   if(f === '20DC')   return r.size === '20DC';
   if(f === '20RF')   return r.size === '20RF';
   if(f === '40HQ')   return r.size === '40HQ';
@@ -372,7 +373,7 @@ function fmtWgt(w){ if(!w) return '-'; return parseInt(w).toLocaleString()+'kg';
 // ── 카드 렌더 ────────────────────────────────────
 function renderCard(r){
   var isDone = !!r.checked;
-  var isXray = r.special === 'XRAY';
+  var isXray = !!r.xray;
   var isRf   = r.special && r.special.indexOf('RF') === 0;
   var mod    = isModified(r);
   var xraySeal = r.xray_seal || '';
@@ -383,8 +384,8 @@ function renderCard(r){
   // 태그
   var tags = '<span class="tag" style="background:#e8f4e8;color:#2d7a2d">'+r.size+'</span>';
   if(isXray) tags += '<span class="tag xray">⚠ XRAY</span>';
-  else if(isRf) tags += '<span class="tag rf">🧊 '+r.special+'</span>';
-  else if(r.special) tags += '<span class="tag sp">'+r.special+'</span>';
+  if(isRf) tags += '<span class="tag rf">🧊 '+r.special+'</span>';
+  else if(!isXray && r.special) tags += '<span class="tag sp">'+r.special+'</span>';
 
   var xrayBanner = isXray ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
 
@@ -471,6 +472,14 @@ function editPos(no){
   if(newPos === null) return;
   newPos = newPos.trim().toUpperCase();
   if(!newPos) return;
+
+  // 중복 위치 체크
+  var dup = DATA.find(function(x){ return x.no!==no && x.pos===newPos; });
+  if(dup){
+    var ok = confirm('[위치중복] 입력위치 ['+newPos+'] 에 No.'+dup.no+' '+dup.cntr+' 이(가) 이미 있습니다. 계속하면 같은 위치에 2개가 됩니다. 그래도 변경하시겠습니까?');
+    if(!ok) return;
+  }
+
   r.pos = newPos;
   var card = document.getElementById('card'+no);
   if(card){
