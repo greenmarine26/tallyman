@@ -308,12 +308,18 @@ function tog(no){const el=document.getElementById('d'+no);if(el)el.style.display
 function startEdit(no){document.getElementById('sv'+no).style.display='none';document.getElementById('se'+no).style.display='flex';document.getElementById('si'+no).focus();}
 function cancelEdit(no){document.getElementById('se'+no).style.display='none';document.getElementById('sv'+no).style.display='flex';const r=DATA.find(x=>x.no===no);if(r)document.getElementById('si'+no).value=r.seal;}
 function saveSeal(no){
-  const v=document.getElementById('si'+no).value.trim();
+  var v=document.getElementById('si'+no).value.trim();
   if(!v){alert('실번호 입력');return;}
-  const r=DATA.find(x=>x.no===no);if(!r)return;
+  var r=DATA.find(function(x){return x.no===no;});
+  if(!r) return;
   r.seal=v;
-  const card=document.getElementById('card'+no);
-  if(card){const wasOpen=document.getElementById('d'+no).style.display==='block';card.outerHTML=renderCard(r);if(wasOpen)document.getElementById('d'+no).style.display='block';}
+  // DOM만 업데이트 - detail 닫힘 방지
+  var sval=document.getElementById('sval'+no);
+  if(sval) sval.textContent=v;
+  var sv=document.getElementById('sv'+no);
+  var se=document.getElementById('se'+no);
+  if(se) se.style.display='none';
+  if(sv) sv.style.display='flex';
 }
 
 document.querySelectorAll('.tab').forEach(t=>{
@@ -530,7 +536,7 @@ function camManualSearch(val){
 
 render();
 
-// ── 음성인식 + TTS ────────────────────────────────
+// ── 음성인식 + TTS (여성목소리) ───────────────────
 var voiceRecog = null;
 var voiceActive = false;
 var voiceToastTimer = null;
@@ -538,7 +544,6 @@ var voiceToastTimer = null;
 function toggleVoice() {
   if (voiceActive) { stopVoice(); } else { startVoice(); }
 }
-
 function startVoice() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SR) { showVoiceToast('❌ Chrome 브라우저에서 사용해주세요'); return; }
@@ -551,11 +556,11 @@ function startVoice() {
     var btn = document.getElementById('voiceBtn');
     btn.style.background = 'rgba(255,50,50,0.6)';
     btn.style.borderColor = 'rgba(255,80,80,0.9)';
-    btn.textContent = '🔴';
-    showVoiceToast('🎤 숫자 4자리를 말씀해 주세요');
+    btn.textContent = '\uD83D\uDD34';
+    showVoiceToast('\uD83C\uDFA4 숫자 4자리를 말씀해 주세요');
   };
   voiceRecog.onresult = function(e) {
-    processVoiceInput(e.results[0][0].transcript.replace(/\s/g, ''));
+    processVoiceInput(e.results[0][0].transcript.replace(/\s/g,''));
   };
   voiceRecog.onerror = function(e) {
     showVoiceToast('❌ ' + e.error + ' — 다시 시도해주세요');
@@ -564,35 +569,31 @@ function startVoice() {
   voiceRecog.onend = function() { resetVoiceBtn(); };
   voiceRecog.start();
 }
-
 function stopVoice() {
   if (voiceRecog) { voiceRecog.stop(); voiceRecog = null; }
   resetVoiceBtn();
 }
-
 function resetVoiceBtn() {
   voiceActive = false;
   var btn = document.getElementById('voiceBtn');
   if (!btn) return;
   btn.style.background = 'rgba(0,200,100,0.25)';
   btn.style.borderColor = 'rgba(0,200,100,0.6)';
-  btn.textContent = '🎤';
+  btn.textContent = '\uD83C\uDFA4';
 }
-
 function korToNum(str) {
   if (/^[0-9]+$/.test(str)) return str;
-  var map = {'영':'0','공':'0','일':'1','하나':'1','이':'2','둘':'2','삼':'3','셋':'3','사':'4','넷':'4','오':'5','다섯':'5','육':'6','여섯':'6','칠':'7','일곱':'7','팔':'8','여덟':'8','구':'9','아홉':'9'};
+  var map = {'\uC601':'0','\uACF5':'0','\uC77C':'1','\uD558\uB098':'1','\uC774':'2','\uB458':'2','\uC0BC':'3','\uC149':'3','\uC0AC':'4','\uB137':'4','\uC624':'5','\uB2E4\uC12F':'5','\uC721':'6','\uC5EC\uC12F':'6','\uCE60':'7','\uC77C\uACF1':'7','\uD314':'8','\uC5EC\uB35F':'8','\uAD6C':'9','\uC544\uD649':'9'};
   var res = str;
   var keys = Object.keys(map).sort(function(a,b){return b.length-a.length;});
   for (var i=0;i<keys.length;i++) res = res.split(keys[i]).join(map[keys[i]]);
   return res;
 }
-
 function processVoiceInput(raw) {
   var digits = korToNum(raw).replace(/[^0-9]/g,'');
   var last4 = digits.slice(-4);
   if (last4.length < 4) {
-    showVoiceToast('⚠ 4자리를 인식 못했어요 ("' + raw + '") — 다시 말씀해 주세요');
+    showVoiceToast('\u26A0 4자리를 인식 못했어요 ("' + raw + '") — 다시 말씀해 주세요');
     setTimeout(startVoice, 1800);
     return;
   }
@@ -602,27 +603,49 @@ function processVoiceInput(raw) {
   if (found.length > 0) {
     var r = found[0];
     var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
-    showVoiceToast('✅ ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | ⚠XRAY':''));
+    showVoiceToast('\u2705 ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | \u26A0XRAY':''));
     if (navigator.vibrate) navigator.vibrate([80,40,80]);
-    // TTS: 실번호 읽기 + XRAY 안내
-    var msg = '실번호 ' + r.seal.split('').join(' ');
+    var msg = '실번호 ' + r.seal;
     if (isXray) msg += '. 엑스레이 대상입니다. 실 달아주세요.';
     speak(msg);
     setTimeout(function(){ var c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); }, 300);
   } else {
-    showVoiceToast('❌ ' + last4 + ' — 목록에 없습니다');
+    showVoiceToast('\u274C ' + last4 + ' — 목록에 없습니다');
     speak(last4 + ' 없습니다');
   }
 }
-
+function getFemaleVoice() {
+  var voices = window.speechSynthesis.getVoices();
+  var pick = null;
+  for (var i=0;i<voices.length;i++) {
+    var v = voices[i];
+    if (v.lang.indexOf('ko') >= 0) {
+      if (!pick) pick = v;
+      if (/female|woman|yuna|sora|\uC9C0\uC601|\uB098\uC5F0|\uBBFC\uC544/i.test(v.name)) { pick = v; break; }
+    }
+  }
+  return pick;
+}
 function speak(text) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ko-KR'; u.rate = 0.9; u.pitch = 1.0;
-  window.speechSynthesis.speak(u);
+  u.lang = 'ko-KR';
+  u.rate = 0.88;
+  u.pitch = 1.25;
+  u.volume = 1.0;
+  // voices 로드 후 선택
+  var doSpeak = function() {
+    var v = getFemaleVoice();
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  };
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
+  }
 }
-
 function showVoiceToast(msg) {
   var t = document.getElementById('voiceToast');
   if (!t) {
@@ -635,6 +658,7 @@ function showVoiceToast(msg) {
   if (voiceToastTimer) clearTimeout(voiceToastTimer);
   voiceToastTimer = setTimeout(function(){ t.style.opacity='0'; }, 3500);
 }
+
 </script>
 </body>
 </html>
