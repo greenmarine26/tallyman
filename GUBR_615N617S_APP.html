@@ -993,8 +993,7 @@ function processVoiceInput(raw) {
   }
   document.getElementById('inp').value = last4;
   curQuery = last4; render();
-  var pool = (curMode === 'in') ? JDATA : JDATA_OUT;
-  var found = pool.filter(function(r){ return r.cntr.slice(-4) === last4; });
+  var found = DATA.filter(function(r){ return r.cntr.slice(-4) === last4; });
   if (found.length > 0) {
     var r = found[0];
     var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
