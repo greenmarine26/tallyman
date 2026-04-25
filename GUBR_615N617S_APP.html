@@ -394,7 +394,7 @@ function renderCard(r){
 
   var xrayBanner = isXray ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
 
-  var doneInfo = isDone ? '<div class="done-info">✅ 완료: '+r.checked+'</div>' : '';
+  var doneInfo = '';
 
   // 확인버튼
   var chkBtnHtml;
@@ -447,7 +447,7 @@ function renderCard(r){
         '<tr><td>실 번호</td><td>'+
           '<div class="seal-wrap" id="sv'+r.no+'">'+
             '<span class="seal-val'+(mod?' modified':'')+'" id="sval'+r.no+'">'+r.seal+'</span>'+
-            (mod ? '<span class="mod-badge">수정됨</span>':'') +
+            (mod ? '<span class="mod-badge">수정됨</span><span style="font-size:10px;color:#999;margin-left:4px">(원본: '+(curMode==='out'?origSealOut[r.no]:origSealIn[r.no])+')</span>':'') +
             '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️ 수정</button>'+
           '</div>'+
           '<div class="edit-inp" id="se'+r.no+'">'+
@@ -462,7 +462,7 @@ function renderCard(r){
         '<tr><td>중량</td><td>'+fmtWgt(r.wgt)+'</td></tr>'+
         '<tr><td>오퍼레이터</td><td>'+r.oper+'</td></tr>'+
         (r.special?'<tr><td>특수화물</td><td style="color:#b00;font-weight:600">'+r.special+'</td></tr>':'')+
-        (r.checked?'<tr><td>검수완료</td><td style="color:#28a745;font-weight:700">'+r.checked+'</td></tr>':'')+
+        (r.checked?'<tr><td>검수완료</td><td style="color:#28a745;font-weight:700">✅ '+r.checked+'</td></tr>':'')+
       '</table>'+
       xraySealBox+
     '</div>'+
@@ -613,10 +613,10 @@ function doCheck(no){
   var r = null;
   for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
   if(!r) return;
-  var now = new Date();
-  var ts = now.getFullYear()+'.'+(now.getMonth()+1)+'.'+(now.getDate())+' '
+
+
            +('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
-  r.checked = currentUser + ' ' + ts;
+  r.checked = currentUser;
   var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
   var card = document.getElementById('card'+no);
   if(card) card.outerHTML = renderCard(r);
