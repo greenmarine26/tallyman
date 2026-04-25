@@ -450,13 +450,13 @@ function startAutoScan(){
     var wait=setInterval(function(){
       if(typeof Tesseract!=='undefined'){
         clearInterval(wait);
-        guide.textContent='📸 버튼 또는 자동인식 대기중...';
+        guide.textContent='🔍 자동 스캔 중...';
         camTimer=setInterval(function(){ if(!camBusy) doOCR(); },3000);
       }
     },500);
     return;
   }
-  guide.textContent='📸 버튼 또는 자동인식 대기중...';
+  guide.textContent='🔍 자동 스캔 중...';
   camTimer=setInterval(function(){ if(!camBusy) doOCR(); },3000);
 }
 
@@ -516,7 +516,7 @@ function doOCR(){
     if(found){
       handleFound(found,el,guide);
     } else {
-      guide.textContent='📸 버튼 또는 자동인식 대기중...';
+      guide.textContent='🔍 자동 스캔 중...';
       el.textContent='';
     }
     camBusy=false;
@@ -553,9 +553,23 @@ function setZoom(val){
 }
 
 function captureNow(){
+  // 자동스캔 멈추기
+  if(camTimer){clearInterval(camTimer);camTimer=null;}
   camBusy=false;
-  document.getElementById('camGuide').textContent='🔍 인식 중...';
-  doOCR();
+  // 분석중 UI 표시
+  var guide=document.getElementById('camGuide');
+  var el=document.getElementById('camResult');
+  var video=document.getElementById('camVideo');
+  // 화면 정지 효과 - 밝기 낮춤
+  video.style.filter='brightness(0.5)';
+  guide.textContent='📷 촬영됨 — 분석중...';
+  el.textContent='';
+  el.style.color='#FFD700';
+  doOCR(function(){
+    // 분석 완료 후 카메라 복구 및 자동스캔 재시작
+    video.style.filter='none';
+    startAutoScan();
+  });
 }
 
 function applySearch(cntr){
