@@ -2,6 +2,11 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+  <!-- PWA 전체화면 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1F3864">
 <meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
 <title>GUBR 615N/617S 검수</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
@@ -923,11 +928,7 @@ function camManualSearch(){
 
 render();
 
-// ── 뒤로가기 방지 ──────────────────────────────
-history.pushState(null, null, location.href);
-window.addEventListener('popstate', function(){
-  history.pushState(null, null, location.href);
-});
+
 
 </script>
 </body>
