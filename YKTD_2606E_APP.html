@@ -119,7 +119,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
       <!-- 줌 슬라이더 -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span style="color:#FFD700;font-size:13px;white-space:nowrap">🔍 줌</span>
-        <input id="zoomSlider" type="range" min="1" max="5" step="0.1" value="1"
+        <input id="zoomSlider" type="range" min="1" max="10" step="0.1" value="1"
           style="flex:1;accent-color:#FFD700;height:4px;cursor:pointer"
           oninput="setZoom(this.value)">
         <span id="zoomVal" style="color:#FFD700;font-size:13px;font-weight:700;min-width:28px;text-align:right">1x</span>
@@ -413,12 +413,17 @@ function startCam(){
   navigator.mediaDevices.getUserMedia({
     video:{
       facingMode:{ideal:'environment'},
-      width:{ideal:1920},
-      height:{ideal:1080},
-      focusMode:{ideal:'continuous'}
+      width:{ideal:3840, min:1280},
+      height:{ideal:2160, min:720},
+      frameRate:{ideal:30}
     }
   }).then(function(stream){
     camStream=stream;
+    // 화질 최적화 설정
+    var track=stream.getVideoTracks()[0];
+    if(track && track.applyConstraints){
+      track.applyConstraints({advanced:[{sharpness:100,contrast:100}]}).catch(function(){});
+    }
     var v=document.getElementById('camVideo');
     v.srcObject=stream;
     v.onloadedmetadata=function(){ v.play(); };
@@ -454,30 +459,58 @@ function startAutoScan(){
   camTimer=setInterval(function(){ if(!camBusy) doOCR(); },2000);
 }
 
-// 이미지 전처리 - 대비/선명도 극대화
+// 이미지 전처리 - 샤프닝 + 적응형 이진화
 function preprocessCanvas(srcCanvas){
   var w=srcCanvas.width, h=srcCanvas.height;
   var dst=document.createElement('canvas');
-  // 2배 확대해서 처리
   dst.width=w*2; dst.height=h*2;
   var ctx=dst.getContext('2d');
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  // 2배 확대
   ctx.drawImage(srcCanvas,0,0,w*2,h*2);
-  // 픽셀 처리: 그레이스케일 + 대비 강화 + 이진화
+
   var imgData=ctx.getImageData(0,0,dst.width,dst.height);
   var d=imgData.data;
-  for(var i=0;i<d.length;i+=4){
-    // 그레이스케일
-    var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
-    // 대비 강화 (S커브)
-    gray=gray<128 ? gray*0.6 : 128+(gray-128)*1.4;
-    gray=Math.max(0,Math.min(255,gray));
-    // 이진화 임계값 140
-    var bin=gray>140?255:0;
-    d[i]=d[i+1]=d[i+2]=bin;
-    d[i+3]=255;
+  var W=dst.width, H=dst.height;
+
+  // 1단계: 그레이스케일 변환
+  var gray=new Uint8ClampedArray(W*H);
+  for(var i=0;i<W*H;i++){
+    gray[i]=Math.round(0.299*d[i*4]+0.587*d[i*4+1]+0.114*d[i*4+2]);
+  }
+
+  // 2단계: 샤프닝 (언샵 마스크)
+  var sharp=new Uint8ClampedArray(W*H);
+  var kernel=[-1,-1,-1,-1,9,-1,-1,-1,-1];
+  for(var y=1;y<H-1;y++){
+    for(var x=1;x<W-1;x++){
+      var sum=0;
+      for(var ky=-1;ky<=1;ky++){
+        for(var kx=-1;kx<=1;kx++){
+          sum+=gray[(y+ky)*W+(x+kx)]*kernel[(ky+1)*3+(kx+1)];
+        }
+      }
+      sharp[y*W+x]=Math.max(0,Math.min(255,sum));
+    }
+  }
+
+  // 3단계: 적응형 이진화 (15x15 블록 평균)
+  var block=15;
+  for(var y=0;y<H;y++){
+    for(var x=0;x<W;x++){
+      var sum=0, cnt=0;
+      for(var dy=-block;dy<=block;dy++){
+        for(var dx=-block;dx<=block;dx++){
+          var ny=y+dy, nx=x+dx;
+          if(ny>=0&&ny<H&&nx>=0&&nx<W){sum+=sharp[ny*W+nx];cnt++;}
+        }
+      }
+      var thresh=sum/cnt-5;
+      var bin=sharp[y*W+x]>thresh?255:0;
+      var idx=(y*W+x)*4;
+      d[idx]=d[idx+1]=d[idx+2]=bin;
+      d[idx+3]=255;
+    }
   }
   ctx.putImageData(imgData,0,0);
   return dst;
@@ -557,7 +590,7 @@ function setZoom(val){
   var caps=track.getCapabilities();
   if(caps.zoom){
     var min=caps.zoom.min, max=caps.zoom.max;
-    var z=min+(max-min)*((val-1)/4);
+    var z=min+(max-min)*((val-1)/9);
     track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
   }
 }
