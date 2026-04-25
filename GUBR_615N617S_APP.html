@@ -999,7 +999,7 @@ function processVoiceInput(raw) {
     var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
     showVoiceToast('✅ ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | ⚠XRAY':''));
     if (navigator.vibrate) navigator.vibrate([80,40,80]);
-    var msg = '실번호 ' + r.seal + ' 입니다.';
+    var msg = '실번호 ' + sealToSpeech(r.seal) + ' 입니다.';
     if (isXray) {
       speakThen(msg, '엑스레이 대상입니다. 실 달아주세요.');
     } else {
@@ -1022,6 +1022,16 @@ function getFemaleVoice() {
     }
   }
   return pick;
+}
+function sealToSpeech(seal) {
+  var numMap = {'0':'공','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+  var result = '';
+  for (var i=0; i<seal.length; i++) {
+    var c = seal[i];
+    if (numMap[c]) result += numMap[c] + ' ';
+    else result += c + ' ';
+  }
+  return result.trim();
 }
 function speak(text) {
   if (!window.speechSynthesis) return;
