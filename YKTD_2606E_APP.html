@@ -72,6 +72,11 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .xr-val{color:#C00000;font-weight:700}
 .empty{text-align:center;padding:40px 0;color:#aaa}
 .empty .icon{font-size:40px;margin-bottom:8px}
+
+.xray-banner{background:#FFE0E0;color:#C00000;font-size:11px;font-weight:700;padding:5px 12px;border-left:5px solid #C00000}
+.xray-seal-box{background:#fff8f8;border:1.5px solid #ffcccc;border-radius:8px;padding:8px 12px;margin-top:8px}
+.xray-seal-title{font-size:11px;color:#C00000;font-weight:700;margin-bottom:6px}
+.xray-seal-inp{padding:6px 10px;border:2px solid #C00000;border-radius:6px;font-size:13px;font-family:monospace;flex:1;font-weight:700}
 .sum-bar{position:sticky;bottom:0;background:#1F3864;color:#fff;padding:8px 14px;font-size:11px;display:flex;flex-wrap:wrap;gap:8px;z-index:99}
 .sum-bar span{opacity:.85}
 .sum-bar b{color:#FFD966}
@@ -260,37 +265,55 @@ function renderCard(r){
   const hdrCls='card-hdr'+(isXr?' xray':isRf?' rf':'');
   const szBadge='badge '+(r.size==='40HQ'?'hq':r.size==='20DC'?'dc':'rf');
   const sp=r.special?`<tr><td>특수화물</td><td><span class="${isXr?'xr-val':'sp-val'}">${r.special}</span></td></tr>`:'';
-  return `<div class="card" id="card${r.no}">
-    <div class="${hdrCls}" onclick="tog(${r.no})">
-      <span style="color:#888;font-size:12px;min-width:28px">#${r.no}</span>
-      <span class="cntr-no">${r.cntr}</span>
-      <span class="${szBadge}">${r.size}</span>
-      ${isXr?'<span class="badge xray">XRAY</span>':''}
-      ${isRf?`<span class="badge rf">🧊${r.rf}</span>`:''}
-    </div>
-    <div class="detail" id="d${r.no}">
-      <table>
-        <tr><td>실번호</td><td>
-          <div id="sv${r.no}" class="seal-wrap">
-            <span class="seal-val seal-big" id="sval${r.no}">${r.seal||'- '}</span>
-            ${r.seal&&r.seal!==r._origSeal?'<span class="mod-badge">수정됨</span>':''}
-            <button class="edit-btn" onclick="startEdit(${r.no});event.stopPropagation()">✏️</button>
-          </div>
-          <div id="se${r.no}" class="edit-inp">
-            <input id="si${r.no}" type="text" value="${r.seal}" onclick="event.stopPropagation()">
-            <button class="save-btn" onclick="saveSeal(${r.no});event.stopPropagation()">저장</button>
-            <button class="cancel-btn" onclick="cancelEdit(${r.no});event.stopPropagation()">취소</button>
-          </div>
-        </td></tr>
-        <tr><td>규격</td><td>${r.size} / ${r.fe==='F'?'FULL':'EMPTY'}</td></tr>
-        <tr><td>선내위치</td><td><span class="pos-val">${r.pos}</span></td></tr>
-        <tr><td>중량</td><td>${fmtWgt(r.wgt)}</td></tr>
-        <tr><td>오퍼레이터</td><td>${r.oper}</td></tr>
-        <tr><td>구분</td><td>${r.gui}</td></tr>
-        ${sp}
-      </table>
-    </div>
-  </div>`;
+  var xraySealBox = isXr ? (
+    '<div class="xray-seal-box">'+
+    '<div class="xray-seal-title">🔴 세관봉인 실번호 입력</div>'+
+    '<div id="xsv'+r.no+'" class="seal-wrap">'+
+      '<span class="seal-val" style="color:#C00000" id="xsval'+r.no+'">'+(r.xray_seal||'미입력')+'</span>'+
+      (r.xray_seal?'<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>':'')+
+      '<button class="edit-btn" style="border-color:#C00000;color:#C00000" onclick="startXraySeal('+r.no+');event.stopPropagation()">✏️</button>'+
+    '</div>'+
+    '<div id="xse'+r.no+'" class="edit-inp" style="display:none">'+
+      '<input id="xsi'+r.no+'" type="text" placeholder="봉인SEAL 번호" class="xray-seal-inp" onclick="event.stopPropagation()">'+
+      '<button class="save-btn" style="background:#C00000" onclick="saveXraySeal('+r.no+');event.stopPropagation()">저장</button>'+
+      '<button class="cancel-btn" onclick="cancelXraySeal('+r.no+');event.stopPropagation()">취소</button>'+
+    '</div>'+
+    '</div>'
+  ) : '';
+  var xrayBanner = isXr ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
+  return '<div class="card" id="card'+r.no+'">' +
+    xrayBanner +
+    '<div class="'+hdrCls+'" onclick="tog('+r.no+')">'+
+      '<span style="color:#888;font-size:12px;min-width:28px">#'+r.no+'</span>'+
+      '<span class="cntr-no">'+r.cntr+'</span>'+
+      '<span class="'+szBadge+'">'+r.size+'</span>'+
+      (isXr?'<span class="badge xray">XRAY</span>':'')+
+      (isRf?'<span class="badge rf">🧊'+r.rf+'</span>':'')+
+    '</div>'+
+    '<div class="detail" id="d'+r.no+'">'+
+      '<table>'+
+        '<tr><td>실번호</td><td>'+
+          '<div id="sv'+r.no+'" class="seal-wrap">'+
+            '<span class="seal-val seal-big" id="sval'+r.no+'">'+( r.seal||'- ')+'</span>'+
+            (r.seal&&r.seal!==r._origSeal?'<span class="mod-badge">수정됨</span>':'')+
+            '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️</button>'+
+          '</div>'+
+          '<div id="se'+r.no+'" class="edit-inp" style="display:none">'+
+            '<input id="si'+r.no+'" type="text" value="'+r.seal+'" onclick="event.stopPropagation()">'+
+            '<button class="save-btn" onclick="saveSeal('+r.no+');event.stopPropagation()">저장</button>'+
+            '<button class="cancel-btn" onclick="cancelEdit('+r.no+');event.stopPropagation()">취소</button>'+
+          '</div>'+
+        '</td></tr>'+
+        '<tr><td>규격</td><td>'+r.size+' / '+(r.fe==='F'?'FULL':'EMPTY')+'</td></tr>'+
+        '<tr><td>선내위치</td><td><span class="pos-val">'+r.pos+'</span></td></tr>'+
+        '<tr><td>중량</td><td>'+fmtWgt(r.wgt)+'</td></tr>'+
+        '<tr><td>오퍼레이터</td><td>'+r.oper+'</td></tr>'+
+        '<tr><td>구분</td><td>'+r.gui+'</td></tr>'+
+        (r.special?'<tr><td>특수화물</td><td><span class="'+(isXr?'xr-val':'sp-val')+'">'+r.special+'</span></td></tr>':'')+
+      '</table>'+
+      xraySealBox+
+    '</div>'+
+  '</div>';
 }
 
 function render(){
@@ -322,9 +345,73 @@ function saveSeal(no){
   if(sv) sv.style.display='flex';
 }
 
+
+function startXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  var inp=document.getElementById('xsi'+no);
+  var r=DATA.find(function(x){return x.no===no;});
+  if(sv) sv.style.display='none';
+  if(se) se.style.display='flex';
+  if(inp&&r) inp.value=r.xray_seal||'';
+  if(inp) inp.focus();
+}
+function cancelXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  if(se) se.style.display='none';
+  if(sv) sv.style.display='flex';
+}
+function saveXraySeal(no){
+  var inp=document.getElementById('xsi'+no);
+  if(!inp) return;
+  var v=inp.value.trim().toUpperCase();
+  var r=DATA.find(function(x){return x.no===no;});
+  if(!r) return;
+  r.xray_seal=v;
+  // DOM만 업데이트 - detail 닫힘 방지
+  var se=document.getElementById('xse'+no);
+  var sv=document.getElementById('xsv'+no);
+  var xval=document.getElementById('xsval'+no);
+  if(se) se.style.display='none';
+  if(xval) xval.textContent=v||'미입력';
+  if(sv) sv.style.display='flex';
+}
 document.querySelectorAll('.tab').forEach(t=>{
   t.addEventListener('click',()=>{
-    document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+    
+function startXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  var inp=document.getElementById('xsi'+no);
+  var r=DATA.find(function(x){return x.no===no;});
+  if(sv) sv.style.display='none';
+  if(se) se.style.display='flex';
+  if(inp&&r) inp.value=r.xray_seal||'';
+  if(inp) inp.focus();
+}
+function cancelXraySeal(no){
+  var sv=document.getElementById('xsv'+no);
+  var se=document.getElementById('xse'+no);
+  if(se) se.style.display='none';
+  if(sv) sv.style.display='flex';
+}
+function saveXraySeal(no){
+  var inp=document.getElementById('xsi'+no);
+  if(!inp) return;
+  var v=inp.value.trim().toUpperCase();
+  var r=DATA.find(function(x){return x.no===no;});
+  if(!r) return;
+  r.xray_seal=v;
+  // DOM만 업데이트 - detail 닫힘 방지
+  var se=document.getElementById('xse'+no);
+  var sv=document.getElementById('xsv'+no);
+  var xval=document.getElementById('xsval'+no);
+  if(se) se.style.display='none';
+  if(xval) xval.textContent=v||'미입력';
+  if(sv) sv.style.display='flex';
+}
+document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
     t.classList.add('active');curFilter=t.dataset.f;render();
   });
 });
