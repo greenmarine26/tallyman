@@ -314,7 +314,7 @@ document.getElementById('loginPw').addEventListener('keydown', function(e){ if(e
 // ── 데이터 ──────────────────────────────────────
 var DATA = JSON.parse(document.getElementById('JDATA').textContent);
 var origSeal = {};
-DATA.forEach(function(r){ origSeal[r.no] = r.seal; });
+DATA.forEach(function(r){ origSeal[r.no] = r.seal; }); // 베이플랜 원본 고정
 
 var curFilter = 'all', curQuery = '';
 
@@ -325,6 +325,8 @@ function matches(r, q, f){
   if(f === 'all')    return true;
   if(f === 'remain') return !r.checked;
   if(f === 'done')   return !!r.checked;
+  // 전체/기타 탭에서는 완료된 것 제외
+  if(!!r.checked) return false;
   if(f === 'SP')     return !!r.special;
   if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
   if(f === 'XRAY')   return r.special === 'XRAY';
@@ -505,7 +507,7 @@ function saveXraySeal(no){
   var inp = document.getElementById('xsi'+no);
   if(!inp) return;
   var v = inp.value.trim().toUpperCase();
-  if(!v){ alert('봉인SEAL 번호를 입력하세요'); return; }
+  // 공백도 저장 가능 (교대 시 초기화 용도)
   var r = null;
   for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
   if(!r) return;
@@ -568,8 +570,8 @@ function loadFromSheets(){
           var row = res.data[i];
           for(var j=0;j<DATA.length;j++){
             if(DATA[j].no === row.no){
-              if(row.seal){ DATA[j].seal = row.seal; origSeal[row.no] = row.seal; }
-              if(row.xray_seal) DATA[j].xray_seal = row.xray_seal;
+              if(row.seal) DATA[j].seal = row.seal;
+              if(row.xray_seal !== undefined) DATA[j].xray_seal = row.xray_seal;
               if(row.checked) DATA[j].checked = row.checked;
               break;
             }
