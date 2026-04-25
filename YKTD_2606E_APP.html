@@ -124,7 +124,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
       <!-- 줌 슬라이더 -->
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <span style="color:#FFD700;font-size:13px;white-space:nowrap">🔍 줌</span>
-        <input id="zoomSlider" type="range" min="1" max="10" step="0.1" value="1"
+        <input id="zoomSlider" type="range" min="1" max="30" step="0.5" value="1"
           style="flex:1;accent-color:#FFD700;height:4px;cursor:pointer"
           oninput="setZoom(this.value)">
         <span id="zoomVal" style="color:#FFD700;font-size:13px;font-weight:700;min-width:28px;text-align:right">1x</span>
@@ -460,11 +460,10 @@ function startAutoScan(){
   camTimer=setInterval(function(){ if(!camBusy) doOCR(); },3000);
 }
 
-// 이미지 전처리 - 경량 버전 (폰 최적화)
+// 이미지 전처리 - 줌 레벨에 따른 화질 보상
 function preprocessCanvas(srcCanvas){
   var w=srcCanvas.width, h=srcCanvas.height;
   var dst=document.createElement('canvas');
-  // 고정 크기로 제한 (너무 크면 느림)
   var maxW=1200;
   var scale=w>maxW ? maxW/w : 1;
   dst.width=Math.round(w*scale);
@@ -472,104 +471,130 @@ function preprocessCanvas(srcCanvas){
   var ctx=dst.getContext('2d');
   ctx.imageSmoothingEnabled=true;
   ctx.imageSmoothingQuality='high';
-  // Canvas 필터로 샤프닝 (GPU 가속, 빠름)
-  ctx.filter='contrast(1.4) brightness(1.05)';
+
+  // 줌 레벨에 따라 대비/선명도 강화
+  var z=currentZoom||1;
+  var contrast, brightness, saturate;
+  if(z<=3){
+    contrast=1.3; brightness=1.0; saturate=1.0;
+  } else if(z<=10){
+    // 중간 줌 - 대비 강화
+    contrast=1.6; brightness=1.05; saturate=0.8;
+  } else {
+    // 고배율 - 강한 대비 + 선명도 최대
+    contrast=2.0; brightness=1.1; saturate=0.5;
+  }
+  ctx.filter='contrast('+contrast+') brightness('+brightness+') saturate('+saturate+')';
   ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
   ctx.filter='none';
+
+  // 고배율(10x 이상)일 때 이진화로 노이즈 제거
+  if(z>=10){
+    var imgData=ctx.getImageData(0,0,dst.width,dst.height);
+    var d=imgData.data;
+    for(var i=0;i<d.length;i+=4){
+      var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      var bin=gray>128?255:0;
+      d[i]=d[i+1]=d[i+2]=bin;
+      d[i+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+  }
   return dst;
 }
 
-function doOCR(){
+function doOCR(callback){
   var video=document.getElementById('camVideo');
   var canvas=document.getElementById('camCanvas');
-  if(!video.srcObject||video.paused||video.videoWidth===0) return;
+  if(!video.srcObject||video.paused||video.videoWidth===0){
+    if(callback) callback(); return;
+  }
   camBusy=true;
   var el=document.getElementById('camResult');
   var guide=document.getElementById('camGuide');
-
   var vw=video.videoWidth, vh=video.videoHeight;
-
-  // 스캔박스 영역만 크롭 (화면의 중앙 22% 높이, 90% 너비)
-  var cropX=Math.round(vw*0.05);
-  var cropW=Math.round(vw*0.90);
-  var cropY=Math.round(vh*0.39);  // 중앙 기준 위아래 11%
-  var cropH=Math.round(vh*0.22);
-
-  canvas.width=cropW;
-  canvas.height=cropH;
+  var cropX=Math.round(vw*0.05), cropW=Math.round(vw*0.90);
+  var cropY=Math.round(vh*0.39), cropH=Math.round(vh*0.22);
+  canvas.width=cropW; canvas.height=cropH;
   var ctx=canvas.getContext('2d');
-  ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
-
-  // 전처리 캔버스 생성
+  ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
   var processed=preprocessCanvas(canvas);
 
-  guide.textContent='🔍 인식 중...';
-
-  // PSM 6: 단일 텍스트 블록, PSM 11: 낱글자 — 둘 다 시도
   Tesseract.recognize(processed,'eng',{
     logger:function(){},
-    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode:'11',
+    tessedit_char_whitelist:'0123456789',
+    tessedit_pageseg_mode:'7',
     preserve_interword_spaces:'0'
-  }).then(function(r1){
-    var found=parseCntr(r1.data.text);
+  }).then(function(r){
+    var nums=r.data.text.replace(/[^0-9]/g,'');
+    var found=findByNumbers(nums);
     if(found){
-      handleFound(found,el,guide);
+      var match=DATA.find(function(d){return d.cntr===found;});
+      if(match&&found!==camLast){
+        camLast=found;
+        el.textContent='✅ '+match.cntr+' 인식됨!';
+        el.style.color='#FFD700';
+        guide.textContent='✅ 찾았습니다!';
+        if(navigator.vibrate) navigator.vibrate([80,40,80]);
+        setTimeout(function(){ applySearch(match.cntr); closeCamera(); },700);
+      }
     } else {
-      guide.textContent='🔍 자동 스캔 중...';
       el.textContent='';
+      if(!callback) guide.textContent='🔍 자동 스캔 중...';
     }
     camBusy=false;
-  }).catch(function(){ camBusy=false; });
+    if(callback) callback();
+  }).catch(function(){ camBusy=false; if(callback) callback(); });
 }
 
-function handleFound(found,el,guide){
-  var match=DATA.find(function(r){return r.cntr===found;});
-  if(match&&found!==camLast){
-    camLast=found;
-    el.textContent='✅ '+match.cntr+' 인식됨!';
-    el.style.color='#FFD700';
-    guide.textContent='✅ 찾았습니다!';
-    if(navigator.vibrate) navigator.vibrate([80,40,80]);
-    setTimeout(function(){ applySearch(match.cntr); closeCamera(); },700);
-  } else if(!match){
-    el.textContent='⚠ '+found+' — 목록에 없음';
-    el.style.color='#FFA500';
+function findByNumbers(nums){
+  if(nums.length<4) return null;
+  if(nums.length>=7){
+    var last7=nums.slice(-7);
+    for(var i=0;i<DATA.length;i++){
+      if(DATA[i].cntr.slice(-7)===last7) return DATA[i].cntr;
+    }
   }
+  var last4=nums.slice(-4);
+  var matches=[];
+  for(var i=0;i<DATA.length;i++){
+    if(DATA[i].cntr.slice(-4)===last4) matches.push(DATA[i].cntr);
+  }
+  if(matches.length===1) return matches[0];
+  return null;
 }
 
+function captureNow(){
+  if(camTimer){clearInterval(camTimer);camTimer=null;}
+  camBusy=false;
+  var guide=document.getElementById('camGuide');
+  var el=document.getElementById('camResult');
+  var video=document.getElementById('camVideo');
+  video.style.opacity='0.35';
+  guide.textContent='📷 분석중... 잠시 기다리세요';
+  el.textContent='';
+  el.style.color='#FFD700';
+  doOCR(function(){
+    video.style.opacity='1';
+    startAutoScan();
+  });
+}
+
+var currentZoom=1;
 function setZoom(val){
   var v=parseFloat(val);
+  currentZoom=v;
   document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
   if(!camStream) return;
   var track=camStream.getVideoTracks()[0];
   if(!track) return;
+  // 하드웨어 줌 시도
   var caps=track.getCapabilities ? track.getCapabilities() : {};
   if(caps.zoom){
     var min=caps.zoom.min, max=caps.zoom.max;
-    var z=min+(max-min)*((v-1)/9);
+    var z=min+(max-min)*((v-1)/29);
     track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
   }
-}
-
-function captureNow(){
-  // 자동스캔 멈추기
-  if(camTimer){clearInterval(camTimer);camTimer=null;}
-  camBusy=false;
-  // 분석중 UI 표시
-  var guide=document.getElementById('camGuide');
-  var el=document.getElementById('camResult');
-  var video=document.getElementById('camVideo');
-  // 화면 정지 효과 - 밝기 낮춤
-  video.style.filter='brightness(0.5)';
-  guide.textContent='📷 촬영됨 — 분석중...';
-  el.textContent='';
-  el.style.color='#FFD700';
-  doOCR(function(){
-    // 분석 완료 후 카메라 복구 및 자동스캔 재시작
-    video.style.filter='none';
-    startAutoScan();
-  });
 }
 
 function applySearch(cntr){
