@@ -639,18 +639,14 @@ function undoCheck(no){
 
 // ── Google Sheets 연동 ────────────────────────────
 function loadFromSheets(){
-  var btn = document.getElementById("refreshBtn");
-  if(btn){ btn.style.opacity='0.4'; btn.disabled=true; }
   var xhr = new XMLHttpRequest();
   xhr.open('GET', GAS_URL+'?action=getData&mode='+curMode, true);
   xhr.timeout = 10000;
   xhr.ontimeout = function(){
-    if(btn){ btn.style.opacity='1'; btn.disabled=false; }
     alert('서버 응답 없음. 네트워크 확인하세요.');
   };
   xhr.onreadystatechange = function(){
     if(xhr.readyState !== 4) return;
-    if(btn){ btn.style.opacity='1'; btn.disabled=false; }
     if(xhr.status !== 200){ alert('로드 실패 ('+xhr.status+')'); return; }
     try{
       var res = JSON.parse(xhr.responseText);
