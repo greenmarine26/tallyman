@@ -76,7 +76,7 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .sum-bar span{opacity:.85}
 .sum-bar b{color:#FFD966}
 </style>
-
+<!-- Gemini API 사용 중 -->
 </head>
 <body>
 <!-- 카메라 조회 모달 - 상단 카드형 -->
@@ -384,12 +384,13 @@ function doLogout(){
   setTimeout(()=>document.getElementById('nameInp').focus(),100);
 }
 
-// ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
-const VISION_API_KEY='AIzaSyCXy4PaX5aVYFvQsIrlOQALaKWMAoB3FBc';
-let camStream=null,camTimer=null,camBusy=false,camLast='';
+// ── 카메라 조회 (Gemini API) ────────
+var GEMINI_KEY='AIzaSyDPRM3bRGusAwhyhjGGka2K1m2r6c5gJKY';
+var GEMINI_URL='https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+GEMINI_KEY;
+var camStream=null,camTimer=null,camBusy=false,camLast='';
 
 function openCamera(){
-  const m=document.getElementById('camModal');
+  var m=document.getElementById('camModal');
   m.style.display='flex'; m.style.flexDirection='column';
   document.getElementById('camResult').textContent='';
   document.getElementById('camManual').value='';
@@ -405,16 +406,14 @@ function closeCamera(){
 function startCam(){
   navigator.mediaDevices.getUserMedia({
     video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}
-  }).then(stream=>{
+  }).then(function(stream){
     camStream=stream;
-    const v=document.getElementById('camVideo');
+    var v=document.getElementById('camVideo');
     v.srcObject=stream;
-    // 여러 이벤트로 확실하게 시작
-    v.onloadedmetadata=()=>{ v.play(); };
-    v.onplaying=()=>{ startAutoScan(); };
-    // 3초 후에도 안 시작되면 강제 시작
-    setTimeout(()=>{ if(!camTimer) startAutoScan(); }, 3000);
-  }).catch(err=>{
+    v.onloadedmetadata=function(){ v.play(); };
+    v.onplaying=function(){ startAutoScan(); };
+    setTimeout(function(){ if(!camTimer) startAutoScan(); }, 3000);
+  }).catch(function(err){
     document.getElementById('camResult').style.color='#FF6B6B';
     document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
   });
@@ -422,79 +421,85 @@ function startCam(){
 
 function stopCam(){
   if(camTimer){clearInterval(camTimer);camTimer=null;}
-  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
+  if(camStream){camStream.getTracks().forEach(function(t){t.stop();});camStream=null;}
   camBusy=false;
 }
 
 function startAutoScan(){
   if(camTimer) clearInterval(camTimer);
-  document.getElementById('camGuide').textContent='🔍 자동 스캔 중...';
-  camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
+  document.getElementById('camGuide').textContent='🔍 자동 스캔 중... (Gemini)';
+  camTimer=setInterval(function(){ if(!camBusy) doOCR(); },2500);
 }
 
 function doOCR(){
-  const video=document.getElementById('camVideo');
-  const canvas=document.getElementById('camCanvas');
+  var video=document.getElementById('camVideo');
+  var canvas=document.getElementById('camCanvas');
   if(!video.srcObject||video.paused||video.videoWidth===0) return;
   camBusy=true;
+  var el=document.getElementById('camResult');
+  var guide=document.getElementById('camGuide');
 
-  // 캡처
   canvas.width=video.videoWidth;
   canvas.height=video.videoHeight;
-  canvas.getContext('2d').drawImage(video,0,0);
+  var ctx=canvas.getContext('2d');
+  ctx.drawImage(video,0,0);
 
-  // base64로 변환 (JPEG, 품질 0.9)
-  const base64=canvas.toDataURL('image/jpeg',0.9).split(',')[1];
+  // jpeg로 압축해서 base64 추출
+  var b64=canvas.toDataURL('image/jpeg',0.85).split(',')[1];
 
-  // Google Vision API 호출
-  fetch('https://vision.googleapis.com/v1/images:annotate?key='+VISION_API_KEY,{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({
-      requests:[{
-        image:{content:base64},
-        features:[{type:'TEXT_DETECTION',maxResults:10}]
-      }]
-    })
-  })
-  .then(r=>r.json())
-  .then(data=>{
-    const el=document.getElementById('camResult');
-    const guide=document.getElementById('camGuide');
-    const texts=data.responses&&data.responses[0]&&data.responses[0].textAnnotations;
-    if(texts&&texts.length>0){
-      const fullText=texts[0].description||'';
-      const found=parseCntr(fullText);
-      if(found){
-        const match=DATA.find(r=>r.cntr===found);
-        if(match&&found!==camLast){
-          camLast=found;
-          el.textContent='✅  '+match.cntr+'  인식됨!';
-          el.style.color='#FFD700';
-          guide.textContent='✅ 찾았습니다!';
-          if(navigator.vibrate) navigator.vibrate([80,40,80]);
-          setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
-        } else if(!match){
-          el.textContent='⚠ '+found+' — 목록에 없음';
-          el.style.color='#FFA500';
+  guide.textContent='🤖 Gemini 분석 중...';
+
+  var payload={
+    contents:[{parts:[
+      {inline_data:{mime_type:'image/jpeg',data:b64}},
+      {text:'이 이미지에서 컨테이너 번호를 찾아주세요. 컨테이너 번호는 영문 4자리+숫자 7자리 형식입니다 (예: ABCD1234567). 컨테이너 번호만 대문자로 답해주세요. 없으면 NONE이라고만 답하세요.'}
+    ]}]
+  };
+
+  var xhr=new XMLHttpRequest();
+  xhr.open('POST',GEMINI_URL,true);
+  xhr.setRequestHeader('Content-Type','application/json');
+  xhr.onreadystatechange=function(){
+    if(xhr.readyState!==4) return;
+    if(xhr.status===200){
+      try{
+        var res=JSON.parse(xhr.responseText);
+        var txt=res.candidates[0].content.parts[0].text.trim().toUpperCase();
+        var found=parseCntr(txt);
+        if(found){
+          var match=DATA.find(function(r){return r.cntr===found;});
+          if(match&&found!==camLast){
+            camLast=found;
+            el.textContent='✅ '+match.cntr+' 인식됨!';
+            el.style.color='#FFD700';
+            guide.textContent='✅ 찾았습니다!';
+            if(navigator.vibrate) navigator.vibrate([80,40,80]);
+            setTimeout(function(){ applySearch(match.cntr); closeCamera(); },700);
+          } else if(!match){
+            el.textContent='⚠ '+found+' — 목록에 없음';
+            el.style.color='#FFA500';
+            guide.textContent='🔍 자동 스캔 중... (Gemini)';
+          }
         } else {
-          guide.textContent='🔍 자동 스캔 중...';
+          guide.textContent='🔍 자동 스캔 중... (Gemini)';
           el.textContent='';
         }
-      } else {
-        guide.textContent='🔍 자동 스캔 중...';
-        el.textContent='';
+      }catch(e){
+        guide.textContent='⚠ 응답 오류 — 다시 시도';
       }
     } else {
-      guide.textContent='🔍 자동 스캔 중...';
+      el.style.color='#FF6B6B';
+      el.textContent='⚠ API 오류 '+xhr.status;
+      guide.textContent='🔍 자동 스캔 중... (Gemini)';
     }
     camBusy=false;
-  })
-  .catch(()=>{ camBusy=false; });
+  };
+  xhr.send(JSON.stringify(payload));
 }
+
 function captureNow(){
   camBusy=false;
-  document.getElementById('camGuide').textContent='🔍 인식 중...';
+  document.getElementById('camGuide').textContent='🤖 Gemini 분석 중...';
   doOCR();
 }
 
