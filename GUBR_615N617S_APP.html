@@ -1119,5 +1119,19 @@ function showVoiceToast(msg) {
 }
 
 </script>
+<!-- 크롬 브라우저 확인 -->
+<script>
+(function() {
+  var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  var isSamsung = /SamsungBrowser/.test(navigator.userAgent);
+  var isEdge = /Edg/.test(navigator.userAgent);
+  if (!isChrome || isSamsung || isEdge) {
+    var div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C00000;color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+    div.innerHTML = '⚠ 이 앱은 <u>크롬(Chrome) 브라우저</u>에서만 정상 작동합니다.<br>삼성/코멧 브라우저는 음성기능이 지원되지 않습니다.';
+    document.body.insertBefore(div, document.body.firstChild);
+  }
+})();
+</script>
 </body>
 </html>
