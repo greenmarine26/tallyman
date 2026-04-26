@@ -2,792 +2,857 @@
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>YKTD 2606E</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>YKTD 2606E 양하</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color:#222}
-.hdr{background:linear-gradient(135deg,#1F3864,#2E75B6);color:#fff;padding:10px 14px;position:sticky;top:0;z-index:99;box-shadow:0 2px 8px rgba(0,0,0,.3)}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
+/* ── 로그인 ── */
+#loginWrap{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.login-title{font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:24px;}
+.login-label{font-size:12px;color:#555;font-weight:700;margin-bottom:6px;display:block;}
+.login-inp{width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;}
+.login-inp:focus{border-color:#2e6da4;}
+.login-btn{width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;}
+.login-err{color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none;}
+/* ── 헤더 ── */
+.hdr{background:linear-gradient(135deg,#1a3a6b,#2e6da4);color:#fff;padding:10px 14px 8px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-size:14px;font-weight:700;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
+.hdr-user{font-size:10px;opacity:.8;margin-top:2px;}
+/* ── 통계바 ── */
+.sum-bar{background:#1a3a6b;color:#fff;padding:7px 12px;font-size:11px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;border-top:1px solid rgba(255,255,255,.1);}
+.sum-bar span{opacity:.9;}
+.sum-bar b{opacity:1;}
+.sum-bar .done-cnt{color:#7BFF7B;}
+.sum-bar .remain-cnt{color:#FFD700;}
+/* ── 검색창 ── */
+.search-wrap{padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:56px;z-index:99;display:flex;align-items:center;gap:8px;}
+#inp{flex:1;padding:10px 14px;font-size:18px;border:2px solid #2e6da4;border-radius:8px;outline:none;letter-spacing:2px;font-weight:700;text-align:center;}
+#searchIconBtn{display:none;background:#1F3864;border:none;color:#fff;border-radius:8px;padding:10px 14px;font-size:18px;cursor:pointer;flex-shrink:0;}
+/* ── 탭 ── */
+.tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e0e8f0;padding:0 8px;gap:4px;scrollbar-width:none;position:sticky;top:112px;z-index:98;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:7px 12px;font-size:12px;font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;border:none;background:transparent;color:#666;}
+.tab.active{background:#2e6da4;color:#fff;}
+/* ── 결과바 ── */
+.result-bar{padding:5px 12px;font-size:11px;color:#666;background:#f8fafc;border-bottom:1px solid #e8edf2;}
+/* ── 카드 ── */
+.list{padding:8px;}
+.card{border-radius:10px;margin-bottom:7px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);background:#fff;}
+.card.done-card{opacity:.6;}
+.card-main{display:flex;align-items:stretch;border-left:5px solid #2e6da4;cursor:pointer;}
+.card-main.xray-c{border-left-color:#cc0000;background:#fffef0;}
+.card-left{padding:8px 10px;flex:1;min-width:0;}
+.card-no{font-size:10px;color:#888;font-weight:600;}
+.card-cntr{font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
+.card-seal{font-size:13px;color:#1a3a6b;font-weight:700;margin-top:2px;font-family:monospace;}
+.card-seal.modified{color:#c05000;}
+.card-right{padding:8px 10px;text-align:right;display:flex;flex-direction:column;justify-content:space-between;min-width:100px;gap:4px;}
+.card-pos{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;background:#e8f0fb;border-radius:5px;padding:2px 6px;display:inline-block;}
+.card-oper{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#d9e1f2;color:#1a3a6b;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.tag.rf{background:#d4edda;color:#155724;}
+.tag.xray{background:#cc0000;color:#fff;}
+.tag.sp{background:#fff0d0;color:#7a4000;}
+/* ── 확인(완료) 버튼 ── */
+.chk-btn{background:#28a745;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:4px;}
+.chk-btn.done{background:#6c757d;}
+.done-badge{background:#28a745;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:4px;}
+.undo-btn{background:#dc3545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+/* ── 디테일 ── */
+.detail{display:none;padding:10px 14px;background:#f8fafc;border-top:1px dashed #ccd;}
+.detail table{width:100%;border-collapse:collapse;font-size:11px;}
+.detail td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:middle;}
+.detail td:first-child{color:#666;font-weight:600;width:80px;}
+/* ── 실번호 수정 ── */
+.seal-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.seal-val{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;}
+.seal-val.modified{color:#c05000;}
+.edit-btn{background:#fff;border:1px solid #2e6da4;color:#2e6da4;border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;}
+.edit-inp{display:none;align-items:center;gap:6px;margin-top:4px;}
+.seal-input{padding:6px 10px;border:2px solid #2e6da4;border-radius:6px;font-size:14px;font-family:monospace;width:160px;font-weight:700;}
+.save-btn{background:#2e6da4;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+.cancel-btn{background:#999;color:#fff;border:none;border-radius:5px;padding:6px 10px;font-size:12px;cursor:pointer;}
+.mod-badge{font-size:9px;background:#fff0d0;color:#7a4000;padding:1px 5px;border-radius:8px;font-weight:700;}
+/* ── XRAY 봉인SEAL ── */
+.xray-banner{background:#cc0000;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:700;}
+.xray-seal-box{background:#fff8f8;border:2px solid #cc0000;border-radius:8px;padding:10px;margin-top:8px;}
+.xray-seal-title{color:#cc0000;font-size:11px;font-weight:700;margin-bottom:6px;}
+.xray-seal-row{display:flex;align-items:center;gap:6px;}
+.xray-seal-inp{padding:6px 10px;border:2px solid #cc0000;border-radius:6px;font-size:13px;font-family:monospace;flex:1;font-weight:700;}
+.xray-save-btn{background:#cc0000;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+/* ── 카메라 모달 ── */
+#camModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);flex-direction:column;align-items:center;justify-content:center;padding:0;}
+.cam-wrap{width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.7);border:1.5px solid rgba(255,215,0,.35);}
+.cam-view{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000;}
+#camVideo{width:100%;height:100%;object-fit:cover;transition:transform .15s;}
+#camCanvas{display:none;}
+.cam-titlebar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);}
+.cam-scan-label{color:#FFD700;font-size:13px;font-weight:800;}
+.cam-close-btn{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;}
+.cam-guide-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cam-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.cam-scanbox{position:relative;z-index:1;width:92%;height:30%;border:2.5px solid #FFD700;border-radius:8px;box-shadow:0 0 0 2px rgba(255,215,0,.3);}
+.cam-bottom{background:#111;padding:12px 14px;}
+.cam-result{color:#FFD700;font-size:13px;font-weight:700;text-align:center;min-height:18px;margin-bottom:8px;}
+.cam-guide{color:#aaa;font-size:11px;text-align:center;margin-bottom:10px;}
+.cam-zoom-row{display:flex;align-items:center;gap:8px;}
+.cam-zoom-label{color:#fff;font-size:11px;font-weight:700;min-width:35px;}
+#zoomSlider{flex:1;height:4px;accent-color:#FFD700;}
+#zoomVal{color:#FFD700;font-size:11px;font-weight:700;min-width:38px;text-align:right;}
+.cam-manual-row{display:flex;gap:6px;margin-top:8px;}
+#camManual{flex:1;padding:8px 12px;border:1.5px solid #444;border-radius:8px;font-size:16px;background:#222;color:#fff;text-align:center;letter-spacing:2px;font-family:monospace;}
+.cam-manual-btn{background:#2e6da4;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-weight:700;}
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:40px 20px;color:#aaa;}
+/* ── 완료탭 스타일 ── */
+.done-info{font-size:10px;color:#28a745;font-weight:700;margin-top:2px;}
+
 .hdr-top{display:flex;align-items:center;justify-content:space-between;}
 .hdr-company{font-size:15px;font-weight:800;letter-spacing:.5px;}
 .hdr-ship{font-size:10px;opacity:.8;margin-top:2px;}
-.hdr-btns{display:flex;gap:6px;}
-.hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
-.hdr-btn:active{opacity:0.7}
-.cam-btn{background:rgba(255,215,0,0.25);border-color:rgba(255,215,0,0.6)}
 .hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
 .hdr-user-info{display:flex;align-items:center;gap:8px;}
 .hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
 .hdr-name{font-size:13px;font-weight:700;}
 .logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
-/* 이름 입력 모달 */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center}
-.modal{background:#fff;border-radius:16px;padding:24px 20px;width:80%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
-.modal-logo{margin-bottom:10px;display:flex;justify-content:center}
-.modal-title{font-size:20px;font-weight:900;color:#1F3864;letter-spacing:1.5px;margin-bottom:2px}
-.modal-sub{font-size:11px;color:#aaa;letter-spacing:.5px;margin-bottom:20px}
-.modal-row{display:flex;align-items:center;gap:0;border:2.5px solid #2E75B6;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(46,117,182,.15)}
-.modal-row input{flex:1;padding:13px 16px;border:none;font-size:17px;font-weight:800;letter-spacing:1px;outline:none;color:#1F3864;background:#fff;text-align:center}
-.modal-row input::placeholder{color:#bbb;font-weight:400;font-size:14px;letter-spacing:0}
-.modal-enter{width:52px;background:linear-gradient(135deg,#1F3864,#2E75B6);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s}
-.modal-enter:active{opacity:.7}
-.modal-preview{margin-top:12px;text-align:center;font-size:13px;color:#2E75B6;font-weight:700;min-height:22px;letter-spacing:.5px}
-.search-wrap{padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:56px;z-index:98}
-.search-wrap input{width:100%;padding:10px 14px;font-size:18px;border:2px solid #2E75B6;border-radius:10px;outline:none;letter-spacing:2px;font-weight:700;text-align:center}
-.tabs{display:flex;overflow-x:auto;gap:6px;padding:8px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:112px;z-index:97}
-.tabs::-webkit-scrollbar{display:none}
-.tab{flex-shrink:0;padding:5px 12px;border-radius:20px;border:1px solid #ccc;font-size:12px;font-weight:600;background:#f8f8f8;cursor:pointer;white-space:nowrap}
-.tab.active{background:#1F3864;color:#fff;border-color:#1F3864}
-.result-bar{padding:6px 14px;font-size:12px;color:#555;background:#f8f9fa;border-bottom:1px solid #eee}
-.list{padding:8px 12px;display:flex;flex-direction:column;gap:6px}
-.card{background:#fff;border-radius:10px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);cursor:pointer}
-.card-hdr{display:flex;align-items:center;padding:9px 12px;gap:10px;border-left:5px solid #2E75B6}
-.card-hdr.rf{border-left-color:#00B050}
-.card-hdr.xray{border-left-color:#FF0000}
-.cntr-no{font-size:15px;font-weight:700;font-family:monospace;flex:1;letter-spacing:.5px}
-.seal-big{font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.5px;color:#1F3864}
-.badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#E9ECEF;color:#444}
-.badge.rf{background:#E2EFDA;color:#375623}
-.badge.xray{background:#FFE0E0;color:#C00000}
-.badge.hq{background:#DEEAF1;color:#1F3864}
-.badge.dc{background:#FFF2CC;color:#7F6000}
-.detail{display:none;padding:10px 14px;border-top:1px solid #f0f0f0;font-size:13px}
-.detail table{width:100%;border-collapse:collapse}
-.detail td{padding:4px 6px;border-bottom:1px solid #f5f5f5}
-.detail td:first-child{color:#888;width:80px;font-size:11px}
-.detail td:last-child{font-weight:500}
-.seal-wrap{display:flex;align-items:center;gap:6px}
-.seal-val{flex:1}
-.edit-btn{font-size:11px;padding:2px 8px;border:1px solid #2E75B6;border-radius:6px;color:#2E75B6;background:#fff;cursor:pointer}
-.edit-inp{display:none;flex:1;align-items:center;gap:4px}
-.edit-inp input{flex:1;padding:3px 8px;border:1px solid #2E75B6;border-radius:6px;font-size:13px}
-.save-btn{font-size:11px;padding:2px 8px;border:none;border-radius:6px;color:#fff;background:#2E75B6;cursor:pointer}
-.cancel-btn{font-size:11px;padding:2px 8px;border:1px solid #ccc;border-radius:6px;color:#555;background:#fff;cursor:pointer}
-.mod-badge{font-size:10px;background:#FFF2CC;color:#7F6000;border-radius:4px;padding:1px 5px;margin-left:4px}
-.pos-val{font-family:monospace;font-weight:700;font-size:14px;color:#1a3a6b}
-.sp-val{color:#7030A0;font-weight:700}
-.xr-val{color:#C00000;font-weight:700}
-.empty{text-align:center;padding:40px 0;color:#aaa}
-.empty .icon{font-size:40px;margin-bottom:8px}
-
-.xray-banner{background:#FFE0E0;color:#C00000;font-size:11px;font-weight:700;padding:5px 12px;border-left:5px solid #C00000}
-.xray-seal-box{background:#fff8f8;border:1.5px solid #ffcccc;border-radius:8px;padding:8px 12px;margin-top:8px}
-.xray-seal-title{font-size:11px;color:#C00000;font-weight:700;margin-bottom:6px}
-.xray-seal-inp{padding:6px 10px;border:2px solid #C00000;border-radius:6px;font-size:13px;font-family:monospace;flex:1;font-weight:700}
-.sum-bar{position:sticky;bottom:0;background:#1F3864;color:#fff;padding:8px 14px;font-size:11px;display:flex;flex-wrap:wrap;gap:8px;z-index:99}
-.sum-bar span{opacity:.85}
-.sum-bar b{color:#FFD966}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
 </head>
 <body>
-<!-- 카메라 조회 모달 - 상단 카드형 -->
-<div id="camModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 4% 0">
-  <div style="width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:1.5px solid rgba(255,215,0,0.35);position:relative">
 
-    <!-- 카메라 뷰 - 정사각형 -->
-    <div style="position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000">
-      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
-      <canvas id="camCanvas" style="display:none"></canvas>
+<!-- 로그인 -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">🚢 YKTD 2606E 양하검수</div>
+    <div class="login-sub">그린마린 검수팀</div>
+    <label class="login-label">이름</label>
+    <input class="login-inp" id="loginName" type="text" placeholder="이름 입력" autocomplete="off">
+    <label class="login-label">패스워드 (입사년월일 6자리)</label>
+    <input class="login-inp" id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr">이름 또는 패스워드가 올바르지 않습니다</div>
+  </div>
+</div>
 
-      <!-- 타이틀바 오버레이 -->
-      <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,0.75),transparent)">
-        <div style="color:#FFD700;font-size:13px;font-weight:800;letter-spacing:.5px">📷 컨테이너 번호 스캔</div>
-        <button onclick="closeCamera()" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;line-height:1">✕</button>
+<!-- 카메라 모달 -->
+<div id="camModal">
+  <div class="cam-wrap">
+    <div class="cam-view">
+      <video id="camVideo" autoplay playsinline></video>
+      <canvas id="camCanvas"></canvas>
+      <div class="cam-titlebar">
+        <div class="cam-scan-label">🔍 자동 스캔중</div>
+        <button class="cam-close-btn" onclick="closeCamera()">✕</button>
       </div>
-
-      <!-- 스캔 가이드 - 뷰 안에서 80% 정사각형 -->
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="position:relative;width:82%;aspect-ratio:1/1">
-          <!-- 모서리 4개 -->
-          <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:4px 0 0 0"></div>
-          <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 4px 0 0"></div>
-          <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:0 0 0 4px"></div>
-          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 0 4px 0"></div>
-          <!-- 스캔 라인 - 정사각형 안에서 좌우 꽉 -->
-          <div style="position:absolute;top:50%;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,#FFD700,transparent);animation:scanLine 2s ease-in-out infinite"></div>
+      <div class="cam-guide-wrap">
+        <div class="cam-overlay"></div>
+        <div class="cam-scanbox">
+          <div style="position:absolute;inset:-1px;border:1px dashed rgba(255,215,0,.4);border-radius:7px;"></div>
         </div>
       </div>
-
-      <!-- 안내 + 결과 오버레이 (하단) -->
-      <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
-        <div id="camResult" style="text-align:center;min-height:18px;font-size:13px;font-weight:800;letter-spacing:.5px;color:#FFD700"></div>
-        <div id="camGuide" style="text-align:center;color:rgba(255,255,255,0.55);font-size:10px;margin-top:2px">⏳ 카메라 시작 중...</div>
-      </div>
     </div>
-
-    <!-- 하단 입력 컨트롤 -->
-    <div style="padding:10px 12px 14px;background:#1a1a2e">
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="camManual" type="text" placeholder="직접 입력 (번호 또는 끝 4자리)"
-          style="flex:1;padding:9px 12px;border:1.5px solid rgba(255,215,0,0.55);border-radius:10px;font-size:14px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,0.1);color:#fff;outline:none;text-align:center"
-          oninput="camManualSearch(this.value)">
-        <button onclick="captureNow()" style="background:#FFD700;border:none;border-radius:10px;padding:9px 14px;font-size:20px;cursor:pointer">📸</button>
+    <div class="cam-bottom">
+      <div class="cam-result" id="camResult"></div>
+      <div class="cam-guide" id="camGuide">컨테이너 번호를 박스 안에 맞춰주세요</div>
+      <div class="cam-zoom-row">
+        <span class="cam-zoom-label">줌</span>
+        <input type="range" id="zoomSlider" min="1" max="30" step="0.5" value="1" oninput="setZoom(this.value)">
+        <span id="zoomVal">1.0x</span>
+      </div>
+      <div class="cam-manual-row">
+        <input id="camManual" type="tel" placeholder="끝 4자리 직접입력" maxlength="4" inputmode="numeric">
+        <button class="cam-manual-btn" onclick="camManualSearch()">검색</button>
       </div>
     </div>
   </div>
 </div>
-<style>@keyframes scanLine{0%,100%{opacity:.3;transform:scaleX(.5)}50%{opacity:1;transform:scaleX(1)}}</style>
-<!-- 이름 입력 모달 -->
-<div class="modal-bg" id="modalBg">
-  <div class="modal" style="text-align:center;padding:30px 24px">
-    <div class="modal-logo">
-<svg width="82" height="82" viewBox="0 0 82 82" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="bgG" cx="40%" cy="35%" r="60%">
-      <stop offset="0%" stop-color="#1a6b4a"/>
-      <stop offset="100%" stop-color="#0d3d2a"/>
-    </radialGradient>
-    <linearGradient id="waveG" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#81d4fa" stop-opacity="0.6"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0d3d2a" flood-opacity="0.5"/>
-    </filter>
-  </defs>
-  <!-- 원형 배경 -->
-  <circle cx="41" cy="41" r="39" fill="url(#bgG)" filter="url(#shadow)"/>
-  <circle cx="41" cy="41" r="39" fill="none" stroke="#2ecc71" stroke-width="1.5" opacity="0.4"/>
-  <!-- 외곽 링 점선 -->
-  <circle cx="41" cy="41" r="36" fill="none" stroke="#4fc3f7" stroke-width="0.6" stroke-dasharray="3 4" opacity="0.5"/>
-  <!-- 선박 실루엣 -->
-  <g filter="url(#glow)">
-    <!-- 선체 -->
-    <path d="M14 50 Q41 58 68 50 L64 56 Q41 63 18 56 Z" fill="#2ecc71" opacity="0.95"/>
-    <!-- 갑판 -->
-    <rect x="22" y="44" width="38" height="7" rx="2" fill="#27ae60"/>
-    <!-- 선교 -->
-    <rect x="34" y="34" width="14" height="11" rx="1.5" fill="#1abc9c"/>
-    <rect x="36" y="30" width="10" height="5" rx="1" fill="#16a085"/>
-    <!-- 창문 -->
-    <rect x="36" y="35" width="3" height="3" rx="0.5" fill="#4fc3f7" opacity="0.9"/>
-    <rect x="41" y="35" width="3" height="3" rx="0.5" fill="#4fc3f7" opacity="0.9"/>
-    <!-- 크레인/마스트 -->
-    <line x1="41" y1="30" x2="41" y2="20" stroke="#f1c40f" stroke-width="1.5"/>
-    <line x1="41" y1="22" x2="52" y2="28" stroke="#f1c40f" stroke-width="1"/>
-    <!-- 컨테이너들 -->
-    <rect x="23" y="39" width="9" height="6" rx="0.5" fill="#e74c3c" opacity="0.85"/>
-    <rect x="23" y="39" width="9" height="2" fill="#c0392b" opacity="0.5"/>
-    <rect x="50" y="39" width="9" height="6" rx="0.5" fill="#3498db" opacity="0.85"/>
-    <rect x="50" y="39" width="9" height="2" fill="#2980b9" opacity="0.5"/>
-  </g>
-  <!-- 파도 -->
-  <path d="M10 55 Q20 51 30 55 Q40 59 50 55 Q60 51 72 55" fill="none" stroke="url(#waveG)" stroke-width="2" opacity="0.7"/>
-  <path d="M8 59 Q19 55 30 59 Q41 63 52 59 Q63 55 74 59" fill="none" stroke="url(#waveG)" stroke-width="1.5" opacity="0.4"/>
-  <!-- 상단 텍스트 GM -->
-  <text x="41" y="17" text-anchor="middle" font-family="Arial" font-weight="900" font-size="7" fill="#2ecc71" letter-spacing="3" opacity="0.8">GREEN MARINE</text>
-</svg>
-</div>
-    <div class="modal-title">그린마린 검수팀</div>
-    <div class="modal-sub">GREEN MARINE INSPECTION</div>
-    <div class="modal-row">
-      <input id="nameInp" type="text" placeholder="사용자명 입력" maxlength="10" autocomplete="off">
-      <button class="modal-enter" onclick="setName()">↵</button>
+
+<!-- 메인 앱 (로그인 후 표시) -->
+<div id="appWrap" style="display:none">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title-wrap">
+        <div class="hdr-company">🚢 그린마린 검수팀</div>
+        <div class="hdr-ship">YKTD 2606E 양하검수 | KRPTK 평택</div>
+      </div>
+      <div class="hdr-btns">
+        <button class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
+        <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
+      </div>
     </div>
-    <div class="modal-preview" id="rolePreview"></div>
-  </div>
-</div>
-<div class="hdr">
-  <div class="hdr-top">
-    <div class="hdr-title-wrap">
-      <div class="hdr-company">🚢 그린마린 검수팀</div>
-      <div class="hdr-ship">YKTD 2606E | KRPTK 평택 | 150개</div>
-    </div>
-    <div class="hdr-btns">
-      <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
-      <button class="hdr-btn" id="voiceBtn" onclick="toggleVoice()" title="음성 검색" style="background:rgba(0,200,100,0.25);border-color:rgba(0,200,100,0.6)">🎤</button>
+    <div class="hdr-user-row">
+      <div class="hdr-user-info">
+        <span class="hdr-role" id="hdrRole">-</span>
+        <span class="hdr-name" id="hdrName">-</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
     </div>
   </div>
-  <div class="hdr-user-row" onclick="reEnterName()" style="cursor:pointer">
-    <div class="hdr-user-info">
-      <span class="hdr-role" id="userRoleDisp">-</span>
-      <span class="hdr-name" id="userNameDisp">-</span>
-    </div>
-    <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
+
+  <div class="sum-bar" id="sumBar">
+    <span>전체 <b>150</b></span>
+    <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
+    <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
+    <span>|</span>
+    <span>🔶특수 <b>14</b></span>
+    <span>🧊RF <b>13</b></span>
+    <span>⚠XRAY <b>1</b></span>
+    <span>|</span>
+    <span>SKR <b>77</b></span>
+    <span>DJS <b>38</b></span>
+    <span>HAS <b>26</b></span>
+    <span>HSL <b>7</b></span>
+    <span>DYS <b>2</b></span>
+    <span>|</span>
+    <span>20DC <b>26</b></span>
+    <span>20RF <b>2</b></span>
+    <span>40HQ <b>111</b></span>
+    <span>40RF <b>11</b></span>
   </div>
+
+  <div class="search-wrap">
+    <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric" maxlength="4">
+    <button id="searchIconBtn" onclick="toggleSearchInput()">🔍</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-f="all">전체</button>
+    <button class="tab" data-f="remain">잔여</button>
+    <button class="tab" data-f="done">✅완료</button>
+    <button class="tab" data-f="SP">🔶특수</button>
+    <button class="tab" data-f="RF">🧊리퍼</button>
+    <button class="tab" data-f="XRAY">⚠XRAY</button>
+    <button class="tab" data-f="20DC">20DC</button>
+    <button class="tab" data-f="20RF">20RF</button>
+    <button class="tab" data-f="40HQ">40HQ</button>
+    <button class="tab" data-f="40RF">40RF</button>
+    <button class="tab" data-f="SKR">SKR</button>
+    <button class="tab" data-f="DJS">DJS</button>
+    <button class="tab" data-f="HAS">HAS</button>
+  </div>
+
+  <div class="result-bar" id="rbar"></div>
+  <div class="list" id="list"></div>
 </div>
-<div class="search-wrap">
-  <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric">
-</div>
-<div class="tabs">
-  <button class="tab active" data-f="all">전체</button>
-  <button class="tab" data-f="SP">🔶 특수화물</button>
-  <button class="tab" data-f="RF">🧊 리퍼</button>
-  <button class="tab" data-f="XRAY">⚠ XRAY</button>
-  <button class="tab" data-f="20DC">20DC</button>
-  <button class="tab" data-f="20RF">20RF</button>
-  <button class="tab" data-f="40HQ">40HQ</button>
-  <button class="tab" data-f="40RF">40RF</button>
-  <button class="tab" data-f="SKR">SKR</button>
-  <button class="tab" data-f="DJS">DJS</button>
-  <button class="tab" data-f="HAS">HAS</button>
-</div>
-<div class="result-bar" id="rbar">전체 150개</div>
-<div class="list" id="list"></div>
-<div class="sum-bar">
-  <span>SKR <b>77</b></span> <span>DJS <b>38</b></span> <span>HAS <b>26</b></span> <span>HSL <b>7</b></span> <span>DYS <b>2</b></span>
-  <span>|</span>
-  <span>20DC <b>26</b></span> <span>20RF <b>2</b></span> <span>40HQ <b>111</b></span> <span>40RF <b>11</b></span>
-  <span>|</span>
-  <span>🔶 특수화물 <b>14</b></span> <span>🧊 RF <b>13</b></span> <span>⚠ XRAY <b>1</b></span>
-</div>
-<script type="application/json" id="JDATA">[{"no": 1, "oper": "DJS", "cntr": "DJLU2161606", "seal": "DJHN221019", "size": "20DC", "fe": "F", "pos": "05-01-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 2, "oper": "DJS", "cntr": "DJLU2186878", "seal": "DJHN223020", "size": "20DC", "fe": "F", "pos": "23-05-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 3, "oper": "DJS", "cntr": "DJLU2188103", "seal": "DJHN221011", "size": "20DC", "fe": "F", "pos": "07-03-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 4, "oper": "DJS", "cntr": "DJLU2189310", "seal": "DJHN223014", "size": "20DC", "fe": "F", "pos": "07-02-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 5, "oper": "DJS", "cntr": "DJLU2232823", "seal": "DJHN223201", "size": "20DC", "fe": "F", "pos": "07-05-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 6, "oper": "DJS", "cntr": "DJLU2233049", "seal": "DJHN223154", "size": "20DC", "fe": "F", "pos": "21-06-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 7, "oper": "DJS", "cntr": "DJLU2251660", "seal": "DJHN223110", "size": "20DC", "fe": "F", "pos": "23-05-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 8, "oper": "DJS", "cntr": "PHRU2609440", "seal": "DJHN223120", "size": "20DC", "fe": "F", "pos": "07-04-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 9, "oper": "DJS", "cntr": "PHRU2700631", "seal": "DJHN223155", "size": "20DC", "fe": "F", "pos": "07-06-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 10, "oper": "DJS", "cntr": "TIIU2433426", "seal": "DJHN223209", "size": "20DC", "fe": "F", "pos": "21-08-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 11, "oper": "DJS", "cntr": "TIIU2657278", "seal": "DJHN223035", "size": "20DC", "fe": "F", "pos": "21-05-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 12, "oper": "DJS", "cntr": "TIIU2658084", "seal": "DJHN223044", "size": "20DC", "fe": "F", "pos": "05-03-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 13, "oper": "DYS", "cntr": "DYLU2132764", "seal": "DYL836840", "size": "20DC", "fe": "F", "pos": "05-02-02", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 14, "oper": "HAS", "cntr": "SKLU2008851", "seal": "HAS1512765", "size": "20DC", "fe": "F", "pos": "21-00-82", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 15, "oper": "HSL", "cntr": "HSLU2404267", "seal": "HSL001015", "size": "20DC", "fe": "F", "pos": "07-02-04", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 16, "oper": "SKR", "cntr": "HALU2309643", "seal": "SHPH013214", "size": "20DC", "fe": "F", "pos": "05-01-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 17, "oper": "SKR", "cntr": "HALU2316431", "seal": "SHPH013215", "size": "20DC", "fe": "F", "pos": "21-07-04", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 18, "oper": "SKR", "cntr": "HALU2466658", "seal": "SHPH013211", "size": "20DC", "fe": "F", "pos": "05-04-04", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 19, "oper": "SKR", "cntr": "HALU2468748", "seal": "SHPH013216", "size": "20DC", "fe": "F", "pos": "07-01-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 20, "oper": "SKR", "cntr": "SKLU0534965", "seal": "SHPH013212", "size": "20DC", "fe": "F", "pos": "23-06-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 21, "oper": "SKR", "cntr": "SKLU0584230", "seal": "SHPH013217", "size": "20DC", "fe": "F", "pos": "05-02-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 22, "oper": "SKR", "cntr": "SKLU1815946", "seal": "268830", "size": "20DC", "fe": "F", "pos": "21-00-84", "wgt": 23800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 23, "oper": "SKR", "cntr": "SKLU1919998", "seal": "SHPH013213", "size": "20DC", "fe": "F", "pos": "23-08-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 24, "oper": "SKR", "cntr": "SKLU2053758", "seal": "SHPH013169", "size": "20DC", "fe": "F", "pos": "21-05-02", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 25, "oper": "SKR", "cntr": "SKLU2357067", "seal": "004507", "size": "20DC", "fe": "F", "pos": "23-07-04", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 26, "oper": "SKR", "cntr": "SKLU2485509", "seal": "SHPH013170", "size": "20DC", "fe": "F", "pos": "07-01-04", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 27, "oper": "DJS", "cntr": "SEKU9444170", "seal": "DJHN223048", "size": "20RF", "fe": "F", "pos": "23-00-84", "wgt": 15000, "gui": "LOCAL", "rf": "-20.0C", "special": "RF(-20.0C)", "xray": false}, {"no": 28, "oper": "DJS", "cntr": "SZLU2070020", "seal": "DJHN221018", "size": "20RF", "fe": "F", "pos": "23-00-82", "wgt": 15000, "gui": "LOCAL", "rf": "0.0C", "special": "RF(0.0C)", "xray": false}, {"no": 29, "oper": "DJS", "cntr": "BEAU4646146", "seal": "DJHN228149", "size": "40HQ", "fe": "F", "pos": "06-06-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 30, "oper": "DJS", "cntr": "DJLU5017296", "seal": "DJHN223204", "size": "40HQ", "fe": "F", "pos": "22-03-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 31, "oper": "DJS", "cntr": "DJLU5017974", "seal": "DJHN228188", "size": "40HQ", "fe": "F", "pos": "06-03-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 32, "oper": "DJS", "cntr": "DJLU5151860", "seal": "DJHN222764", "size": "40HQ", "fe": "F", "pos": "22-08-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 33, "oper": "DJS", "cntr": "DJLU5153693", "seal": "DJHN223012", "size": "40HQ", "fe": "F", "pos": "22-06-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 34, "oper": "DJS", "cntr": "DJLU5154365", "seal": "DJHN227525", "size": "40HQ", "fe": "F", "pos": "06-03-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 35, "oper": "DJS", "cntr": "DJLU5154494", "seal": "DJHN229707", "size": "40HQ", "fe": "F", "pos": "22-02-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 36, "oper": "DJS", "cntr": "DJLU5222140", "seal": "DJHN228199", "size": "40HQ", "fe": "F", "pos": "22-06-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 37, "oper": "DJS", "cntr": "DJLU5234007", "seal": "DJHN228145", "size": "40HQ", "fe": "F", "pos": "22-07-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 38, "oper": "DJS", "cntr": "FCIU7084404", "seal": "DJHN221015", "size": "40HQ", "fe": "F", "pos": "22-01-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 39, "oper": "DJS", "cntr": "FFAU1735461", "seal": "DJHN223042", "size": "40HQ", "fe": "F", "pos": "22-02-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 40, "oper": "DJS", "cntr": "FFAU1735950", "seal": "DJHN223059", "size": "40HQ", "fe": "F", "pos": "22-01-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 41, "oper": "DJS", "cntr": "FFAU1875695", "seal": "DJHN228186", "size": "40HQ", "fe": "F", "pos": "22-05-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 42, "oper": "DJS", "cntr": "FFAU1876285", "seal": "DJHN228197", "size": "40HQ", "fe": "F", "pos": "22-08-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 43, "oper": "DJS", "cntr": "PHRU8604764", "seal": "DJHN221052", "size": "40HQ", "fe": "F", "pos": "06-03-82", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 44, "oper": "DJS", "cntr": "PHRU8608570", "seal": "DJHN229701", "size": "40HQ", "fe": "F", "pos": "06-02-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 45, "oper": "DJS", "cntr": "PHRU8609771", "seal": "DJHN221016", "size": "40HQ", "fe": "F", "pos": "22-02-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 46, "oper": "DJS", "cntr": "PHRU8610263", "seal": "DJHN228185", "size": "40HQ", "fe": "F", "pos": "22-03-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 47, "oper": "DJS", "cntr": "PHRU8610854", "seal": "DJHN223015", "size": "40HQ", "fe": "F", "pos": "22-08-84", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 48, "oper": "DJS", "cntr": "TIIU5511219", "seal": "DJHN223073", "size": "40HQ", "fe": "F", "pos": "22-01-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 49, "oper": "DJS", "cntr": "TIIU6748205", "seal": "DJHN223031", "size": "40HQ", "fe": "F", "pos": "22-04-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 50, "oper": "DYS", "cntr": "SEGU5474043", "seal": "DYB403837", "size": "40HQ", "fe": "F", "pos": "30-06-84", "wgt": 18200, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 51, "oper": "HAS", "cntr": "BMOU5102326", "seal": "HHPH017837", "size": "40HQ", "fe": "F", "pos": "06-04-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 52, "oper": "HAS", "cntr": "BMOU5402046", "seal": "HHPH014025", "size": "40HQ", "fe": "F", "pos": "06-03-86", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 53, "oper": "HAS", "cntr": "FCIU7253870", "seal": "HHPH014119", "size": "40HQ", "fe": "F", "pos": "06-05-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 54, "oper": "HAS", "cntr": "HLHU6403226", "seal": "HHPH000987", "size": "40HQ", "fe": "F", "pos": "06-08-84", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 55, "oper": "HAS", "cntr": "HLHU8359842", "seal": "HHPH002179", "size": "40HQ", "fe": "F", "pos": "22-08-82", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 56, "oper": "HAS", "cntr": "HLHU8386405", "seal": "HHPH002113", "size": "40HQ", "fe": "F", "pos": "06-01-84", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 57, "oper": "HAS", "cntr": "HLHU8427037", "seal": "HHPH002162", "size": "40HQ", "fe": "F", "pos": "06-03-84", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 58, "oper": "HAS", "cntr": "HLHU8429092", "seal": "HHPH006628", "size": "40HQ", "fe": "F", "pos": "06-04-82", "wgt": 25000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 59, "oper": "HAS", "cntr": "HLHU8443043", "seal": "HHPH000219", "size": "40HQ", "fe": "F", "pos": "06-01-08", "wgt": 20000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 60, "oper": "HAS", "cntr": "HLHU8596227", "seal": "HASHK00506", "size": "40HQ", "fe": "F", "pos": "30-01-86", "wgt": 9100, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 61, "oper": "HAS", "cntr": "SKHU6203647", "seal": "HHPH002111", "size": "40HQ", "fe": "F", "pos": "22-04-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 62, "oper": "HAS", "cntr": "SKHU6323473", "seal": "HHPH004589", "size": "40HQ", "fe": "F", "pos": "06-05-82", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 63, "oper": "HAS", "cntr": "SKHU6329614", "seal": "HHPH000988", "size": "40HQ", "fe": "F", "pos": "06-06-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 64, "oper": "HAS", "cntr": "SKHU6398174", "seal": "HHPH014030", "size": "40HQ", "fe": "F", "pos": "06-02-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 65, "oper": "HAS", "cntr": "SKHU6480050", "seal": "HASHK23015", "size": "40HQ", "fe": "F", "pos": "06-05-88", "wgt": 6800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 66, "oper": "HAS", "cntr": "SKHU8130637", "seal": "HAS1281489", "size": "40HQ", "fe": "F", "pos": "22-01-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 67, "oper": "HAS", "cntr": "SKHU8930500", "seal": "HHPH000229", "size": "40HQ", "fe": "F", "pos": "06-00-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 68, "oper": "HAS", "cntr": "SKHU9205582", "seal": "HHPH014211", "size": "40HQ", "fe": "F", "pos": "06-08-82", "wgt": 13000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 69, "oper": "HAS", "cntr": "SKHU9317155", "seal": "HHPH002201", "size": "40HQ", "fe": "F", "pos": "22-06-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 70, "oper": "HAS", "cntr": "SKHU9421771", "seal": "HASHK18490", "size": "40HQ", "fe": "F", "pos": "22-05-88", "wgt": 9600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 71, "oper": "HAS", "cntr": "SKHU9604453", "seal": "961518", "size": "40HQ", "fe": "F", "pos": "06-01-86", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 72, "oper": "HAS", "cntr": "SKHU9613265", "seal": "961513", "size": "40HQ", "fe": "F", "pos": "06-07-84", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 73, "oper": "HAS", "cntr": "SKHU9947513", "seal": "HHPH002206", "size": "40HQ", "fe": "F", "pos": "06-02-82", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 74, "oper": "HAS", "cntr": "TCNU6008452", "seal": "HHPH014024", "size": "40HQ", "fe": "F", "pos": "06-02-08", "wgt": 21000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 75, "oper": "HAS", "cntr": "TGBU5179018", "seal": "HASHK23033", "size": "40HQ", "fe": "F", "pos": "06-04-88", "wgt": 6700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 76, "oper": "HSL", "cntr": "DJLU5250306", "seal": "HSL001011", "size": "40HQ", "fe": "F", "pos": "22-07-84", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 77, "oper": "HSL", "cntr": "HSLU8400947", "seal": "HSL001013", "size": "40HQ", "fe": "F", "pos": "22-07-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 78, "oper": "HSL", "cntr": "HSLU8402678", "seal": "HSL001017", "size": "40HQ", "fe": "F", "pos": "22-07-82", "wgt": 22000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 79, "oper": "HSL", "cntr": "HSLU8403550", "seal": "HSL001014", "size": "40HQ", "fe": "F", "pos": "22-03-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 80, "oper": "HSL", "cntr": "HSLU8404599", "seal": "HSL001012", "size": "40HQ", "fe": "F", "pos": "06-02-06", "wgt": 19000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 81, "oper": "HSL", "cntr": "HSLU8408995", "seal": "HSL001016", "size": "40HQ", "fe": "F", "pos": "22-02-04", "wgt": 17000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 82, "oper": "SKR", "cntr": "BMOU4718148", "seal": "263896", "size": "40HQ", "fe": "F", "pos": "30-00-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 83, "oper": "SKR", "cntr": "BMOU5938738", "seal": "263897", "size": "40HQ", "fe": "F", "pos": "30-05-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 84, "oper": "SKR", "cntr": "BMOU6051218", "seal": "181097", "size": "40HQ", "fe": "F", "pos": "06-06-86", "wgt": 9400, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 85, "oper": "SKR", "cntr": "CICU2713497", "seal": "AVN07348", "size": "40HQ", "fe": "F", "pos": "06-04-06", "wgt": 21000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 86, "oper": "SKR", "cntr": "DFSU7711982", "seal": "263906", "size": "40HQ", "fe": "F", "pos": "30-00-84", "wgt": 15200, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 87, "oper": "SKR", "cntr": "FCIU9720803", "seal": "SHPH013220", "size": "40HQ", "fe": "F", "pos": "06-05-08", "wgt": 27000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 88, "oper": "SKR", "cntr": "FCIU9720974", "seal": "263898", "size": "40HQ", "fe": "F", "pos": "30-02-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 89, "oper": "SKR", "cntr": "FSCU8193688", "seal": "263900", "size": "40HQ", "fe": "F", "pos": "30-01-80", "wgt": 26800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 90, "oper": "SKR", "cntr": "GCXU6003674", "seal": "263907", "size": "40HQ", "fe": "F", "pos": "22-03-88", "wgt": 8500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 91, "oper": "SKR", "cntr": "HALU5611282", "seal": "263882", "size": "40HQ", "fe": "F", "pos": "30-01-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 92, "oper": "SKR", "cntr": "HLHU6412681", "seal": "273391", "size": "40HQ", "fe": "F", "pos": "22-01-88", "wgt": 8800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 93, "oper": "SKR", "cntr": "HLHU6424770", "seal": "SHPH013223", "size": "40HQ", "fe": "F", "pos": "06-01-82", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 94, "oper": "SKR", "cntr": "HLHU8351707", "seal": "263870", "size": "40HQ", "fe": "F", "pos": "30-08-82", "wgt": 20300, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 95, "oper": "SKR", "cntr": "HLHU8369060", "seal": "273372", "size": "40HQ", "fe": "F", "pos": "30-02-86", "wgt": 11200, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 96, "oper": "SKR", "cntr": "HLHU8443418", "seal": "SHPH019730", "size": "40HQ", "fe": "F", "pos": "22-06-84", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 97, "oper": "SKR", "cntr": "HLHU8448810", "seal": "263886", "size": "40HQ", "fe": "F", "pos": "30-04-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 98, "oper": "SKR", "cntr": "HLHU8472479", "seal": "SHPH013165", "size": "40HQ", "fe": "F", "pos": "06-04-08", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 99, "oper": "SKR", "cntr": "HLHU8486282", "seal": "961519", "size": "40HQ", "fe": "F", "pos": "06-00-82", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 100, "oper": "SKR", "cntr": "HLHU8549035", "seal": "SHPH019719", "size": "40HQ", "fe": "F", "pos": "06-00-86", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 101, "oper": "SKR", "cntr": "RFCU4050448", "seal": "AVN07349", "size": "40HQ", "fe": "F", "pos": "22-04-02", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 102, "oper": "SKR", "cntr": "SKHU6319405", "seal": "263893", "size": "40HQ", "fe": "F", "pos": "30-06-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 103, "oper": "SKR", "cntr": "SKHU6323508", "seal": "SHPH013224", "size": "40HQ", "fe": "F", "pos": "22-08-08", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 104, "oper": "SKR", "cntr": "SKHU6347264", "seal": "SHPH013180", "size": "40HQ", "fe": "F", "pos": "22-05-06", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 105, "oper": "SKR", "cntr": "SKHU6351480", "seal": "SHPH013117", "size": "40HQ", "fe": "F", "pos": "22-05-86", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 106, "oper": "SKR", "cntr": "SKHU6356121", "seal": "273398", "size": "40HQ", "fe": "F", "pos": "06-08-86", "wgt": 8300, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 107, "oper": "SKR", "cntr": "SKHU6369371", "seal": "263894", "size": "40HQ", "fe": "F", "pos": "30-06-82", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 108, "oper": "SKR", "cntr": "SKHU6433850", "seal": "268898", "size": "40HQ", "fe": "F", "pos": "30-08-84", "wgt": 19900, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 109, "oper": "SKR", "cntr": "SKHU6475028", "seal": "SHPH019715", "size": "40HQ", "fe": "F", "pos": "22-04-06", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 110, "oper": "SKR", "cntr": "SKHU6501066", "seal": "SKSHK03734", "size": "40HQ", "fe": "F", "pos": "06-05-86", "wgt": 9600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 111, "oper": "SKR", "cntr": "SKHU6575285", "seal": "263891", "size": "40HQ", "fe": "F", "pos": "30-05-84", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 112, "oper": "SKR", "cntr": "SKHU6583824", "seal": "268827", "size": "40HQ", "fe": "F", "pos": "06-01-88", "wgt": 8500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 113, "oper": "SKR", "cntr": "SKHU6593057", "seal": "273395", "size": "40HQ", "fe": "F", "pos": "22-00-86", "wgt": 11200, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 114, "oper": "SKR", "cntr": "SKHU8110986", "seal": "273476", "size": "40HQ", "fe": "F", "pos": "22-02-88", "wgt": 8900, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 115, "oper": "SKR", "cntr": "SKHU8403834", "seal": "SKSHK11597", "size": "40HQ", "fe": "F", "pos": "22-06-88", "wgt": 9100, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 116, "oper": "SKR", "cntr": "SKHU8713803", "seal": "SKSHK11600", "size": "40HQ", "fe": "F", "pos": "30-04-84", "wgt": 13900, "gui": "LOCAL", "rf": "", "special": "XRAY", "xray": true}, {"no": 117, "oper": "SKR", "cntr": "SKHU8924961", "seal": "SKSHK00020", "size": "40HQ", "fe": "F", "pos": "06-06-88", "wgt": 8700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 118, "oper": "SKR", "cntr": "SKHU8925567", "seal": "263883", "size": "40HQ", "fe": "F", "pos": "30-00-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 119, "oper": "SKR", "cntr": "SKHU8928545", "seal": "SHPH013113", "size": "40HQ", "fe": "F", "pos": "22-07-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 120, "oper": "SKR", "cntr": "SKHU8934213", "seal": "SHPH013112", "size": "40HQ", "fe": "F", "pos": "22-03-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 121, "oper": "SKR", "cntr": "SKHU9103615", "seal": "268897", "size": "40HQ", "fe": "F", "pos": "30-07-84", "wgt": 10900, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 122, "oper": "SKR", "cntr": "SKHU9104479", "seal": "SKSHK03725", "size": "40HQ", "fe": "F", "pos": "06-03-88", "wgt": 8400, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 123, "oper": "SKR", "cntr": "SKHU9301457", "seal": "SHPH013116", "size": "40HQ", "fe": "F", "pos": "06-06-82", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 124, "oper": "SKR", "cntr": "SKHU9500660", "seal": "263888", "size": "40HQ", "fe": "F", "pos": "30-03-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 125, "oper": "SKR", "cntr": "SKHU9531758", "seal": "SHPH013119", "size": "40HQ", "fe": "F", "pos": "06-04-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 126, "oper": "SKR", "cntr": "SKHU9540940", "seal": "SKSHK11701", "size": "40HQ", "fe": "F", "pos": "06-00-88", "wgt": 8200, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 127, "oper": "SKR", "cntr": "SKHU9614488", "seal": "647860", "size": "40HQ", "fe": "F", "pos": "06-02-88", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 128, "oper": "SKR", "cntr": "SKHU9624742", "seal": "263895", "size": "40HQ", "fe": "F", "pos": "30-04-82", "wgt": 26800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 129, "oper": "SKR", "cntr": "SKHU9808539", "seal": "SKSHK11710", "size": "40HQ", "fe": "F", "pos": "30-02-84", "wgt": 20000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 130, "oper": "SKR", "cntr": "SKHU9830620", "seal": "SKSHK11718", "size": "40HQ", "fe": "F", "pos": "06-07-86", "wgt": 7800, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 131, "oper": "SKR", "cntr": "SKHU9936782", "seal": "263885", "size": "40HQ", "fe": "F", "pos": "30-02-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 132, "oper": "SKR", "cntr": "SKHU9967145", "seal": "263884", "size": "40HQ", "fe": "F", "pos": "30-03-84", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 133, "oper": "SKR", "cntr": "SUZU4044425", "seal": "AVN07342", "size": "40HQ", "fe": "F", "pos": "06-01-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 134, "oper": "SKR", "cntr": "TCNU5129017", "seal": "263881", "size": "40HQ", "fe": "F", "pos": "30-03-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 135, "oper": "SKR", "cntr": "TCNU5396137", "seal": "263820", "size": "40HQ", "fe": "F", "pos": "22-04-88", "wgt": 9400, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 136, "oper": "SKR", "cntr": "TCNU6517383", "seal": "263887", "size": "40HQ", "fe": "F", "pos": "30-07-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 137, "oper": "SKR", "cntr": "TCNU6730193", "seal": "SHPH013239", "size": "40HQ", "fe": "F", "pos": "06-07-82", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 138, "oper": "SKR", "cntr": "TEMU6591502", "seal": "263892", "size": "40HQ", "fe": "F", "pos": "30-01-84", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 139, "oper": "SKR", "cntr": "TRHU6228419", "seal": "263899", "size": "40HQ", "fe": "F", "pos": "30-05-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false}, {"no": 140, "oper": "DJS", "cntr": "OTPU6565854", "seal": "DJHN223109", "size": "40RF", "fe": "F", "pos": "22-05-84", "wgt": 15000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false}, {"no": 141, "oper": "DJS", "cntr": "OTPU6672554", "seal": "DJHN223687", "size": "40RF", "fe": "F", "pos": "22-02-82", "wgt": 15000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 142, "oper": "DJS", "cntr": "OTPU6776651", "seal": "DJHN223682", "size": "40RF", "fe": "F", "pos": "22-05-82", "wgt": 15000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 143, "oper": "SKR", "cntr": "FBIU5092142", "seal": "SHPH004569", "size": "40RF", "fe": "F", "pos": "22-01-82", "wgt": 20000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false}, {"no": 144, "oper": "SKR", "cntr": "FBIU5368420", "seal": "SHPH004561", "size": "40RF", "fe": "F", "pos": "22-04-82", "wgt": 28000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 145, "oper": "SKR", "cntr": "FBIU5370583", "seal": "SHPH004563", "size": "40RF", "fe": "F", "pos": "22-02-84", "wgt": 21000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 146, "oper": "SKR", "cntr": "FSCU5834978", "seal": "SHPH004565", "size": "40RF", "fe": "F", "pos": "22-03-82", "wgt": 28000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 147, "oper": "SKR", "cntr": "FSCU5908406", "seal": "SHPH004567", "size": "40RF", "fe": "F", "pos": "22-01-84", "wgt": 20000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false}, {"no": 148, "oper": "SKR", "cntr": "FSCU5911668", "seal": "SHPH004562", "size": "40RF", "fe": "F", "pos": "22-06-82", "wgt": 27000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 149, "oper": "SKR", "cntr": "HALU8500256", "seal": "SHPH004564", "size": "40RF", "fe": "F", "pos": "22-04-84", "wgt": 21000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}, {"no": 150, "oper": "SKR", "cntr": "SKRU9904620", "seal": "SHPH004566", "size": "40RF", "fe": "F", "pos": "22-03-84", "wgt": 29000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false}]</script>
+
+<script type="application/json" id="JDATA">[{"no": 1, "oper": "DJS", "cntr": "DJLU2161606", "seal": "DJHN221019", "size": "20DC", "fe": "F", "pos": "05-01-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 2, "oper": "DJS", "cntr": "DJLU2186878", "seal": "DJHN223020", "size": "20DC", "fe": "F", "pos": "23-05-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 3, "oper": "DJS", "cntr": "DJLU2188103", "seal": "DJHN221011", "size": "20DC", "fe": "F", "pos": "07-03-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 4, "oper": "DJS", "cntr": "DJLU2189310", "seal": "DJHN223014", "size": "20DC", "fe": "F", "pos": "07-02-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 5, "oper": "DJS", "cntr": "DJLU2232823", "seal": "DJHN223201", "size": "20DC", "fe": "F", "pos": "07-05-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 6, "oper": "DJS", "cntr": "DJLU2233049", "seal": "DJHN223154", "size": "20DC", "fe": "F", "pos": "21-06-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 7, "oper": "DJS", "cntr": "DJLU2251660", "seal": "DJHN223110", "size": "20DC", "fe": "F", "pos": "23-05-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 8, "oper": "DJS", "cntr": "PHRU2609440", "seal": "DJHN223120", "size": "20DC", "fe": "F", "pos": "07-04-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 9, "oper": "DJS", "cntr": "PHRU2700631", "seal": "DJHN223155", "size": "20DC", "fe": "F", "pos": "07-06-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 10, "oper": "DJS", "cntr": "TIIU2433426", "seal": "DJHN223209", "size": "20DC", "fe": "F", "pos": "21-08-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 11, "oper": "DJS", "cntr": "TIIU2657278", "seal": "DJHN223035", "size": "20DC", "fe": "F", "pos": "21-05-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 12, "oper": "DJS", "cntr": "TIIU2658084", "seal": "DJHN223044", "size": "20DC", "fe": "F", "pos": "05-03-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 13, "oper": "DYS", "cntr": "DYLU2132764", "seal": "DYL836840", "size": "20DC", "fe": "F", "pos": "05-02-02", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 14, "oper": "HAS", "cntr": "SKLU2008851", "seal": "HAS1512765", "size": "20DC", "fe": "F", "pos": "21-00-82", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 15, "oper": "HSL", "cntr": "HSLU2404267", "seal": "HSL001015", "size": "20DC", "fe": "F", "pos": "07-02-04", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 16, "oper": "SKR", "cntr": "HALU2309643", "seal": "SHPH013214", "size": "20DC", "fe": "F", "pos": "05-01-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 17, "oper": "SKR", "cntr": "HALU2316431", "seal": "SHPH013215", "size": "20DC", "fe": "F", "pos": "21-07-04", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 18, "oper": "SKR", "cntr": "HALU2466658", "seal": "SHPH013211", "size": "20DC", "fe": "F", "pos": "05-04-04", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 19, "oper": "SKR", "cntr": "HALU2468748", "seal": "SHPH013216", "size": "20DC", "fe": "F", "pos": "07-01-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 20, "oper": "SKR", "cntr": "SKLU0534965", "seal": "SHPH013212", "size": "20DC", "fe": "F", "pos": "23-06-02", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 21, "oper": "SKR", "cntr": "SKLU0584230", "seal": "SHPH013217", "size": "20DC", "fe": "F", "pos": "05-02-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 22, "oper": "SKR", "cntr": "SKLU1815946", "seal": "268830", "size": "20DC", "fe": "F", "pos": "21-00-84", "wgt": 23800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 23, "oper": "SKR", "cntr": "SKLU1919998", "seal": "SHPH013213", "size": "20DC", "fe": "F", "pos": "23-08-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 24, "oper": "SKR", "cntr": "SKLU2053758", "seal": "SHPH013169", "size": "20DC", "fe": "F", "pos": "21-05-02", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 25, "oper": "SKR", "cntr": "SKLU2357067", "seal": "004507", "size": "20DC", "fe": "F", "pos": "23-07-04", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 26, "oper": "SKR", "cntr": "SKLU2485509", "seal": "SHPH013170", "size": "20DC", "fe": "F", "pos": "07-01-04", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 27, "oper": "DJS", "cntr": "SEKU9444170", "seal": "DJHN223048", "size": "20RF", "fe": "F", "pos": "23-00-84", "wgt": 15000, "gui": "LOCAL", "rf": "-20.0C", "special": "RF(-20.0C)", "xray": false, "xray_seal": ""}, {"no": 28, "oper": "DJS", "cntr": "SZLU2070020", "seal": "DJHN221018", "size": "20RF", "fe": "F", "pos": "23-00-82", "wgt": 15000, "gui": "LOCAL", "rf": "0.0C", "special": "RF(0.0C)", "xray": false, "xray_seal": ""}, {"no": 29, "oper": "DJS", "cntr": "BEAU4646146", "seal": "DJHN228149", "size": "40HQ", "fe": "F", "pos": "06-06-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 30, "oper": "DJS", "cntr": "DJLU5017296", "seal": "DJHN223204", "size": "40HQ", "fe": "F", "pos": "22-03-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 31, "oper": "DJS", "cntr": "DJLU5017974", "seal": "DJHN228188", "size": "40HQ", "fe": "F", "pos": "06-03-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 32, "oper": "DJS", "cntr": "DJLU5151860", "seal": "DJHN222764", "size": "40HQ", "fe": "F", "pos": "22-08-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 33, "oper": "DJS", "cntr": "DJLU5153693", "seal": "DJHN223012", "size": "40HQ", "fe": "F", "pos": "22-06-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 34, "oper": "DJS", "cntr": "DJLU5154365", "seal": "DJHN227525", "size": "40HQ", "fe": "F", "pos": "06-03-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 35, "oper": "DJS", "cntr": "DJLU5154494", "seal": "DJHN229707", "size": "40HQ", "fe": "F", "pos": "22-02-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 36, "oper": "DJS", "cntr": "DJLU5222140", "seal": "DJHN228199", "size": "40HQ", "fe": "F", "pos": "22-06-04", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 37, "oper": "DJS", "cntr": "DJLU5234007", "seal": "DJHN228145", "size": "40HQ", "fe": "F", "pos": "22-07-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 38, "oper": "DJS", "cntr": "FCIU7084404", "seal": "DJHN221015", "size": "40HQ", "fe": "F", "pos": "22-01-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 39, "oper": "DJS", "cntr": "FFAU1735461", "seal": "DJHN223042", "size": "40HQ", "fe": "F", "pos": "22-02-06", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 40, "oper": "DJS", "cntr": "FFAU1735950", "seal": "DJHN223059", "size": "40HQ", "fe": "F", "pos": "22-01-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 41, "oper": "DJS", "cntr": "FFAU1875695", "seal": "DJHN228186", "size": "40HQ", "fe": "F", "pos": "22-05-08", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 42, "oper": "DJS", "cntr": "FFAU1876285", "seal": "DJHN228197", "size": "40HQ", "fe": "F", "pos": "22-08-06", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 43, "oper": "DJS", "cntr": "PHRU8604764", "seal": "DJHN221052", "size": "40HQ", "fe": "F", "pos": "06-03-82", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 44, "oper": "DJS", "cntr": "PHRU8608570", "seal": "DJHN229701", "size": "40HQ", "fe": "F", "pos": "06-02-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 45, "oper": "DJS", "cntr": "PHRU8609771", "seal": "DJHN221016", "size": "40HQ", "fe": "F", "pos": "22-02-02", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 46, "oper": "DJS", "cntr": "PHRU8610263", "seal": "DJHN228185", "size": "40HQ", "fe": "F", "pos": "22-03-02", "wgt": 28000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 47, "oper": "DJS", "cntr": "PHRU8610854", "seal": "DJHN223015", "size": "40HQ", "fe": "F", "pos": "22-08-84", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 48, "oper": "DJS", "cntr": "TIIU5511219", "seal": "DJHN223073", "size": "40HQ", "fe": "F", "pos": "22-01-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 49, "oper": "DJS", "cntr": "TIIU6748205", "seal": "DJHN223031", "size": "40HQ", "fe": "F", "pos": "22-04-04", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 50, "oper": "DYS", "cntr": "SEGU5474043", "seal": "DYB403837", "size": "40HQ", "fe": "F", "pos": "30-06-84", "wgt": 18200, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 51, "oper": "HAS", "cntr": "BMOU5102326", "seal": "HHPH017837", "size": "40HQ", "fe": "F", "pos": "06-04-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 52, "oper": "HAS", "cntr": "BMOU5402046", "seal": "HHPH014025", "size": "40HQ", "fe": "F", "pos": "06-03-86", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 53, "oper": "HAS", "cntr": "FCIU7253870", "seal": "HHPH014119", "size": "40HQ", "fe": "F", "pos": "06-05-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 54, "oper": "HAS", "cntr": "HLHU6403226", "seal": "HHPH000987", "size": "40HQ", "fe": "F", "pos": "06-08-84", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 55, "oper": "HAS", "cntr": "HLHU8359842", "seal": "HHPH002179", "size": "40HQ", "fe": "F", "pos": "22-08-82", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 56, "oper": "HAS", "cntr": "HLHU8386405", "seal": "HHPH002113", "size": "40HQ", "fe": "F", "pos": "06-01-84", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 57, "oper": "HAS", "cntr": "HLHU8427037", "seal": "HHPH002162", "size": "40HQ", "fe": "F", "pos": "06-03-84", "wgt": 14000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 58, "oper": "HAS", "cntr": "HLHU8429092", "seal": "HHPH006628", "size": "40HQ", "fe": "F", "pos": "06-04-82", "wgt": 25000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 59, "oper": "HAS", "cntr": "HLHU8443043", "seal": "HHPH000219", "size": "40HQ", "fe": "F", "pos": "06-01-08", "wgt": 20000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 60, "oper": "HAS", "cntr": "HLHU8596227", "seal": "HASHK00506", "size": "40HQ", "fe": "F", "pos": "30-01-86", "wgt": 9100, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 61, "oper": "HAS", "cntr": "SKHU6203647", "seal": "HHPH002111", "size": "40HQ", "fe": "F", "pos": "22-04-86", "wgt": 15000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 62, "oper": "HAS", "cntr": "SKHU6323473", "seal": "HHPH004589", "size": "40HQ", "fe": "F", "pos": "06-05-82", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 63, "oper": "HAS", "cntr": "SKHU6329614", "seal": "HHPH000988", "size": "40HQ", "fe": "F", "pos": "06-06-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 64, "oper": "HAS", "cntr": "SKHU6398174", "seal": "HHPH014030", "size": "40HQ", "fe": "F", "pos": "06-02-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 65, "oper": "HAS", "cntr": "SKHU6480050", "seal": "HASHK23015", "size": "40HQ", "fe": "F", "pos": "06-05-88", "wgt": 6800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 66, "oper": "HAS", "cntr": "SKHU8130637", "seal": "HAS1281489", "size": "40HQ", "fe": "F", "pos": "22-01-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 67, "oper": "HAS", "cntr": "SKHU8930500", "seal": "HHPH000229", "size": "40HQ", "fe": "F", "pos": "06-00-84", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 68, "oper": "HAS", "cntr": "SKHU9205582", "seal": "HHPH014211", "size": "40HQ", "fe": "F", "pos": "06-08-82", "wgt": 13000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 69, "oper": "HAS", "cntr": "SKHU9317155", "seal": "HHPH002201", "size": "40HQ", "fe": "F", "pos": "22-06-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 70, "oper": "HAS", "cntr": "SKHU9421771", "seal": "HASHK18490", "size": "40HQ", "fe": "F", "pos": "22-05-88", "wgt": 9600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 71, "oper": "HAS", "cntr": "SKHU9604453", "seal": "961518", "size": "40HQ", "fe": "F", "pos": "06-01-86", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 72, "oper": "HAS", "cntr": "SKHU9613265", "seal": "961513", "size": "40HQ", "fe": "F", "pos": "06-07-84", "wgt": 8000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 73, "oper": "HAS", "cntr": "SKHU9947513", "seal": "HHPH002206", "size": "40HQ", "fe": "F", "pos": "06-02-82", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 74, "oper": "HAS", "cntr": "TCNU6008452", "seal": "HHPH014024", "size": "40HQ", "fe": "F", "pos": "06-02-08", "wgt": 21000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 75, "oper": "HAS", "cntr": "TGBU5179018", "seal": "HASHK23033", "size": "40HQ", "fe": "F", "pos": "06-04-88", "wgt": 6700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 76, "oper": "HSL", "cntr": "DJLU5250306", "seal": "HSL001011", "size": "40HQ", "fe": "F", "pos": "22-07-84", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 77, "oper": "HSL", "cntr": "HSLU8400947", "seal": "HSL001013", "size": "40HQ", "fe": "F", "pos": "22-07-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 78, "oper": "HSL", "cntr": "HSLU8402678", "seal": "HSL001017", "size": "40HQ", "fe": "F", "pos": "22-07-82", "wgt": 22000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 79, "oper": "HSL", "cntr": "HSLU8403550", "seal": "HSL001014", "size": "40HQ", "fe": "F", "pos": "22-03-04", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 80, "oper": "HSL", "cntr": "HSLU8404599", "seal": "HSL001012", "size": "40HQ", "fe": "F", "pos": "06-02-06", "wgt": 19000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 81, "oper": "HSL", "cntr": "HSLU8408995", "seal": "HSL001016", "size": "40HQ", "fe": "F", "pos": "22-02-04", "wgt": 17000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 82, "oper": "SKR", "cntr": "BMOU4718148", "seal": "263896", "size": "40HQ", "fe": "F", "pos": "30-00-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 83, "oper": "SKR", "cntr": "BMOU5938738", "seal": "263897", "size": "40HQ", "fe": "F", "pos": "30-05-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 84, "oper": "SKR", "cntr": "BMOU6051218", "seal": "181097", "size": "40HQ", "fe": "F", "pos": "06-06-86", "wgt": 9400, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 85, "oper": "SKR", "cntr": "CICU2713497", "seal": "AVN07348", "size": "40HQ", "fe": "F", "pos": "06-04-06", "wgt": 21000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 86, "oper": "SKR", "cntr": "DFSU7711982", "seal": "263906", "size": "40HQ", "fe": "F", "pos": "30-00-84", "wgt": 15200, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 87, "oper": "SKR", "cntr": "FCIU9720803", "seal": "SHPH013220", "size": "40HQ", "fe": "F", "pos": "06-05-08", "wgt": 27000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 88, "oper": "SKR", "cntr": "FCIU9720974", "seal": "263898", "size": "40HQ", "fe": "F", "pos": "30-02-80", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 89, "oper": "SKR", "cntr": "FSCU8193688", "seal": "263900", "size": "40HQ", "fe": "F", "pos": "30-01-80", "wgt": 26800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 90, "oper": "SKR", "cntr": "GCXU6003674", "seal": "263907", "size": "40HQ", "fe": "F", "pos": "22-03-88", "wgt": 8500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 91, "oper": "SKR", "cntr": "HALU5611282", "seal": "263882", "size": "40HQ", "fe": "F", "pos": "30-01-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 92, "oper": "SKR", "cntr": "HLHU6412681", "seal": "273391", "size": "40HQ", "fe": "F", "pos": "22-01-88", "wgt": 8800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 93, "oper": "SKR", "cntr": "HLHU6424770", "seal": "SHPH013223", "size": "40HQ", "fe": "F", "pos": "06-01-82", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 94, "oper": "SKR", "cntr": "HLHU8351707", "seal": "263870", "size": "40HQ", "fe": "F", "pos": "30-08-82", "wgt": 20300, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 95, "oper": "SKR", "cntr": "HLHU8369060", "seal": "273372", "size": "40HQ", "fe": "F", "pos": "30-02-86", "wgt": 11200, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 96, "oper": "SKR", "cntr": "HLHU8443418", "seal": "SHPH019730", "size": "40HQ", "fe": "F", "pos": "22-06-84", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 97, "oper": "SKR", "cntr": "HLHU8448810", "seal": "263886", "size": "40HQ", "fe": "F", "pos": "30-04-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 98, "oper": "SKR", "cntr": "HLHU8472479", "seal": "SHPH013165", "size": "40HQ", "fe": "F", "pos": "06-04-08", "wgt": 24000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 99, "oper": "SKR", "cntr": "HLHU8486282", "seal": "961519", "size": "40HQ", "fe": "F", "pos": "06-00-82", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 100, "oper": "SKR", "cntr": "HLHU8549035", "seal": "SHPH019719", "size": "40HQ", "fe": "F", "pos": "06-00-86", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 101, "oper": "SKR", "cntr": "RFCU4050448", "seal": "AVN07349", "size": "40HQ", "fe": "F", "pos": "22-04-02", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 102, "oper": "SKR", "cntr": "SKHU6319405", "seal": "263893", "size": "40HQ", "fe": "F", "pos": "30-06-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 103, "oper": "SKR", "cntr": "SKHU6323508", "seal": "SHPH013224", "size": "40HQ", "fe": "F", "pos": "22-08-08", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 104, "oper": "SKR", "cntr": "SKHU6347264", "seal": "SHPH013180", "size": "40HQ", "fe": "F", "pos": "22-05-06", "wgt": 23000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 105, "oper": "SKR", "cntr": "SKHU6351480", "seal": "SHPH013117", "size": "40HQ", "fe": "F", "pos": "22-05-86", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 106, "oper": "SKR", "cntr": "SKHU6356121", "seal": "273398", "size": "40HQ", "fe": "F", "pos": "06-08-86", "wgt": 8300, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 107, "oper": "SKR", "cntr": "SKHU6369371", "seal": "263894", "size": "40HQ", "fe": "F", "pos": "30-06-82", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 108, "oper": "SKR", "cntr": "SKHU6433850", "seal": "268898", "size": "40HQ", "fe": "F", "pos": "30-08-84", "wgt": 19900, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 109, "oper": "SKR", "cntr": "SKHU6475028", "seal": "SHPH019715", "size": "40HQ", "fe": "F", "pos": "22-04-06", "wgt": 11000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 110, "oper": "SKR", "cntr": "SKHU6501066", "seal": "SKSHK03734", "size": "40HQ", "fe": "F", "pos": "06-05-86", "wgt": 9600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 111, "oper": "SKR", "cntr": "SKHU6575285", "seal": "263891", "size": "40HQ", "fe": "F", "pos": "30-05-84", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 112, "oper": "SKR", "cntr": "SKHU6583824", "seal": "268827", "size": "40HQ", "fe": "F", "pos": "06-01-88", "wgt": 8500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 113, "oper": "SKR", "cntr": "SKHU6593057", "seal": "273395", "size": "40HQ", "fe": "F", "pos": "22-00-86", "wgt": 11200, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 114, "oper": "SKR", "cntr": "SKHU8110986", "seal": "273476", "size": "40HQ", "fe": "F", "pos": "22-02-88", "wgt": 8900, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 115, "oper": "SKR", "cntr": "SKHU8403834", "seal": "SKSHK11597", "size": "40HQ", "fe": "F", "pos": "22-06-88", "wgt": 9100, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 116, "oper": "SKR", "cntr": "SKHU8713803", "seal": "SKSHK11600", "size": "40HQ", "fe": "F", "pos": "30-04-84", "wgt": 13900, "gui": "LOCAL", "rf": "", "special": "XRAY", "xray": true, "xray_seal": ""}, {"no": 117, "oper": "SKR", "cntr": "SKHU8924961", "seal": "SKSHK00020", "size": "40HQ", "fe": "F", "pos": "06-06-88", "wgt": 8700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 118, "oper": "SKR", "cntr": "SKHU8925567", "seal": "263883", "size": "40HQ", "fe": "F", "pos": "30-00-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 119, "oper": "SKR", "cntr": "SKHU8928545", "seal": "SHPH013113", "size": "40HQ", "fe": "F", "pos": "22-07-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 120, "oper": "SKR", "cntr": "SKHU8934213", "seal": "SHPH013112", "size": "40HQ", "fe": "F", "pos": "22-03-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 121, "oper": "SKR", "cntr": "SKHU9103615", "seal": "268897", "size": "40HQ", "fe": "F", "pos": "30-07-84", "wgt": 10900, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 122, "oper": "SKR", "cntr": "SKHU9104479", "seal": "SKSHK03725", "size": "40HQ", "fe": "F", "pos": "06-03-88", "wgt": 8400, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 123, "oper": "SKR", "cntr": "SKHU9301457", "seal": "SHPH013116", "size": "40HQ", "fe": "F", "pos": "06-06-82", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 124, "oper": "SKR", "cntr": "SKHU9500660", "seal": "263888", "size": "40HQ", "fe": "F", "pos": "30-03-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 125, "oper": "SKR", "cntr": "SKHU9531758", "seal": "SHPH013119", "size": "40HQ", "fe": "F", "pos": "06-04-86", "wgt": 10000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 126, "oper": "SKR", "cntr": "SKHU9540940", "seal": "SKSHK11701", "size": "40HQ", "fe": "F", "pos": "06-00-88", "wgt": 8200, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 127, "oper": "SKR", "cntr": "SKHU9614488", "seal": "647860", "size": "40HQ", "fe": "F", "pos": "06-02-88", "wgt": 9000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 128, "oper": "SKR", "cntr": "SKHU9624742", "seal": "263895", "size": "40HQ", "fe": "F", "pos": "30-04-82", "wgt": 26800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 129, "oper": "SKR", "cntr": "SKHU9808539", "seal": "SKSHK11710", "size": "40HQ", "fe": "F", "pos": "30-02-84", "wgt": 20000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 130, "oper": "SKR", "cntr": "SKHU9830620", "seal": "SKSHK11718", "size": "40HQ", "fe": "F", "pos": "06-07-86", "wgt": 7800, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 131, "oper": "SKR", "cntr": "SKHU9936782", "seal": "263885", "size": "40HQ", "fe": "F", "pos": "30-02-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 132, "oper": "SKR", "cntr": "SKHU9967145", "seal": "263884", "size": "40HQ", "fe": "F", "pos": "30-03-84", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 133, "oper": "SKR", "cntr": "SUZU4044425", "seal": "AVN07342", "size": "40HQ", "fe": "F", "pos": "06-01-06", "wgt": 26000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 134, "oper": "SKR", "cntr": "TCNU5129017", "seal": "263881", "size": "40HQ", "fe": "F", "pos": "30-03-80", "wgt": 26500, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 135, "oper": "SKR", "cntr": "TCNU5396137", "seal": "263820", "size": "40HQ", "fe": "F", "pos": "22-04-88", "wgt": 9400, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 136, "oper": "SKR", "cntr": "TCNU6517383", "seal": "263887", "size": "40HQ", "fe": "F", "pos": "30-07-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 137, "oper": "SKR", "cntr": "TCNU6730193", "seal": "SHPH013239", "size": "40HQ", "fe": "F", "pos": "06-07-82", "wgt": 12000, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 138, "oper": "SKR", "cntr": "TEMU6591502", "seal": "263892", "size": "40HQ", "fe": "F", "pos": "30-01-84", "wgt": 26700, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 139, "oper": "SKR", "cntr": "TRHU6228419", "seal": "263899", "size": "40HQ", "fe": "F", "pos": "30-05-82", "wgt": 26600, "gui": "LOCAL", "rf": "", "special": "", "xray": false, "xray_seal": ""}, {"no": 140, "oper": "DJS", "cntr": "OTPU6565854", "seal": "DJHN223109", "size": "40RF", "fe": "F", "pos": "22-05-84", "wgt": 15000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false, "xray_seal": ""}, {"no": 141, "oper": "DJS", "cntr": "OTPU6672554", "seal": "DJHN223687", "size": "40RF", "fe": "F", "pos": "22-02-82", "wgt": 15000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 142, "oper": "DJS", "cntr": "OTPU6776651", "seal": "DJHN223682", "size": "40RF", "fe": "F", "pos": "22-05-82", "wgt": 15000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 143, "oper": "SKR", "cntr": "FBIU5092142", "seal": "SHPH004569", "size": "40RF", "fe": "F", "pos": "22-01-82", "wgt": 20000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false, "xray_seal": ""}, {"no": 144, "oper": "SKR", "cntr": "FBIU5368420", "seal": "SHPH004561", "size": "40RF", "fe": "F", "pos": "22-04-82", "wgt": 28000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 145, "oper": "SKR", "cntr": "FBIU5370583", "seal": "SHPH004563", "size": "40RF", "fe": "F", "pos": "22-02-84", "wgt": 21000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 146, "oper": "SKR", "cntr": "FSCU5834978", "seal": "SHPH004565", "size": "40RF", "fe": "F", "pos": "22-03-82", "wgt": 28000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 147, "oper": "SKR", "cntr": "FSCU5908406", "seal": "SHPH004567", "size": "40RF", "fe": "F", "pos": "22-01-84", "wgt": 20000, "gui": "LOCAL", "rf": "-18.0C", "special": "RF(-18.0C)", "xray": false, "xray_seal": ""}, {"no": 148, "oper": "SKR", "cntr": "FSCU5911668", "seal": "SHPH004562", "size": "40RF", "fe": "F", "pos": "22-06-82", "wgt": 27000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 149, "oper": "SKR", "cntr": "HALU8500256", "seal": "SHPH004564", "size": "40RF", "fe": "F", "pos": "22-04-84", "wgt": 21000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}, {"no": 150, "oper": "SKR", "cntr": "SKRU9904620", "seal": "SHPH004566", "size": "40RF", "fe": "F", "pos": "22-03-84", "wgt": 29000, "gui": "LOCAL", "rf": "-25.0C", "special": "RF(-25.0C)", "xray": false, "xray_seal": ""}]</script>
 <script>
-const DATA=JSON.parse(document.getElementById('JDATA').textContent);
-let curQuery='',curFilter='all';
+// ── 패스워드 DB ──────────────────────────────────
+var STAFF_DB = {
+  '신성호':'630101','표인수':'101001','황창웅':'041001','최장욱':'010301','이현규':'220620',
+  '김명보':'241209','권수안':'230901','정영배':'020314','오승택':'140401','성창모':'150121',
+  '이강익':'240508','김유신':'200713','김석':'201102','전우수':'240801','김성일':'240902',
+  '장문영':'210215','김판석':'240108','최관식':'240109','김홍규':'240617','한성호':'240708',
+  '오종하':'250210','이인철':'250701','이종부':'250707','이종현':'250811','송제욱':'260421','최원형':'240710'
+};
 
-function fmtWgt(w){return w?w.toLocaleString()+'kg':'-'}
+var currentUser = '';
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyzdoQtC2mNaxAM_QtCmhK_I-xiijXeQkEyoc0o6hPhB4htnDz-OLxBeZ5IKJeDV4uL/exec';
 
-function matches(r,q,f){
-  if(q&&!r.cntr.slice(-4).includes(q)&&!r.cntr.includes(q))return false;
-  if(f==='all')return true;
-  if(f==='FULL')return r.fe==='F';
-  if(f==='SP')return!!r.special;          // 특수화물 전체
-  if(f==='RF')return r.special&&r.special.startsWith('RF');  // 리퍼만
-  if(f==='XRAY')return r.special==='XRAY'; // XRAY만
-  if(f===r.size)return true;
-  if(f===r.oper)return true;
-  return false;
+// ── 로그인 ──────────────────────────────────────
+function doLogin(){
+  var name = document.getElementById('loginName').value.trim();
+  var pw   = document.getElementById('loginPw').value.trim();
+  var err  = document.getElementById('loginErr');
+  if(!name || !pw){ err.style.display='block'; err.textContent='이름과 패스워드를 입력하세요'; return; }
+  if(STAFF_DB[name] !== pw){ err.style.display='block'; err.textContent='이름 또는 패스워드가 올바르지 않습니다'; return; }
+  currentUser = name;
+  // localStorage에 저장 (자동로그인)
+  localStorage.setItem('gm_2606e_user', JSON.stringify({name:name, pw:pw}));
+  showApp(name);
+  err.style.display='none';
+  setTimeout(function(){ loadFromSheets(); }, 800);
+  render();
 }
 
+function showApp(name){
+  currentUser = name;
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  var role = STAFF_DB[name] === STAFF_DB[name] ? '검수원' : '검수';
+  // 직책 표시 (팀장은 별도)
+  var roleText = (name === '신성호') ? '검수팀장' : '검수원';
+  document.getElementById('hdrRole').textContent = roleText;
+  document.getElementById('hdrName').textContent = name;
+}
+
+function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  localStorage.removeItem('gm_2606e_user');
+  currentUser = '';
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginName').focus();
+}
+
+// 자동로그인 체크 (페이지 로드시)
+(function(){
+  var saved = localStorage.getItem('gm_2606e_user');
+  if(saved){
+    try{
+      var u = JSON.parse(saved);
+      if(u && u.name && STAFF_DB[u.name] && STAFF_DB[u.name] === u.pw){
+        showApp(u.name);
+        setTimeout(function(){ loadFromSheets(); }, 800);
+        render();
+      }
+    }catch(e){}
+  }
+})();
+document.getElementById('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+// ── 데이터 ──────────────────────────────────────
+var DATA = JSON.parse(document.getElementById('JDATA').textContent);
+var origSeal = {};
+DATA.forEach(function(r){ origSeal[r.no] = r.seal; }); // 베이플랜 원본 고정
+
+var curFilter = 'all', curQuery = '';
+
+function isModified(r){ return r.seal !== origSeal[r.no]; }
+
+function matches(r, q, f){
+  if(q.length > 0 && r.cntr.slice(-4) !== q) return false;
+  if(f === 'all')    return true;
+  if(f === 'remain') return !r.checked;
+  if(f === 'done')   return !!r.checked;
+  // 전체/기타 탭에서는 완료된 것 제외
+  if(!!r.checked) return false;
+  if(f === 'SP')     return !!r.special;
+  if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
+  if(f === 'XRAY')   return r.special === 'XRAY';
+  if(f === '20DC')   return r.size === '20DC';
+  if(f === '20RF')   return r.size === '20RF';
+  if(f === '40HQ')   return r.size === '40HQ';
+  if(f === '40RF')   return r.size === '40RF';
+  if(f === 'SKR')    return r.oper === 'SKR';
+  if(f === 'DJS')    return r.oper === 'DJS';
+  if(f === 'HAS')    return r.oper === 'HAS';
+  return true;
+}
+
+function fmtWgt(w){ if(!w) return '-'; return parseInt(w).toLocaleString()+'kg'; }
+
+// ── 카드 렌더 ────────────────────────────────────
 function renderCard(r){
-  const isRf=r.special&&r.special.startsWith('RF'),isXr=r.special==='XRAY';
-  const hdrCls='card-hdr'+(isXr?' xray':isRf?' rf':'');
-  const szBadge='badge '+(r.size==='40HQ'?'hq':r.size==='20DC'?'dc':'rf');
-  const sp=r.special?`<tr><td>특수화물</td><td><span class="${isXr?'xr-val':'sp-val'}">${r.special}</span></td></tr>`:'';
-  var xraySealBox = isXr ? (
+  var isDone = !!r.checked;
+  var isXray = r.special === 'XRAY';
+  var isRf   = r.special && r.special.indexOf('RF') === 0;
+  var mod    = isModified(r);
+  var xraySeal = r.xray_seal || '';
+
+  var mainCls = 'card-main' + (isXray ? ' xray-c' : '');
+  var cardCls = 'card' + (isDone ? ' done-card' : '');
+
+  // 태그
+  var tags = '<span class="tag" style="background:#e8f4e8;color:#2d7a2d">'+r.size+'</span>';
+  if(isXray) tags += '<span class="tag xray">⚠ XRAY</span>';
+  else if(isRf) tags += '<span class="tag rf">🧊 '+r.special+'</span>';
+  else if(r.special) tags += '<span class="tag sp">'+r.special+'</span>';
+
+  var xrayBanner = isXray ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
+
+  var doneInfo = isDone ? '<div class="done-info">✅ 완료: '+r.checked+'</div>' : '';
+
+  // 확인버튼
+  var chkBtnHtml;
+  if(isDone){
+    chkBtnHtml = '<button class="chk-btn done" onclick="undoCheck('+r.no+');event.stopPropagation()">완료취소</button>';
+  } else {
+    chkBtnHtml = '<button class="chk-btn" onclick="doCheck('+r.no+');event.stopPropagation()">✔ 확인</button>';
+  }
+
+  // XRAY 봉인SEAL
+  var xraySealBox = isXray ? (
     '<div class="xray-seal-box">'+
     '<div class="xray-seal-title">🔴 세관봉인 실번호 입력</div>'+
     '<div id="xsv'+r.no+'" class="seal-wrap">'+
-      '<span class="seal-val" style="color:#C00000" id="xsval'+r.no+'">'+(r.xray_seal||'미입력')+'</span>'+
-      (r.xray_seal?'<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>':'')+
+      '<span class="seal-val" style="color:#C00000" id="xsval'+r.no+'">'+( xraySeal || '미입력'  )+'</span>'+
+      (xraySeal ? '<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>' : '')+
       '<button class="edit-btn" style="border-color:#C00000;color:#C00000" onclick="startXraySeal('+r.no+');event.stopPropagation()">✏️</button>'+
     '</div>'+
-    '<div id="xse'+r.no+'" class="edit-inp" style="display:none">'+
-      '<input id="xsi'+r.no+'" type="text" placeholder="봉인SEAL 번호" class="xray-seal-inp" onclick="event.stopPropagation()">'+
+    '<div id="xse'+r.no+'" class="edit-inp">'+
+      '<input id="xsi'+r.no+'" type="text" placeholder="봉인SEAL 번호" class="seal-input" style="border-color:#C00000" onclick="event.stopPropagation()">'+
       '<button class="save-btn" style="background:#C00000" onclick="saveXraySeal('+r.no+');event.stopPropagation()">저장</button>'+
       '<button class="cancel-btn" onclick="cancelXraySeal('+r.no+');event.stopPropagation()">취소</button>'+
     '</div>'+
     '</div>'
   ) : '';
-  var xrayBanner = isXr ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
-  return '<div class="card" id="card'+r.no+'">' +
-    xrayBanner +
-    '<div class="'+hdrCls+'" onclick="tog('+r.no+')">'+
-      '<span style="color:#888;font-size:12px;min-width:28px">#'+r.no+'</span>'+
-      '<span class="cntr-no">'+r.cntr+'</span>'+
-      '<span class="'+szBadge+'">'+r.size+'</span>'+
-      (isXr?'<span class="badge xray">XRAY</span>':'')+
-      (isRf?'<span class="badge rf">🧊'+r.rf+'</span>':'')+
+
+  return '<div class="'+cardCls+'" id="card'+r.no+'">'+
+    xrayBanner+
+    '<div class="'+mainCls+'" onclick="tog('+r.no+')">'+
+      '<div class="card-left">'+
+        '<div class="card-no">No.'+r.no+(mod?'<span class="mod-badge" style="margin-left:4px">수정됨</span>':'')+(isDone?'<span class="done-badge">✅완료</span>':'')+'</div>'+
+        '<div class="card-cntr">'+r.cntr+'</div>'+
+        '<div class="card-seal'+(mod?' modified':'')+'">'+r.seal+'</div>'+
+        doneInfo+
+        '<div class="tags">'+tags+'</div>'+
+      '</div>'+
+      '<div class="card-right">'+
+        '<div class="card-pos">'+( r.pos||'-' )+'</div>'+
+        '<div class="card-oper">'+r.oper+'</div>'+
+        chkBtnHtml+
+      '</div>'+
     '</div>'+
     '<div class="detail" id="d'+r.no+'">'+
       '<table>'+
-        '<tr><td>실번호</td><td>'+
-          '<div id="sv'+r.no+'" class="seal-wrap">'+
-            '<span class="seal-val seal-big" id="sval'+r.no+'">'+( r.seal||'- ')+'</span>'+
-            (r.seal&&r.seal!==r._origSeal?'<span class="mod-badge">수정됨</span>':'')+
-            '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️</button>'+
+        '<tr><td>컨테이너</td><td style="font-family:monospace;font-weight:700">'+r.cntr+'</td></tr>'+
+        '<tr><td>실 번호</td><td>'+
+          '<div class="seal-wrap" id="sv'+r.no+'">'+
+            '<span class="seal-val'+(mod?' modified':'')+'" id="sval'+r.no+'">'+r.seal+'</span>'+
+            (mod ? '<span class="mod-badge">수정됨</span>':'') +
+            '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️ 수정</button>'+
           '</div>'+
-          '<div id="se'+r.no+'" class="edit-inp" style="display:none">'+
-            '<input id="si'+r.no+'" type="text" value="'+r.seal+'" onclick="event.stopPropagation()">'+
-            '<button class="save-btn" onclick="saveSeal('+r.no+');event.stopPropagation()">저장</button>'+
-            '<button class="cancel-btn" onclick="cancelEdit('+r.no+');event.stopPropagation()">취소</button>'+
+          '<div class="edit-inp" id="se'+r.no+'">'+
+            '<input id="si'+r.no+'" type="text" value="'+r.seal+'" class="seal-input" onclick="event.stopPropagation()">'+
+            '<button class="save-btn" onclick="saveSeal('+r.no+')">저장</button>'+
+            '<button class="cancel-btn" onclick="cancelEdit('+r.no+')">취소</button>'+
           '</div>'+
         '</td></tr>'+
-        '<tr><td>규격</td><td>'+r.size+' / '+(r.fe==='F'?'FULL':'EMPTY')+'</td></tr>'+
-        '<tr><td>선내위치</td><td><span class="pos-val">'+r.pos+'</span></td></tr>'+
+        '<tr><td>규격</td><td>'+r.size+'</td></tr>'+
+        '<tr><td>F/E</td><td>'+(r.fe==='F'?'FULL (화물)':'EMPTY')+'</td></tr>'+
+        '<tr><td>선내위치</td><td style="font-family:monospace;font-size:14px;font-weight:700;color:#1a3a6b">'+( r.pos||'-' )+'</td></tr>'+
         '<tr><td>중량</td><td>'+fmtWgt(r.wgt)+'</td></tr>'+
         '<tr><td>오퍼레이터</td><td>'+r.oper+'</td></tr>'+
-        '<tr><td>구분</td><td>'+r.gui+'</td></tr>'+
-        (r.special?'<tr><td>특수화물</td><td><span class="'+(isXr?'xr-val':'sp-val')+'">'+r.special+'</span></td></tr>':'')+
+        (r.special?'<tr><td>특수화물</td><td style="color:#b00;font-weight:600">'+r.special+'</td></tr>':'')+
+        (r.checked?'<tr><td>검수완료</td><td style="color:#28a745;font-weight:700">'+r.checked+'</td></tr>':'')+
       '</table>'+
       xraySealBox+
     '</div>'+
   '</div>';
 }
 
+// ── 렌더 ────────────────────────────────────────
+function updateSumBar(){
+  var done = DATA.filter(function(r){ return !!r.checked; }).length;
+  var remain = DATA.length - done;
+  document.getElementById('sumDone').textContent = done;
+  document.getElementById('sumRemain').textContent = remain;
+}
+
 function render(){
-  const q=curQuery,f=curFilter;
-  const fil=DATA.filter(r=>matches(r,q,f));
-  document.getElementById('rbar').textContent=(q||f!=='all')?`검색결과: ${fil.length}개`:`전체 ${fil.length}개`;
-  if(!fil.length){
-    document.getElementById('list').innerHTML='<div class="empty"><div class="icon">🔍</div><div>검색 결과 없음</div></div>';
-    return;
+  var filtered = DATA.filter(function(r){ return matches(r, curQuery, curFilter); });
+  document.getElementById('rbar').textContent =
+    (curQuery || curFilter !== 'all') ? ('검색결과: '+filtered.length+'개') : ('전체 '+filtered.length+'개');
+  if(!filtered.length){
+    document.getElementById('list').innerHTML = '<div class="empty">🔍 검색 결과가 없습니다</div>';
+  } else {
+    document.getElementById('list').innerHTML = filtered.map(renderCard).join('');
   }
-  document.getElementById('list').innerHTML=fil.map(renderCard).join('');
+  updateSumBar();
 }
 
-function tog(no){const el=document.getElementById('d'+no);if(el)el.style.display=el.style.display==='block'?'none':'block';}
-function startEdit(no){document.getElementById('sv'+no).style.display='none';document.getElementById('se'+no).style.display='flex';document.getElementById('si'+no).focus();}
-function cancelEdit(no){document.getElementById('se'+no).style.display='none';document.getElementById('sv'+no).style.display='flex';const r=DATA.find(x=>x.no===no);if(r)document.getElementById('si'+no).value=r.seal;}
+// ── 토글 ────────────────────────────────────────
+function tog(no){
+  var el = document.getElementById('d'+no);
+  if(el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── 실번호 수정 ──────────────────────────────────
+function startEdit(no){
+  document.getElementById('sv'+no).style.display = 'none';
+  document.getElementById('se'+no).style.display = 'flex';
+  document.getElementById('si'+no).focus();
+}
+function cancelEdit(no){
+  document.getElementById('se'+no).style.display = 'none';
+  document.getElementById('sv'+no).style.display = 'flex';
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(r) document.getElementById('si'+no).value = r.seal;
+}
 function saveSeal(no){
-  var v=document.getElementById('si'+no).value.trim();
-  if(!v){alert('실번호 입력');return;}
-  var r=DATA.find(function(x){return x.no===no;});
+  var v = document.getElementById('si'+no).value.trim().toUpperCase();
+  if(!v){ alert('실번호를 입력하세요'); return; }
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
   if(!r) return;
-  r.seal=v;
-  // DOM만 업데이트 - detail 닫힘 방지
-  var sval=document.getElementById('sval'+no);
-  if(sval) sval.textContent=v;
-  var sv=document.getElementById('sv'+no);
-  var se=document.getElementById('se'+no);
-  if(se) se.style.display='none';
-  if(sv) sv.style.display='flex';
+  r.seal = v;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  saveToSheets(no, 'seal', v);
 }
 
-
+// ── XRAY 봉인SEAL ────────────────────────────────
 function startXraySeal(no){
-  var sv=document.getElementById('xsv'+no);
-  var se=document.getElementById('xse'+no);
-  var inp=document.getElementById('xsi'+no);
-  var r=DATA.find(function(x){return x.no===no;});
-  if(sv) sv.style.display='none';
-  if(se) se.style.display='flex';
-  if(inp&&r) inp.value=r.xray_seal||'';
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(sv) sv.style.display = 'none';
+  if(se) se.style.display = 'flex';
+  var inp = document.getElementById('xsi'+no);
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(inp && r) inp.value = r.xray_seal || '';
   if(inp) inp.focus();
 }
 function cancelXraySeal(no){
-  var sv=document.getElementById('xsv'+no);
-  var se=document.getElementById('xse'+no);
-  if(se) se.style.display='none';
-  if(sv) sv.style.display='flex';
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(se) se.style.display = 'none';
+  if(sv) sv.style.display = 'flex';
 }
 function saveXraySeal(no){
-  var inp=document.getElementById('xsi'+no);
+  var inp = document.getElementById('xsi'+no);
   if(!inp) return;
-  var v=inp.value.trim().toUpperCase();
-  var r=DATA.find(function(x){return x.no===no;});
+  var v = inp.value.trim().toUpperCase();
+  // 공백도 저장 가능 (교대 시 초기화 용도)
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
   if(!r) return;
-  r.xray_seal=v;
-  // DOM만 업데이트 - detail 닫힘 방지
-  var se=document.getElementById('xse'+no);
-  var sv=document.getElementById('xsv'+no);
-  var xval=document.getElementById('xsval'+no);
-  if(se) se.style.display='none';
-  if(xval) xval.textContent=v||'미입력';
-  if(sv) sv.style.display='flex';
-}
-document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click',()=>{
-    
-function startXraySeal(no){
-  var sv=document.getElementById('xsv'+no);
-  var se=document.getElementById('xse'+no);
-  var inp=document.getElementById('xsi'+no);
-  var r=DATA.find(function(x){return x.no===no;});
-  if(sv) sv.style.display='none';
-  if(se) se.style.display='flex';
-  if(inp&&r) inp.value=r.xray_seal||'';
-  if(inp) inp.focus();
-}
-function cancelXraySeal(no){
-  var sv=document.getElementById('xsv'+no);
-  var se=document.getElementById('xse'+no);
-  if(se) se.style.display='none';
-  if(sv) sv.style.display='flex';
-}
-function saveXraySeal(no){
-  var inp=document.getElementById('xsi'+no);
-  if(!inp) return;
-  var v=inp.value.trim().toUpperCase();
-  var r=DATA.find(function(x){return x.no===no;});
-  if(!r) return;
-  r.xray_seal=v;
-  // DOM만 업데이트 - detail 닫힘 방지
-  var se=document.getElementById('xse'+no);
-  var sv=document.getElementById('xsv'+no);
-  var xval=document.getElementById('xsval'+no);
-  if(se) se.style.display='none';
-  if(xval) xval.textContent=v||'미입력';
-  if(sv) sv.style.display='flex';
-}
-document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
-    t.classList.add('active');curFilter=t.dataset.f;render();
-  });
-});
-
-const inp=document.getElementById('inp');
-let lastVal='';
-function chk(){const v=inp.value.replace(/\D/g,'').slice(-4);if(v!==lastVal){lastVal=v;curQuery=v;render();}}
-inp.addEventListener('input',chk);inp.addEventListener('keyup',chk);
-setInterval(chk,100);
-// ── 접속자 이름 처리
-// ◀ 직원 DB (이름 → 직책 자동 매핑)
-const STAFF_DB = {
-  '신성호':'대표이사','표인수':'상무이사','황창웅':'이사','최장욱':'실장',
-  '이현규':'부장·수석검수','김명보':'부장·수석검수','권수안':'차장',
-  '정영배':'차장','오승택':'차장·수석검수','성창모':'과장·수석검수',
-  '이강익':'과장·수석검수','김유신':'대리','김석':'대리',
-  '전우수':'대리·수석검수','김성일':'대리·부수석','장문영':'검수',
-  '김판석':'검수','최관식':'검수','김홍규':'검수','한성호':'검수',
-  '오종하':'검수','이인철':'검수','이종부':'검수','이종현':'검수',
-  '송제욱':'검수','최원형':'검수'
-};
-
-function setName(){
-  const name=document.getElementById('nameInp').value.trim();
-  if(!name){document.getElementById('nameInp').focus();return;}
-  const role='검수원';
-  localStorage.setItem('gm_user_2606e',JSON.stringify({name,role}));
-  document.getElementById('userNameDisp').textContent=name;
-  document.getElementById('userRoleDisp').textContent=role;
-  document.getElementById('modalBg').style.display='none';
-}
-function reEnterName(){
-  const saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'{}');
-  document.getElementById('nameInp').value=saved.name||'';
-  if(saved.name) updateRolePreview(saved.name);
-  document.getElementById('modalBg').style.display='flex';
-  setTimeout(()=>document.getElementById('nameInp').focus(),100);
-}
-function updateRolePreview(name){
-  const role=STAFF_DB[name];
-  const el=document.getElementById('rolePreview');
-  if(!el) return;
-  el.textContent=name?'👤 '+name:'';
-}
-document.getElementById('nameInp').addEventListener('input',function(){updateRolePreview(this.value.trim());});
-document.getElementById('nameInp').addEventListener('keyup',function(e){if(e.key==='Enter')setName();});
-(function(){
-  const saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'null');
-  if(saved&&saved.name){
-    document.getElementById('userNameDisp').textContent=saved.name;
-    document.getElementById('userRoleDisp').textContent='검수원';
-    document.getElementById('modalBg').style.display='none';
+  r.xray_seal = v;
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(se) se.style.display = 'none';
+  if(sv){
+    sv.style.display = 'flex';
+    document.getElementById('xsval'+no).textContent = v;
+    sv.innerHTML = sv.innerHTML;
   }
-})();
-
-// ── 로그아웃 ──────────────────────────────────
-function doLogout(){
-  if(!confirm('로그아웃 하시겠습니까?')) return;
-  localStorage.removeItem('gm_user_2606e');
-  document.getElementById('userNameDisp').textContent='-';
-  document.getElementById('userRoleDisp').textContent='-';
-  document.getElementById('modalBg').style.display='flex';
-  setTimeout(()=>document.getElementById('nameInp').focus(),100);
+  // 카드 재렌더
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  saveToSheets(no, 'xray_seal', v);
 }
 
-// ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
-let camStream=null,camTimer=null,camBusy=false,camLast='';
+// ── 확인(완료처리) ────────────────────────────────
+function doCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  var now = new Date();
+  var ts = now.getFullYear()+'.'+(now.getMonth()+1)+'.'+(now.getDate())+' '
+           +('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  r.checked = currentUser + ' ' + ts;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', r.checked);
+}
+function undoCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.checked = '';
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', '');
+}
+
+// ── Google Sheets 연동 ────────────────────────────
+function loadFromSheets(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?action=getData', true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4 || xhr.status !== 200) return;
+    try{
+      var res = JSON.parse(xhr.responseText);
+      if(res.data){
+        for(var i=0;i<res.data.length;i++){
+          var row = res.data[i];
+          for(var j=0;j<DATA.length;j++){
+            if(DATA[j].no === row.no){
+              if(row.seal) DATA[j].seal = row.seal.trim();
+              if(row.xray_seal !== undefined) DATA[j].xray_seal = row.xray_seal;
+              if(row.checked) DATA[j].checked = row.checked;
+              break;
+            }
+          }
+        }
+        render();
+      }
+    } catch(e){ console.log('Sheets 로드 오류:',e); }
+  };
+  xhr.send();
+}
+
+function saveToSheets(no, field, value){
+  var params = 'action=updateSeal&no='+no+'&field='+field+'&value='+encodeURIComponent(value)+'&user='+encodeURIComponent(currentUser);
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?'+params, true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4) return;
+    console.log('Sheets 저장:', field, '=', value);
+  };
+  xhr.send();
+}
+
+// ── 탭/검색 ─────────────────────────────────────
+var tabs = document.querySelectorAll('.tab');
+for(var ti=0;ti<tabs.length;ti++){
+  (function(t){
+    t.addEventListener('click', function(){
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+      t.classList.add('active');
+      curFilter = t.getAttribute('data-f');
+      render();
+    });
+  })(tabs[ti]);
+}
+
+var inp = document.getElementById('inp');
+var lastVal = '';
+function checkInput(){
+  var v = inp.value.replace(/\D/g,'').slice(-4);
+  if(v !== lastVal){ lastVal = v; curQuery = v; render(); }
+}
+inp.addEventListener('input', checkInput);
+inp.addEventListener('keyup', checkInput);
+setInterval(checkInput, 100);
+
+// ── 검색창 토글 (카메라 열릴때) ──────────────────
+function toggleSearchInput(){
+  var inp2 = document.getElementById('inp');
+  if(inp2.style.display === 'none'){
+    inp2.style.display = '';
+    inp2.focus();
+  } else {
+    inp2.style.display = 'none';
+  }
+}
+
+// ── 카메라 ──────────────────────────────────────
+var camStream = null, camTimer = null, camBusy = false, camLast = '', currentZoom = 1;
 
 function openCamera(){
-  const m=document.getElementById('camModal');
-  m.style.display='flex'; m.style.flexDirection='column';
-  document.getElementById('camResult').textContent='';
-  document.getElementById('camManual').value='';
-  camLast='';
+  var m = document.getElementById('camModal');
+  m.style.display = 'flex'; m.style.flexDirection = 'column';
+  document.getElementById('camResult').textContent = '';
+  document.getElementById('camManual').value = '';
+  document.getElementById('zoomSlider').value = 1;
+  document.getElementById('zoomVal').textContent = '1.0x';
+  camLast = '';
+  // 검색창 숨기고 아이콘 표시
+  document.getElementById('inp').style.display = 'none';
+  document.getElementById('searchIconBtn').style.display = 'block';
   startCam();
 }
 
 function closeCamera(){
   stopCam();
-  document.getElementById('camModal').style.display='none';
+  document.getElementById('camVideo').style.transform = 'scale(1)';
+  document.getElementById('camModal').style.display = 'none';
+  // 검색창 복원
+  document.getElementById('inp').style.display = '';
+  document.getElementById('searchIconBtn').style.display = 'none';
 }
 
 function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 미지원';
+    return;
+  }
   navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}
-  }).then(stream=>{
-    camStream=stream;
-    const v=document.getElementById('camVideo');
-    v.srcObject=stream;
-    // 여러 이벤트로 확실하게 시작
-    v.onloadedmetadata=()=>{ v.play(); };
-    v.onplaying=()=>{ startAutoScan(); };
-    // 3초 후에도 안 시작되면 강제 시작
-    setTimeout(()=>{ if(!camTimer) startAutoScan(); }, 3000);
-  }).catch(err=>{
+    video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+  }).then(function(stream){
+    camStream = stream;
+    var v = document.getElementById('camVideo');
+    v.srcObject = stream;
+    v.onloadedmetadata = function(){ v.play(); };
+    v.onplaying = function(){ startAutoScan(); };
+    setTimeout(function(){ if(!camTimer) startAutoScan(); }, 3000);
+  }).catch(function(err){
     document.getElementById('camResult').style.color='#FF6B6B';
     document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
   });
 }
 
 function stopCam(){
-  if(camTimer){clearInterval(camTimer);camTimer=null;}
-  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
-  camBusy=false;
+  if(camTimer){ clearInterval(camTimer); camTimer=null; }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  camBusy = false;
 }
 
 function startAutoScan(){
   if(camTimer) clearInterval(camTimer);
-  const guide=document.getElementById('camGuide');
-  if(typeof Tesseract==='undefined'){
-    guide.textContent='⏳ OCR 로딩 중...';
-    // Tesseract 로딩 기다리기
-    const wait=setInterval(()=>{
-      if(typeof Tesseract!=='undefined'){
+  var guide = document.getElementById('camGuide');
+  if(typeof Tesseract === 'undefined'){
+    guide.textContent = '⏳ OCR 로딩 중...';
+    var wait = setInterval(function(){
+      if(typeof Tesseract !== 'undefined'){
         clearInterval(wait);
-        guide.textContent='🔍 자동 스캔 중...';
-        camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
+        guide.textContent = '🔍 자동 스캔 중...';
+        camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
       }
-    },500);
+    }, 500);
     return;
   }
-  guide.textContent='🔍 자동 스캔 중...';
-  camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
+  guide.textContent = '🔍 자동 스캔 중...';
+  camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+}
+
+function preprocessCanvas(srcCanvas){
+  var w=srcCanvas.width, h=srcCanvas.height;
+  var dst=document.createElement('canvas');
+  var maxW=1200;
+  var scale=w>maxW?maxW/w:1;
+  dst.width=Math.round(w*scale);
+  dst.height=Math.round(h*scale);
+  var ctx=dst.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  var z=currentZoom||1;
+  var contrast,brightness,saturate;
+  if(z<=3){contrast=1.3;brightness=1.0;saturate=1.0;}
+  else if(z<=10){contrast=1.6;brightness=1.05;saturate=0.8;}
+  else{contrast=2.0;brightness=1.1;saturate=0.5;}
+  ctx.filter='contrast('+contrast+') brightness('+brightness+') saturate('+saturate+')';
+  ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
+  ctx.filter='none';
+  if(z>=10){
+    var imgData=ctx.getImageData(0,0,dst.width,dst.height);
+    var d=imgData.data;
+    for(var i=0;i<d.length;i+=4){
+      var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      var bin=gray>128?255:0;
+      d[i]=d[i+1]=d[i+2]=bin;
+      d[i+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+  return dst;
 }
 
 function doOCR(){
-  const video=document.getElementById('camVideo');
-  const canvas=document.getElementById('camCanvas');
-  if(!video.srcObject||video.paused||video.videoWidth===0) return;
+  var video=document.getElementById('camVideo');
+  var canvas=document.getElementById('camCanvas');
+  if(!video.srcObject||video.paused||video.videoWidth===0){ return; }
   camBusy=true;
-
-  // 전처리 없이 원본 그대로 — Tesseract가 컬러 이미지를 더 잘 인식
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(video,0,0);
-
-  const el=document.getElementById('camResult');
-  const guide=document.getElementById('camGuide');
-
-  Tesseract.recognize(canvas,'eng',{
-    logger:()=>{},
-    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode:'11'  // 낱글자 모드 - 흩어진 텍스트에 강함
-  }).then(({data:{text}})=>{
-    const found=parseCntr(text);
+  var el=document.getElementById('camResult');
+  var guide=document.getElementById('camGuide');
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var cropX=Math.round(vw*0.02);
+  var cropW=Math.round(vw*0.96);
+  var cropY=Math.round(vh*0.25);
+  var cropH=Math.round(vh*0.50);
+  canvas.width=cropW; canvas.height=cropH;
+  var ctx=canvas.getContext('2d');
+  ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
+  var processed=preprocessCanvas(canvas);
+  Tesseract.recognize(processed,'eng',{
+    logger:function(){},
+    tessedit_char_whitelist:'0123456789',
+    tessedit_pageseg_mode:'7',
+    preserve_interword_spaces:'0'
+  }).then(function(r){
+    var nums=r.data.text.replace(/[^0-9]/g,'');
+    var found=findByNumbers(nums);
     if(found){
-      const match=DATA.find(r=>r.cntr===found);
-      if(match&&found!==camLast){
+      var match=null;
+      for(var i=0;i<DATA.length;i++){ if(DATA[i].cntr===found){ match=DATA[i]; break; } }
+      if(match && found!==camLast){
         camLast=found;
-        el.textContent='✅  '+match.cntr+'  인식됨!';
+        el.textContent='✅ '+match.cntr+' 인식됨!';
         el.style.color='#FFD700';
         guide.textContent='✅ 찾았습니다!';
         if(navigator.vibrate) navigator.vibrate([80,40,80]);
-        setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
-      } else if(!match){
-        el.textContent='⚠ '+found+' — 목록에 없음';
-        el.style.color='#FFA500';
+        setTimeout(function(){ applySearch(match.cntr); closeCamera(); }, 700);
       }
     } else {
-      guide.textContent='🔍 자동 스캔 중...';
       el.textContent='';
+      guide.textContent='🔍 자동 스캔 중...';
     }
     camBusy=false;
-  }).catch(()=>{ camBusy=false; });
+  }).catch(function(){ camBusy=false; });
 }
-function captureNow(){
-  camBusy=false;
-  document.getElementById('camGuide').textContent='🔍 인식 중...';
-  doOCR();
+
+function findByNumbers(nums){
+  if(nums.length<4) return null;
+  if(nums.length>=7){
+    for(var s=0;s<=nums.length-7;s++){
+      var sub7=nums.substr(s,7);
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-7)===sub7) return DATA[i].cntr;
+      }
+    }
+  }
+  if(nums.length>=4){
+    for(var s=0;s<=nums.length-4;s++){
+      var sub4=nums.substr(s,4);
+      var matches=[];
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-4)===sub4) matches.push(DATA[i].cntr);
+      }
+      if(matches.length===1) return matches[0];
+    }
+  }
+  return null;
+}
+
+function setZoom(val){
+  var v=parseFloat(val);
+  currentZoom=v;
+  document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
+  var video=document.getElementById('camVideo');
+  if(!camStream){ video.style.transform='scale('+v+')'; video.style.transformOrigin='center center'; return; }
+  var track=camStream.getVideoTracks()[0];
+  var caps=track&&track.getCapabilities?track.getCapabilities():{};
+  if(caps.zoom){
+    var hwMax=caps.zoom.max, hwMin=caps.zoom.min;
+    if(v<=hwMax){
+      var z=hwMin+(hwMax-hwMin)*((v-1)/29);
+      track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+      video.style.transform='scale(1)';
+    } else {
+      track.applyConstraints({advanced:[{zoom:hwMax}]}).catch(function(){});
+      var cssScale=v/hwMax;
+      video.style.transform='scale('+cssScale+')';
+      video.style.transformOrigin='center center';
+    }
+  } else {
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
+  }
 }
 
 function applySearch(cntr){
-  const last4=cntr.slice(-4);
+  var last4=cntr.slice(-4);
   document.getElementById('inp').value=last4;
   curQuery=last4; render();
-  setTimeout(()=>{ const c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); },300);
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
 }
 
-function parseCntr(text){
-  const up=text.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  // 완전 패턴: 영문4 + 숫자7
-  const m=up.match(/[A-Z]{4}[0-9]{7}/g);
-  if(m) return m[0];
-  // O↔0, I↔1 교정 후 재시도
-  const fixed=up.replace(/O/g,'0').replace(/I(?=[0-9])/g,'1').replace(/(?<=[A-Z]{4})O/g,'0');
-  const m2=fixed.match(/[A-Z]{4}[0-9]{7}/g);
-  if(m2) return m2[0];
-  return null;
-}
-function camManualSearch(val){
-  const v=val.replace(/\s/g,'').toUpperCase();
-  const el=document.getElementById('camResult');
-  if(v.length<2){el.textContent='';return;}
-  const found=DATA.filter(r=>r.cntr.includes(v)||r.cntr.slice(-4)===v.slice(-4));
-  if(found.length>0){
-    el.textContent='✅  '+found[0].cntr;
-    el.style.color='#FFD700';
-    if(v.length>=4){
-      if(navigator.vibrate) navigator.vibrate(80);
-      setTimeout(()=>{ applySearch(found[0].cntr); closeCamera(); },600);
-    }
-  } else {
-    el.textContent=v.length>=3?'❌ 없음':'';
-    el.style.color='#FF6B6B';
-  }
+function camManualSearch(){
+  var v=document.getElementById('camManual').value.replace(/\D/g,'').slice(-4);
+  if(v.length<4){ alert('끝 4자리를 입력하세요'); return; }
+  closeCamera();
+  document.getElementById('inp').value=v;
+  curQuery=v; render();
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
 }
 
 render();
 
-// ── 음성인식 + TTS (여성목소리) ───────────────────
-var voiceRecog = null;
-var voiceActive = false;
-var voiceToastTimer = null;
-
-function toggleVoice() {
-  if (voiceActive) { stopVoice(); } else { startVoice(); }
-}
-function startVoice() {
-  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SR) { showVoiceToast('❌ Chrome 브라우저에서 사용해주세요'); return; }
-  voiceRecog = new SR();
-  voiceRecog.lang = 'ko-KR';
-  voiceRecog.continuous = false;
-  voiceRecog.interimResults = false;
-  voiceRecog.onstart = function() {
-    voiceActive = true;
-    var btn = document.getElementById('voiceBtn');
-    btn.style.background = 'rgba(255,50,50,0.6)';
-    btn.style.borderColor = 'rgba(255,80,80,0.9)';
-    btn.textContent = '\uD83D\uDD34';
-    showVoiceToast('\uD83C\uDFA4 숫자 4자리를 말씀해 주세요');
-    // speechSynthesis 권한 미리 확보 (무음 재생)
-    if (window.speechSynthesis) {
-      var warm = new SpeechSynthesisUtterance(' ');
-      warm.volume = 0; warm.lang = 'ko-KR';
-      window.speechSynthesis.speak(warm);
-    }
-  };
-  voiceRecog.onresult = function(e) {
-    processVoiceInput(e.results[0][0].transcript.replace(/\s/g,''));
-  };
-  voiceRecog.onerror = function(e) {
-    showVoiceToast('❌ ' + e.error + ' — 다시 시도해주세요');
-    resetVoiceBtn();
-  };
-  voiceRecog.onend = function() { resetVoiceBtn(); };
-  voiceRecog.start();
-}
-function stopVoice() {
-  if (voiceRecog) { voiceRecog.stop(); voiceRecog = null; }
-  resetVoiceBtn();
-}
-function resetVoiceBtn() {
-  voiceActive = false;
-  var btn = document.getElementById('voiceBtn');
-  if (!btn) return;
-  btn.style.background = 'rgba(0,200,100,0.25)';
-  btn.style.borderColor = 'rgba(0,200,100,0.6)';
-  btn.textContent = '\uD83C\uDFA4';
-}
-function korToNum(str) {
-  if (/^[0-9]+$/.test(str)) return str;
-  var map = {'\uC601':'0','\uACF5':'0','\uC77C':'1','\uD558\uB098':'1','\uC774':'2','\uB458':'2','\uC0BC':'3','\uC149':'3','\uC0AC':'4','\uB137':'4','\uC624':'5','\uB2E4\uC12F':'5','\uC721':'6','\uC5EC\uC12F':'6','\uCE60':'7','\uC77C\uACF1':'7','\uD314':'8','\uC5EC\uB35F':'8','\uAD6C':'9','\uC544\uD649':'9'};
-  var res = str;
-  var keys = Object.keys(map).sort(function(a,b){return b.length-a.length;});
-  for (var i=0;i<keys.length;i++) res = res.split(keys[i]).join(map[keys[i]]);
-  return res;
-}
-function processVoiceInput(raw) {
-  var digits = korToNum(raw).replace(/[^0-9]/g,'');
-  var last4 = digits.slice(-4);
-  if (last4.length < 4) {
-    showVoiceToast('\u26A0 4자리를 인식 못했어요 ("' + raw + '") — 다시 말씀해 주세요');
-    setTimeout(startVoice, 1800);
-    return;
-  }
-  document.getElementById('inp').value = last4;
-  curQuery = last4; render();
-  var found = DATA.filter(function(r){ return r.cntr.slice(-4) === last4; });
-  if (found.length > 0) {
-    var r = found[0];
-    var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
-    showVoiceToast('\u2705 ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | \u26A0XRAY':''));
-    if (navigator.vibrate) navigator.vibrate([80,40,80]);
-    if (isXray) {
-      speakThen('실번호 ' + sealToSpeech(r.seal) + ' 입니다.', '엑스레이 대상입니다. 실 달아주세요.');
-    } else {
-      speak('실번호 ' + sealToSpeech(r.seal) + ' 입니다.');
-    }
-    setTimeout(function(){ var c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); }, 300);
-  } else {
-    showVoiceToast('\u274C ' + last4 + ' — 목록에 없습니다');
-    speak(last4 + ' 없습니다');
-  }
-}
-function getFemaleVoice() {
-  var voices = window.speechSynthesis.getVoices();
-  // 1순위: 고품질 네이티브 한국어 (네비처럼 자연스러운 음성)
-  var priority = ['Google 한국의','Google Korean','Yuna','유나','나연','지영'];
-  for (var p=0; p<priority.length; p++) {
-    for (var i=0;i<voices.length;i++) {
-      if (voices[i].lang.indexOf('ko')>=0 && voices[i].name.indexOf(priority[p])>=0) {
-        return voices[i];
-      }
-    }
-  }
-  // 2순위: 한국어 아무거나
-  for (var i=0;i<voices.length;i++) {
-    if (voices[i].lang.indexOf('ko')>=0) return voices[i];
-  }
-  return null;
-}
-function sealToSpeech(seal) {
-  // 숫자→한글 한글자씩, 영문→그대로, 0→공 으로 읽기
-  var numMap = {'0':'공','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
-  var result = '';
-  for (var i=0; i<seal.length; i++) {
-    var c = seal[i];
-    if (numMap[c]) result += numMap[c] + ' ';
-    else result += c + ' ';
-  }
-  return result.trim();
-}
-function speak(text) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(text);
-  u.lang = 'ko-KR';
-  u.rate = 0.95;
-  u.pitch = 1.0;
-  u.volume = 1.0;
-  // voices 로드 후 선택
-  var doSpeak = function() {
-    var v = getFemaleVoice();
-    if (v) u.voice = v;
-    window.speechSynthesis.speak(u);
-  };
-  if (window.speechSynthesis.getVoices().length > 0) {
-    doSpeak();
-  } else {
-    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
-  }
-}
-function speakThen(first, second) {
-  if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  var u1 = new SpeechSynthesisUtterance(first);
-  u1.lang = 'ko-KR'; u1.rate = 0.95; u1.pitch = 1.0; u1.volume = 1.0;
-  u1.onend = function() {
-    setTimeout(function() {
-      var u2 = new SpeechSynthesisUtterance(second);
-      u2.lang = 'ko-KR'; u2.rate = 0.95; u2.pitch = 1.0; u2.volume = 1.0;
-      var v = getFemaleVoice();
-      if (v) u2.voice = v;
-      window.speechSynthesis.speak(u2);
-    }, 300);
-  };
-  var doSpeak = function() {
-    var v = getFemaleVoice();
-    if (v) u1.voice = v;
-    window.speechSynthesis.speak(u1);
-  };
-  if (window.speechSynthesis.getVoices().length > 0) {
-    doSpeak();
-  } else {
-    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
-  }
-}
-function showVoiceToast(msg) {
-  var t = document.getElementById('voiceToast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'voiceToast';
-    t.style.cssText = 'position:fixed;top:68px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;max-width:92%;text-align:center;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:none';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg; t.style.opacity = '1';
-  if (voiceToastTimer) clearTimeout(voiceToastTimer);
-  voiceToastTimer = setTimeout(function(){ t.style.opacity='0'; }, 3500);
-}
+// ── 뒤로가기 방지 ──────────────────────────────
+history.pushState(null, null, location.href);
+window.addEventListener('popstate', function(){
+  history.pushState(null, null, location.href);
+});
 
 </script>
 </body>
