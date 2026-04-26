@@ -917,10 +917,11 @@ function applySearch(cntr){
   var last4=cntr.slice(-4);
   document.getElementById('inp').value=last4;
   curQuery=last4; render();
+  // 카메라 모달 완전히 닫힌 후 스크롤 (모달 내 카드 오선택 방지)
   setTimeout(function(){
-    var c=document.querySelector('.card');
-    if(c) c.scrollIntoView({behavior:'smooth'});
-  },300);
+    var cards=document.querySelectorAll('#list .card');
+    if(cards.length>0) cards[0].scrollIntoView({behavior:'smooth'});
+  },500);
 }
 
 function camManualSearch(){
@@ -959,6 +960,12 @@ function startVoice() {
     btn.style.borderColor = 'rgba(255,80,80,0.9)';
     btn.textContent = '🔴';
     showVoiceToast('🎤 숫자 4자리를 말씀해 주세요');
+    // speechSynthesis 권한 미리 확보 (무음 재생)
+    if (window.speechSynthesis) {
+      var warm = new SpeechSynthesisUtterance(' ');
+      warm.volume = 0; warm.lang = 'ko-KR';
+      window.speechSynthesis.speak(warm);
+    }
   };
   voiceRecog.onresult = function(e) {
     processVoiceInput(e.results[0][0].transcript.replace(/\s/g,''));
@@ -1007,12 +1014,15 @@ function processVoiceInput(raw) {
     showVoiceToast('✅ ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | ⚠XRAY':''));
     if (navigator.vibrate) navigator.vibrate([80,40,80]);
     var msg = '실번호 ' + sealToSpeech(r.seal) + ' 입니다.';
-    if (isXray) {
-      speakThen(msg, '엑스레이 대상입니다. 실 달아주세요.');
-    } else {
-      speak(msg);
-    }
-    setTimeout(function(){ var c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); }, 300);
+    // DOM 업데이트 완료 후 음성 재생 (즉시 실행 시 묻힘 방지)
+    setTimeout(function() {
+      if (isXray) {
+        speakThen(msg, '엑스레이 대상입니다. 실 달아주세요.');
+      } else {
+        speak(msg);
+      }
+    }, 400);
+    setTimeout(function(){ var cards=document.querySelectorAll('#list .card'); if(cards.length>0) cards[0].scrollIntoView({behavior:'smooth'}); }, 500);
   } else {
     showVoiceToast('❌ ' + last4 + ' — 목록에 없습니다');
     speak(last4 + ' 없습니다');
@@ -1045,8 +1055,8 @@ function speak(text) {
   window.speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
-  u.rate = 0.88;
-  u.pitch = 1.25;
+  u.rate = 0.82;
+  u.pitch = 1.0;
   u.volume = 1.0;
   var doSpeak = function() {
     var v = getFemaleVoice();
@@ -1063,11 +1073,11 @@ function speakThen(first, second) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var u1 = new SpeechSynthesisUtterance(first);
-  u1.lang = 'ko-KR'; u1.rate = 0.88; u1.pitch = 1.25; u1.volume = 1.0;
+  u1.lang = 'ko-KR'; u1.rate = 0.82; u1.pitch = 1.0; u1.volume = 1.0;
   u1.onend = function() {
     setTimeout(function() {
       var u2 = new SpeechSynthesisUtterance(second);
-      u2.lang = 'ko-KR'; u2.rate = 0.88; u2.pitch = 1.25; u2.volume = 1.0;
+      u2.lang = 'ko-KR'; u2.rate = 0.82; u2.pitch = 1.0; u2.volume = 1.0;
       var v = getFemaleVoice();
       if (v) u2.voice = v;
       window.speechSynthesis.speak(u2);
