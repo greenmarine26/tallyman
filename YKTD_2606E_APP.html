@@ -705,15 +705,20 @@ function processVoiceInput(raw) {
 }
 function getFemaleVoice() {
   var voices = window.speechSynthesis.getVoices();
-  var pick = null;
-  for (var i=0;i<voices.length;i++) {
-    var v = voices[i];
-    if (v.lang.indexOf('ko') >= 0) {
-      if (!pick) pick = v;
-      if (/female|woman|yuna|sora|\uC9C0\uC601|\uB098\uC5F0|\uBBFC\uC544/i.test(v.name)) { pick = v; break; }
+  // 1순위: 고품질 네이티브 한국어 (네비처럼 자연스러운 음성)
+  var priority = ['Google 한국의','Google Korean','Yuna','유나','나연','지영'];
+  for (var p=0; p<priority.length; p++) {
+    for (var i=0;i<voices.length;i++) {
+      if (voices[i].lang.indexOf('ko')>=0 && voices[i].name.indexOf(priority[p])>=0) {
+        return voices[i];
+      }
     }
   }
-  return pick;
+  // 2순위: 한국어 아무거나
+  for (var i=0;i<voices.length;i++) {
+    if (voices[i].lang.indexOf('ko')>=0) return voices[i];
+  }
+  return null;
 }
 function sealToSpeech(seal) {
   // 숫자→한글 한글자씩, 영문→그대로, 0→공 으로 읽기
@@ -731,7 +736,7 @@ function speak(text) {
   window.speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
-  u.rate = 0.82;
+  u.rate = 0.95;
   u.pitch = 1.0;
   u.volume = 1.0;
   // voices 로드 후 선택
@@ -750,11 +755,11 @@ function speakThen(first, second) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var u1 = new SpeechSynthesisUtterance(first);
-  u1.lang = 'ko-KR'; u1.rate = 0.82; u1.pitch = 1.0; u1.volume = 1.0;
+  u1.lang = 'ko-KR'; u1.rate = 0.95; u1.pitch = 1.0; u1.volume = 1.0;
   u1.onend = function() {
     setTimeout(function() {
       var u2 = new SpeechSynthesisUtterance(second);
-      u2.lang = 'ko-KR'; u2.rate = 0.82; u2.pitch = 1.0; u2.volume = 1.0;
+      u2.lang = 'ko-KR'; u2.rate = 0.95; u2.pitch = 1.0; u2.volume = 1.0;
       var v = getFemaleVoice();
       if (v) u2.voice = v;
       window.speechSynthesis.speak(u2);
