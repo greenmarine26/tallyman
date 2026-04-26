@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>XUD 2617E 검수 리포트</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;min-height:100vh}
+.hdr{background:linear-gradient(135deg,#1a3a6b,#2e6da4);color:#fff;padding:16px 20px}
+.hdr h1{font-size:16px;font-weight:700}
+.hdr p{font-size:11px;opacity:.8;margin-top:3px}
+.hdr-row{display:flex;align-items:center;justify-content:space-between}
+.refresh-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:700;cursor:pointer}
+.refresh-btn:active{opacity:.7}
+
+/* 통계 카드 */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;padding:14px}
+.stat{background:#fff;border-radius:10px;padding:12px 14px;box-shadow:0 1px 4px rgba(0,0,0,.08);text-align:center}
+.stat-val{font-size:28px;font-weight:800;line-height:1}
+.stat-lbl{font-size:11px;color:#888;margin-top:4px;font-weight:600}
+.stat.done .stat-val{color:#28a745}
+.stat.remain .stat-val{color:#dc3545}
+.stat.xray .stat-val{color:#cc0000}
+.stat.rf .stat-val{color:#0070c0}
+.stat.total .stat-val{color:#1a3a6b}
+
+/* 섹션 */
+.section{margin:0 14px 14px;background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);overflow:hidden}
+.sec-hdr{background:#1a3a6b;color:#fff;padding:10px 14px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
+.sec-hdr span{font-size:11px;opacity:.8;font-weight:400}
+.dl-btn{background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:6px;padding:4px 10px;font-size:11px;font-weight:700;cursor:pointer}
+.dl-btn:active{opacity:.7}
+
+/* 테이블 */
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#f0f4f8;padding:8px 10px;text-align:left;font-weight:700;color:#555;border-bottom:2px solid #dde3ea;white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #eef0f3;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-block;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px}
+.badge.done{background:#d4edda;color:#155724}
+.badge.remain{background:#f8d7da;color:#721c24}
+.badge.xray{background:#cc0000;color:#fff}
+.badge.rf{background:#cce5ff;color:#004085}
+.badge.dg{background:#fff3cd;color:#856404}
+.tag-pos{font-family:monospace;font-size:11px;background:#e8f0fb;color:#1a3a6b;padding:2px 6px;border-radius:4px;font-weight:700}
+
+/* 진행바 */
+.prog-wrap{padding:14px}
+.prog-bar-bg{background:#e0e0e0;border-radius:10px;height:14px;overflow:hidden;margin-bottom:6px}
+.prog-bar-fill{background:linear-gradient(90deg,#28a745,#5cb85c);height:100%;border-radius:10px;transition:width .5s}
+.prog-label{display:flex;justify-content:space-between;font-size:11px;color:#666;font-weight:600}
+
+/* 검수원별 */
+.user-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;padding:12px}
+.user-card{background:#f8fafc;border:1px solid #e0e8f0;border-radius:8px;padding:10px 12px;text-align:center}
+.user-name{font-size:13px;font-weight:700;color:#1a3a6b;margin-bottom:4px}
+.user-cnt{font-size:22px;font-weight:800;color:#28a745}
+.user-sub{font-size:10px;color:#888;margin-top:2px}
+
+.empty{text-align:center;padding:30px;color:#aaa;font-size:13px}
+.loading{text-align:center;padding:30px;color:#666;font-size:13px}
+.ts{font-size:10px;color:rgba(255,255,255,.7);margin-top:4px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <div>
+      <h1>🚢 XINQUNDAO V.2617E — 검수 리포트</h1>
+      <p>DLC → 평택(PTK) | 양하 275개</p>
+    </div>
+    <button class="refresh-btn" onclick="loadData()">🔄 새로고침</button>
+  </div>
+  <div class="ts" id="lastUpdate">마지막 업데이트: -</div>
+</div>
+
+<!-- 진행률 -->
+<div class="prog-wrap">
+  <div class="prog-bar-bg"><div class="prog-bar-fill" id="progBar" style="width:0%"></div></div>
+  <div class="prog-label"><span id="progTxt">진행률 계산 중...</span><span id="progPct">0%</span></div>
+</div>
+
+<!-- 통계 카드 -->
+<div class="stats">
+  <div class="stat total"><div class="stat-val" id="sTotal">-</div><div class="stat-lbl">전체</div></div>
+  <div class="stat done"><div class="stat-val" id="sDone">-</div><div class="stat-lbl">완료</div></div>
+  <div class="stat remain"><div class="stat-val" id="sRemain">-</div><div class="stat-lbl">잔여</div></div>
+  <div class="stat xray"><div class="stat-val" id="sXray">-</div><div class="stat-lbl">XRAY</div></div>
+  <div class="stat rf"><div class="stat-val" id="sRf">-</div><div class="stat-lbl">RF(냉동)</div></div>
+</div>
+
+<!-- 검수원별 현황 -->
+<div class="section">
+  <div class="sec-hdr">👤 검수원별 처리 현황 <button class="dl-btn" onclick="downloadExcel()">📥 Excel 다운로드</button></div>
+  <div class="user-grid" id="userGrid"><div class="loading">데이터 로딩 중...</div></div>
+</div>
+
+<!-- 완료 목록 -->
+<div class="section">
+  <div class="sec-hdr">✅ 완료 목록 <span id="doneCount"></span></div>
+  <div style="overflow-x:auto">
+    <table id="doneTable">
+      <thead><tr><th>No</th><th>컨테이너</th><th>실번호</th><th>위치</th><th>규격</th><th>특수</th><th>검수원</th><th>시간</th></tr></thead>
+      <tbody id="doneTbody"><tr><td colspan="8" class="loading">로딩 중...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 잔여 목록 -->
+<div class="section">
+  <div class="sec-hdr">⏳ 잔여 목록 <span id="remainCount"></span></div>
+  <div style="overflow-x:auto">
+    <table id="remainTable">
+      <thead><tr><th>No</th><th>컨테이너</th><th>실번호</th><th>위치</th><th>규격</th><th>특수</th></tr></thead>
+      <tbody id="remainTbody"><tr><td colspan="6" class="loading">로딩 중...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- 실번호 수정 목록 -->
+<div class="section">
+  <div class="sec-hdr">✏️ 실번호 수정 목록 <span id="modCount"></span></div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>컨테이너</th><th>원본 실번호</th><th>수정 실번호</th><th>수정자</th><th>수정시간</th></tr></thead>
+      <tbody id="modTbody"><tr><td colspan="5" class="loading">로딩 중...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- XRAY 현황 -->
+<div class="section">
+  <div class="sec-hdr">⚠️ XRAY 처리 현황</div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>컨테이너</th><th>선사 실번호</th><th>세관봉인번호</th><th>위치</th><th>완료</th></tr></thead>
+      <tbody id="xrayTbody"><tr><td colspan="5" class="loading">로딩 중...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── 설정 ─────────────────────────────────────────
+var FB_URL  = 'https://greenmarine-ee29a-default-rtdb.asia-southeast1.firebasedatabase.app';
+var FB_PATH = 'XUD_2617E';
+var TOTAL   = 275;
+
+// ── 원본 데이터 (앱과 동일) ─────────────────────
+var APP_DATA_URL = 'https://greenmarine26.github.io/tallyman/XUD_2617E_APP.html';
+
+// 원본 컨테이너 데이터 (앱에서 추출한 기준 데이터)
+// Firebase에 없는 항목은 미완료로 처리
+var baseData = {};  // cntr -> {no, size, pos, special, xray, seal}
+
+function parseAppData(html) {
+  var m = html.match(/<script type="application\/json" id="JDATA">([\s\S]*?)<\/script>/);
+  if (!m) return [];
+  try { return JSON.parse(m[1]); } catch(e) { return []; }
+}
+
+// ── 데이터 로드 ──────────────────────────────────
+function loadData() {
+  document.getElementById('lastUpdate').textContent = '마지막 업데이트: 로딩 중...';
+
+  // 1. 앱 HTML에서 원본 데이터 가져오기
+  var xhr1 = new XMLHttpRequest();
+  xhr1.open('GET', APP_DATA_URL + '?t=' + Date.now(), true);
+  xhr1.timeout = 15000;
+  xhr1.onreadystatechange = function() {
+    if (xhr1.readyState !== 4) return;
+    if (xhr1.status === 200) {
+      var items = parseAppData(xhr1.responseText);
+      baseData = {};
+      for (var i = 0; i < items.length; i++) {
+        baseData[items[i].cntr] = items[i];
+      }
+    }
+    // 2. Firebase에서 완료 데이터 가져오기
+    loadFirebase();
+  };
+  xhr1.onerror = function() { loadFirebase(); };
+  xhr1.send();
+}
+
+function loadFirebase() {
+  var url = FB_URL + '/' + FB_PATH + '/in.json?t=' + Date.now();
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', url, true);
+  xhr.timeout = 10000;
+  xhr.ontimeout = function() { showError('Firebase 타임아웃'); };
+  xhr.onreadystatechange = function() {
+    if (xhr.readyState !== 4) return;
+    if (xhr.status !== 200) { showError('Firebase 연결 실패 (' + xhr.status + ')'); return; }
+    try {
+      var fbData = JSON.parse(xhr.responseText) || {};
+      renderAll(fbData);
+      var now = new Date();
+      document.getElementById('lastUpdate').textContent =
+        '마지막 업데이트: ' + now.getFullYear() + '-' +
+        pad(now.getMonth()+1) + '-' + pad(now.getDate()) + ' ' +
+        pad(now.getHours()) + ':' + pad(now.getMinutes()) + ':' + pad(now.getSeconds());
+    } catch(e) { showError('데이터 파싱 오류: ' + e.message); }
+  };
+  xhr.send();
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+function showError(msg) {
+  document.getElementById('lastUpdate').textContent = '오류: ' + msg;
+}
+
+// ── 전체 렌더 ────────────────────────────────────
+function renderAll(fbData) {
+  // baseData + fbData 병합
+  var allKeys = Object.keys(baseData);
+  // fbData에만 있는 것도 포함
+  Object.keys(fbData).forEach(function(k) {
+    if (!baseData[k]) allKeys.push(k);
+  });
+
+  var doneList   = [];
+  var remainList = [];
+  var modList    = [];
+  var xrayList   = [];
+  var userMap    = {};  // name -> count
+  var rfCount    = 0;
+  var xrayDone   = 0;
+
+  allKeys.forEach(function(cntr) {
+    var base = baseData[cntr] || { cntr: cntr, no: '-', size: '-', pos: '-', special: '', xray: false, seal: '' };
+    var fb   = fbData[cntr] || {};
+
+    var seal    = fb.seal || base.seal || '';
+    var pos     = fb.pos  || base.pos  || '-';
+    var checked = fb.checked || '';
+    var xraySeal= fb.xray_seal || '';
+    var special = base.special || '';
+    var isXray  = base.xray || false;
+    var size    = base.size || '-';
+
+    // RF 카운트
+    if (size === '40RF' || size === '20RF' || special.indexOf('RF') === 0) rfCount++;
+
+    // XRAY 목록
+    if (isXray) {
+      xrayList.push({ cntr: cntr, seal: seal, xraySeal: xraySeal, pos: pos, checked: checked });
+      if (checked) xrayDone++;
+    }
+
+    // 실번호 수정 감지
+    if (fb.seal && base.seal && fb.seal !== base.seal) {
+      modList.push({
+        cntr: cntr,
+        origSeal: base.seal,
+        newSeal: fb.seal,
+        by: fb.updatedBy || '-',
+        at: fb.updatedAt || '-'
+      });
+    }
+
+    // 완료/잔여 분류
+    if (checked) {
+      // 검수원 파싱 (예: "김성일 2026-04-27 09:32")
+      var parts = checked.split(' ');
+      var userName = parts[0] || checked;
+      var timeStr  = parts.slice(1).join(' ') || '';
+
+      if (!userMap[userName]) userMap[userName] = 0;
+      userMap[userName]++;
+
+      doneList.push({ no: base.no, cntr: cntr, seal: seal, pos: pos, size: size, special: special, user: userName, time: timeStr });
+    } else {
+      remainList.push({ no: base.no, cntr: cntr, seal: seal, pos: pos, size: size, special: special });
+    }
+  });
+
+  var doneCount   = doneList.length;
+  var remainCount = remainList.length;
+  var pct         = TOTAL > 0 ? Math.round(doneCount / TOTAL * 100) : 0;
+
+  // 통계 업데이트
+  document.getElementById('sTotal').textContent  = TOTAL;
+  document.getElementById('sDone').textContent   = doneCount;
+  document.getElementById('sRemain').textContent = TOTAL - doneCount;
+  document.getElementById('sXray').textContent   = xrayList.length;
+  document.getElementById('sRf').textContent     = rfCount;
+
+  // 진행률
+  document.getElementById('progBar').style.width = pct + '%';
+  document.getElementById('progTxt').textContent = '완료 ' + doneCount + ' / ' + TOTAL + '개';
+  document.getElementById('progPct').textContent = pct + '%';
+
+  // 검수원별
+  renderUsers(userMap);
+
+  // 완료 테이블
+  document.getElementById('doneCount').textContent = doneCount + '개';
+  renderDone(doneList);
+
+  // 잔여 테이블
+  document.getElementById('remainCount').textContent = (TOTAL - doneCount) + '개';
+  renderRemain(remainList);
+
+  // 수정 테이블
+  document.getElementById('modCount').textContent = modList.length + '건';
+  renderMod(modList);
+
+  // XRAY 테이블
+  renderXray(xrayList);
+
+  // 전역 저장 (Excel 다운로드용)
+  window._reportData = { doneList: doneList, remainList: remainList, modList: modList, xrayList: xrayList, userMap: userMap };
+}
+
+function renderUsers(userMap) {
+  var names = Object.keys(userMap).sort(function(a,b){ return userMap[b]-userMap[a]; });
+  if (!names.length) {
+    document.getElementById('userGrid').innerHTML = '<div class="empty">아직 완료 데이터 없음</div>';
+    return;
+  }
+  var html = '';
+  names.forEach(function(name) {
+    html += '<div class="user-card">' +
+      '<div class="user-name">' + name + '</div>' +
+      '<div class="user-cnt">' + userMap[name] + '</div>' +
+      '<div class="user-sub">건 완료</div>' +
+      '</div>';
+  });
+  document.getElementById('userGrid').innerHTML = html;
+}
+
+function specialBadge(sp) {
+  if (!sp) return '';
+  if (sp.indexOf('XRAY') >= 0) return '<span class="badge xray">XRAY</span>';
+  if (sp.indexOf('RF') >= 0)   return '<span class="badge rf">RF</span>';
+  if (sp.indexOf('DG') >= 0)   return '<span class="badge dg">DG</span>';
+  return '<span class="badge" style="background:#f0f0f0;color:#555">' + sp.substring(0,8) + '</span>';
+}
+
+function renderDone(list) {
+  if (!list.length) {
+    document.getElementById('doneTbody').innerHTML = '<tr><td colspan="8" class="empty">완료된 항목 없음</td></tr>';
+    return;
+  }
+  list.sort(function(a,b){ return (a.no||0)-(b.no||0); });
+  var html = '';
+  list.forEach(function(r) {
+    html += '<tr>' +
+      '<td style="color:#888;font-size:11px">' + r.no + '</td>' +
+      '<td style="font-family:monospace;font-weight:700;font-size:12px">' + r.cntr + '</td>' +
+      '<td style="font-family:monospace;color:#1a3a6b;font-weight:700">' + (r.seal||'-') + '</td>' +
+      '<td><span class="tag-pos">' + (r.pos||'-') + '</span></td>' +
+      '<td>' + (r.size||'-') + '</td>' +
+      '<td>' + specialBadge(r.special) + '</td>' +
+      '<td><span class="badge done">' + r.user + '</span></td>' +
+      '<td style="font-size:11px;color:#888;white-space:nowrap">' + r.time + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('doneTbody').innerHTML = html;
+}
+
+function renderRemain(list) {
+  if (!list.length) {
+    document.getElementById('remainTbody').innerHTML = '<tr><td colspan="6" class="empty">🎉 모두 완료!</td></tr>';
+    return;
+  }
+  list.sort(function(a,b){ return (a.no||0)-(b.no||0); });
+  var html = '';
+  list.forEach(function(r) {
+    html += '<tr>' +
+      '<td style="color:#888;font-size:11px">' + r.no + '</td>' +
+      '<td style="font-family:monospace;font-weight:700;font-size:12px">' + r.cntr + '</td>' +
+      '<td style="font-family:monospace;color:#1a3a6b;font-weight:700">' + (r.seal||'-') + '</td>' +
+      '<td><span class="tag-pos">' + (r.pos||'-') + '</span></td>' +
+      '<td>' + (r.size||'-') + '</td>' +
+      '<td>' + specialBadge(r.special) + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('remainTbody').innerHTML = html;
+}
+
+function renderMod(list) {
+  if (!list.length) {
+    document.getElementById('modTbody').innerHTML = '<tr><td colspan="5" class="empty">수정 없음</td></tr>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(r) {
+    var at = r.at !== '-' ? r.at.replace('T',' ').substring(0,16) : '-';
+    html += '<tr>' +
+      '<td style="font-family:monospace;font-weight:700">' + r.cntr + '</td>' +
+      '<td style="font-family:monospace;color:#888;text-decoration:line-through">' + r.origSeal + '</td>' +
+      '<td style="font-family:monospace;color:#c05000;font-weight:700">' + r.newSeal + '</td>' +
+      '<td><span class="badge done">' + r.by + '</span></td>' +
+      '<td style="font-size:11px;color:#888">' + at + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('modTbody').innerHTML = html;
+}
+
+function renderXray(list) {
+  if (!list.length) {
+    document.getElementById('xrayTbody').innerHTML = '<tr><td colspan="5" class="empty">XRAY 없음</td></tr>';
+    return;
+  }
+  var html = '';
+  list.forEach(function(r) {
+    html += '<tr>' +
+      '<td style="font-family:monospace;font-weight:700">' + r.cntr + '</td>' +
+      '<td style="font-family:monospace;color:#1a3a6b">' + (r.seal||'-') + '</td>' +
+      '<td style="font-family:monospace;color:#cc0000;font-weight:700">' + (r.xraySeal||'<span style="color:#aaa">미입력</span>') + '</td>' +
+      '<td><span class="tag-pos">' + (r.pos||'-') + '</span></td>' +
+      '<td>' + (r.checked ? '<span class="badge done">완료</span>' : '<span class="badge remain">미완료</span>') + '</td>' +
+      '</tr>';
+  });
+  document.getElementById('xrayTbody').innerHTML = html;
+}
+
+// ── Excel 다운로드 ───────────────────────────────
+function downloadExcel() {
+  var d = window._reportData;
+  if (!d) { alert('먼저 데이터를 로드해주세요'); return; }
+
+  var wb = XLSX.utils.book_new();
+
+  // 완료 시트
+  var doneRows = [['No','컨테이너번호','실번호','선내위치','규격','특수화물','검수원','완료시간']];
+  d.doneList.forEach(function(r) {
+    doneRows.push([r.no, r.cntr, r.seal, r.pos, r.size, r.special, r.user, r.time]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(doneRows), '완료목록');
+
+  // 잔여 시트
+  var remRows = [['No','컨테이너번호','실번호','선내위치','규격','특수화물']];
+  d.remainList.forEach(function(r) {
+    remRows.push([r.no, r.cntr, r.seal, r.pos, r.size, r.special]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(remRows), '잔여목록');
+
+  // 검수원별 시트
+  var userRows = [['검수원','완료건수']];
+  Object.keys(d.userMap).sort(function(a,b){ return d.userMap[b]-d.userMap[a]; }).forEach(function(name) {
+    userRows.push([name, d.userMap[name]]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(userRows), '검수원별');
+
+  // 수정 시트
+  var modRows = [['컨테이너번호','원본실번호','수정실번호','수정자','수정시간']];
+  d.modList.forEach(function(r) {
+    modRows.push([r.cntr, r.origSeal, r.newSeal, r.by, r.at]);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(modRows), '실번호수정');
+
+  // XRAY 시트
+  var xrRows = [['컨테이너번호','선사실번호','세관봉인번호','선내위치','완료여부']];
+  d.xrayList.forEach(function(r) {
+    xrRows.push([r.cntr, r.seal, r.xraySeal, r.pos, r.checked ? '완료' : '미완료']);
+  });
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(xrRows), 'XRAY');
+
+  var now = new Date();
+  var fname = 'XUD_2617E_검수리포트_' + now.getFullYear() + pad(now.getMonth()+1) + pad(now.getDate()) + '_' + pad(now.getHours()) + pad(now.getMinutes()) + '.xlsx';
+  XLSX.writeFile(wb, fname);
+}
+
+// ── 초기 로드 ────────────────────────────────────
+loadData();
+// 1분마다 자동 갱신
+setInterval(loadData, 60000);
+</script>
+</body>
+</html>
