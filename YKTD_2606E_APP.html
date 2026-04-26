@@ -14,24 +14,28 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .hdr-btns{display:flex;gap:6px;}
 .hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
 .hdr-btn:active{opacity:0.7}
-.cam-btn{background:rgba(255,215,0,0.25);border-color:rgba(255,215,0,0.6)}
-.hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
-.hdr-user-info{display:flex;align-items:center;gap:8px;}
-.hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
-.hdr-name{font-size:13px;font-weight:700;}
-.logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
-/* 이름 입력 모달 */
-.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center}
-.modal{background:#fff;border-radius:16px;padding:24px 20px;width:80%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
-.modal-logo{margin-bottom:10px;display:flex;justify-content:center}
-.modal-title{font-size:20px;font-weight:900;color:#1F3864;letter-spacing:1.5px;margin-bottom:2px}
-.modal-sub{font-size:11px;color:#aaa;letter-spacing:.5px;margin-bottom:20px}
-.modal-row{display:flex;align-items:center;gap:0;border:2.5px solid #2E75B6;border-radius:14px;overflow:hidden;box-shadow:0 4px 16px rgba(46,117,182,.15)}
-.modal-row input{flex:1;padding:13px 16px;border:none;font-size:17px;font-weight:800;letter-spacing:1px;outline:none;color:#1F3864;background:#fff;text-align:center}
-.modal-row input::placeholder{color:#bbb;font-weight:400;font-size:14px;letter-spacing:0}
-.modal-enter{width:52px;background:linear-gradient(135deg,#1F3864,#2E75B6);border:none;color:#fff;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:opacity .2s}
-.modal-enter:active{opacity:.7}
-.modal-preview{margin-top:12px;text-align:center;font-size:13px;color:#2E75B6;font-weight:700;min-height:22px;letter-spacing:.5px}
+#camModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);flex-direction:column;align-items:center;justify-content:center;padding:0;}
+.cam-wrap{width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.7);border:1.5px solid rgba(255,215,0,.35);}
+.cam-view{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000;}
+#camVideo{width:100%;height:100%;object-fit:cover;transition:transform .15s;}
+#camCanvas{display:none;}
+.cam-titlebar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);}
+.cam-scan-label{color:#FFD700;font-size:13px;font-weight:800;}
+.cam-close-btn{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;}
+.cam-guide-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cam-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.cam-scanbox{position:relative;z-index:1;width:92%;height:30%;border:2.5px solid #FFD700;border-radius:8px;box-shadow:0 0 0 2px rgba(255,215,0,.3);}
+.cam-bottom{background:#111;padding:12px 14px;}
+.cam-result{color:#FFD700;font-size:13px;font-weight:700;text-align:center;min-height:18px;margin-bottom:8px;}
+.cam-guide{color:#aaa;font-size:11px;text-align:center;margin-bottom:10px;}
+.cam-zoom-row{display:flex;align-items:center;gap:8px;}
+.cam-zoom-label{color:#fff;font-size:11px;font-weight:700;min-width:35px;}
+#zoomSlider{flex:1;height:4px;accent-color:#FFD700;}
+#zoomVal{color:#FFD700;font-size:11px;font-weight:700;min-width:38px;text-align:right;}
+.cam-manual-row{display:flex;gap:6px;margin-top:8px;}
+#camManual{flex:1;padding:8px 12px;border:1.5px solid #444;border-radius:8px;font-size:16px;background:#222;color:#fff;text-align:center;letter-spacing:2px;font-family:monospace;}
+.cam-manual-btn{background:#2e6da4;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-weight:700;}
+/* ── 빈 상태 ── *
 .search-wrap{padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:56px;z-index:98}
 .search-wrap input{width:100%;padding:10px 14px;font-size:18px;border:2px solid #2E75B6;border-radius:10px;outline:none;letter-spacing:2px;font-weight:700;text-align:center}
 .tabs{display:flex;overflow-x:auto;gap:6px;padding:8px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:112px;z-index:97}
@@ -82,52 +86,8 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 </head>
 <body>
 <!-- 카메라 조회 모달 - 상단 카드형 -->
-<div id="camModal" style="display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,0.6);flex-direction:column;align-items:center;justify-content:flex-start;padding:56px 4% 0">
-  <div style="width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.7);border:1.5px solid rgba(255,215,0,0.35);position:relative">
 
-    <!-- 카메라 뷰 - 정사각형 -->
-    <div style="position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000">
-      <video id="camVideo" autoplay playsinline style="width:100%;height:100%;object-fit:cover;display:block"></video>
-      <canvas id="camCanvas" style="display:none"></canvas>
 
-      <!-- 타이틀바 오버레이 -->
-      <div style="position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,0.75),transparent)">
-        <div style="color:#FFD700;font-size:13px;font-weight:800;letter-spacing:.5px">📷 컨테이너 번호 스캔</div>
-        <button onclick="closeCamera()" style="background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;line-height:1">✕</button>
-      </div>
-
-      <!-- 스캔 가이드 - 뷰 안에서 80% 정사각형 -->
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none">
-        <div style="position:relative;width:82%;aspect-ratio:1/1">
-          <!-- 모서리 4개 -->
-          <div style="position:absolute;top:0;left:0;width:28px;height:28px;border-top:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:4px 0 0 0"></div>
-          <div style="position:absolute;top:0;right:0;width:28px;height:28px;border-top:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 4px 0 0"></div>
-          <div style="position:absolute;bottom:0;left:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-left:4px solid #FFD700;border-radius:0 0 0 4px"></div>
-          <div style="position:absolute;bottom:0;right:0;width:28px;height:28px;border-bottom:4px solid #FFD700;border-right:4px solid #FFD700;border-radius:0 0 4px 0"></div>
-          <!-- 스캔 라인 - 정사각형 안에서 좌우 꽉 -->
-          <div style="position:absolute;top:50%;left:0;right:0;height:3px;background:linear-gradient(to right,transparent,#FFD700,transparent);animation:scanLine 2s ease-in-out infinite"></div>
-        </div>
-      </div>
-
-      <!-- 안내 + 결과 오버레이 (하단) -->
-      <div style="position:absolute;bottom:0;left:0;right:0;padding:8px 12px 10px;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent)">
-        <div id="camResult" style="text-align:center;min-height:18px;font-size:13px;font-weight:800;letter-spacing:.5px;color:#FFD700"></div>
-        <div id="camGuide" style="text-align:center;color:rgba(255,255,255,0.55);font-size:10px;margin-top:2px">⏳ 카메라 시작 중...</div>
-      </div>
-    </div>
-
-    <!-- 하단 입력 컨트롤 -->
-    <div style="padding:10px 12px 14px;background:#1a1a2e">
-      <div style="display:flex;gap:8px;align-items:center">
-        <input id="camManual" type="text" placeholder="직접 입력 (번호 또는 끝 4자리)"
-          style="flex:1;padding:9px 12px;border:1.5px solid rgba(255,215,0,0.55);border-radius:10px;font-size:14px;font-weight:700;letter-spacing:1px;background:rgba(255,255,255,0.1);color:#fff;outline:none;text-align:center"
-          oninput="camManualSearch(this.value)">
-        <button onclick="captureNow()" style="background:#FFD700;border:none;border-radius:10px;padding:9px 14px;font-size:20px;cursor:pointer">📸</button>
-      </div>
-    </div>
-  </div>
-</div>
-<style>@keyframes scanLine{0%,100%{opacity:.3;transform:scaleX(.5)}50%{opacity:1;transform:scaleX(1)}}</style>
 <!-- 이름 입력 모달 -->
 <div id="loginWrap" style="position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999">
   <div style="background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
@@ -413,148 +373,225 @@ function doLogout(){
   setTimeout(()=>document.getElementById('nameInp').focus(),100);
 }
 
-// ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
-let camStream=null,camTimer=null,camBusy=false,camLast='';
+// ── 카메라 ──────────────────────────────────────
+var camStream = null, camTimer = null, camBusy = false, camLast = '', currentZoom = 1;
 
 function openCamera(){
-  const m=document.getElementById('camModal');
-  m.style.display='flex'; m.style.flexDirection='column';
-  document.getElementById('camResult').textContent='';
-  document.getElementById('camManual').value='';
-  camLast='';
+  var m = document.getElementById('camModal');
+  m.style.display = 'flex'; m.style.flexDirection = 'column';
+  document.getElementById('camResult').textContent = '';
+  document.getElementById('camManual').value = '';
+  document.getElementById('zoomSlider').value = 1;
+  document.getElementById('zoomVal').textContent = '1.0x';
+  camLast = '';
+  // 검색창 숨기고 아이콘 표시
+  document.getElementById('inp').style.display = 'none';
+  document.getElementById('searchIconBtn').style.display = 'block';
   startCam();
 }
 
 function closeCamera(){
   stopCam();
-  document.getElementById('camModal').style.display='none';
+  document.getElementById('camVideo').style.transform = 'scale(1)';
+  document.getElementById('camModal').style.display = 'none';
+  // 검색창 복원
+  document.getElementById('inp').style.display = '';
+  document.getElementById('searchIconBtn').style.display = 'none';
 }
 
 function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 미지원';
+    return;
+  }
   navigator.mediaDevices.getUserMedia({
-    video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}
-  }).then(stream=>{
-    camStream=stream;
-    const v=document.getElementById('camVideo');
-    v.srcObject=stream;
-    // 여러 이벤트로 확실하게 시작
-    v.onloadedmetadata=()=>{ v.play(); };
-    v.onplaying=()=>{ startAutoScan(); };
-    // 3초 후에도 안 시작되면 강제 시작
-    setTimeout(()=>{ if(!camTimer) startAutoScan(); }, 3000);
-  }).catch(err=>{
+    video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+  }).then(function(stream){
+    camStream = stream;
+    var v = document.getElementById('camVideo');
+    v.srcObject = stream;
+    v.onloadedmetadata = function(){ v.play(); };
+    v.onplaying = function(){ startAutoScan(); };
+    setTimeout(function(){ if(!camTimer) startAutoScan(); }, 3000);
+  }).catch(function(err){
     document.getElementById('camResult').style.color='#FF6B6B';
     document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
   });
 }
 
 function stopCam(){
-  if(camTimer){clearInterval(camTimer);camTimer=null;}
-  if(camStream){camStream.getTracks().forEach(t=>t.stop());camStream=null;}
-  camBusy=false;
+  if(camTimer){ clearInterval(camTimer); camTimer=null; }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  camBusy = false;
 }
 
 function startAutoScan(){
   if(camTimer) clearInterval(camTimer);
-  const guide=document.getElementById('camGuide');
-  if(typeof Tesseract==='undefined'){
-    guide.textContent='⏳ OCR 로딩 중...';
-    // Tesseract 로딩 기다리기
-    const wait=setInterval(()=>{
-      if(typeof Tesseract!=='undefined'){
+  var guide = document.getElementById('camGuide');
+  if(typeof Tesseract === 'undefined'){
+    guide.textContent = '⏳ OCR 로딩 중...';
+    var wait = setInterval(function(){
+      if(typeof Tesseract !== 'undefined'){
         clearInterval(wait);
-        guide.textContent='🔍 자동 스캔 중...';
-        camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
+        guide.textContent = '🔍 자동 스캔 중...';
+        camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
       }
-    },500);
+    }, 500);
     return;
   }
-  guide.textContent='🔍 자동 스캔 중...';
-  camTimer=setInterval(()=>{if(!camBusy) doOCR();},1500);
+  guide.textContent = '🔍 자동 스캔 중...';
+  camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+}
+
+function preprocessCanvas(srcCanvas){
+  var w=srcCanvas.width, h=srcCanvas.height;
+  var dst=document.createElement('canvas');
+  var maxW=1200;
+  var scale=w>maxW?maxW/w:1;
+  dst.width=Math.round(w*scale);
+  dst.height=Math.round(h*scale);
+  var ctx=dst.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  var z=currentZoom||1;
+  var contrast,brightness,saturate;
+  if(z<=3){contrast=1.3;brightness=1.0;saturate=1.0;}
+  else if(z<=10){contrast=1.6;brightness=1.05;saturate=0.8;}
+  else{contrast=2.0;brightness=1.1;saturate=0.5;}
+  ctx.filter='contrast('+contrast+') brightness('+brightness+') saturate('+saturate+')';
+  ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
+  ctx.filter='none';
+  if(z>=10){
+    var imgData=ctx.getImageData(0,0,dst.width,dst.height);
+    var d=imgData.data;
+    for(var i=0;i<d.length;i+=4){
+      var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      var bin=gray>128?255:0;
+      d[i]=d[i+1]=d[i+2]=bin;
+      d[i+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+  return dst;
 }
 
 function doOCR(){
-  const video=document.getElementById('camVideo');
-  const canvas=document.getElementById('camCanvas');
-  if(!video.srcObject||video.paused||video.videoWidth===0) return;
+  var video=document.getElementById('camVideo');
+  var canvas=document.getElementById('camCanvas');
+  if(!video.srcObject||video.paused||video.videoWidth===0){ return; }
   camBusy=true;
-
-  // 전처리 없이 원본 그대로 — Tesseract가 컬러 이미지를 더 잘 인식
-  canvas.width=video.videoWidth;
-  canvas.height=video.videoHeight;
-  const ctx=canvas.getContext('2d');
-  ctx.drawImage(video,0,0);
-
-  const el=document.getElementById('camResult');
-  const guide=document.getElementById('camGuide');
-
-  Tesseract.recognize(canvas,'eng',{
-    logger:()=>{},
-    tessedit_char_whitelist:'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789',
-    tessedit_pageseg_mode:'11'  // 낱글자 모드 - 흩어진 텍스트에 강함
-  }).then(({data:{text}})=>{
-    const found=parseCntr(text);
+  var el=document.getElementById('camResult');
+  var guide=document.getElementById('camGuide');
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var cropX=Math.round(vw*0.02);
+  var cropW=Math.round(vw*0.96);
+  var cropY=Math.round(vh*0.25);
+  var cropH=Math.round(vh*0.50);
+  canvas.width=cropW; canvas.height=cropH;
+  var ctx=canvas.getContext('2d');
+  ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
+  var processed=preprocessCanvas(canvas);
+  Tesseract.recognize(processed,'eng',{
+    logger:function(){},
+    tessedit_char_whitelist:'0123456789',
+    tessedit_pageseg_mode:'7',
+    preserve_interword_spaces:'0'
+  }).then(function(r){
+    var nums=r.data.text.replace(/[^0-9]/g,'');
+    var found=findByNumbers(nums);
     if(found){
-      const match=DATA.find(r=>r.cntr===found);
-      if(match&&found!==camLast){
+      var match=null;
+      for(var i=0;i<DATA.length;i++){ if(DATA[i].cntr===found){ match=DATA[i]; break; } }
+      if(match && found!==camLast){
         camLast=found;
-        el.textContent='✅  '+match.cntr+'  인식됨!';
+        el.textContent='✅ '+match.cntr+' 인식됨!';
         el.style.color='#FFD700';
         guide.textContent='✅ 찾았습니다!';
         if(navigator.vibrate) navigator.vibrate([80,40,80]);
-        setTimeout(()=>{ applySearch(match.cntr); closeCamera(); },700);
-      } else if(!match){
-        el.textContent='⚠ '+found+' — 목록에 없음';
-        el.style.color='#FFA500';
+        setTimeout(function(){ applySearch(match.cntr); closeCamera(); }, 700);
       }
     } else {
-      guide.textContent='🔍 자동 스캔 중...';
       el.textContent='';
+      guide.textContent='🔍 자동 스캔 중...';
     }
     camBusy=false;
-  }).catch(()=>{ camBusy=false; });
+  }).catch(function(){ camBusy=false; });
 }
-function captureNow(){
-  camBusy=false;
-  document.getElementById('camGuide').textContent='🔍 인식 중...';
-  doOCR();
+
+function findByNumbers(nums){
+  if(nums.length<4) return null;
+  if(nums.length>=7){
+    for(var s=0;s<=nums.length-7;s++){
+      var sub7=nums.substr(s,7);
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-7)===sub7) return DATA[i].cntr;
+      }
+    }
+  }
+  if(nums.length>=4){
+    for(var s=0;s<=nums.length-4;s++){
+      var sub4=nums.substr(s,4);
+      var matches=[];
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-4)===sub4) matches.push(DATA[i].cntr);
+      }
+      if(matches.length===1) return matches[0];
+    }
+  }
+  return null;
+}
+
+function setZoom(val){
+  var v=parseFloat(val);
+  currentZoom=v;
+  document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
+  var video=document.getElementById('camVideo');
+  if(!camStream){ video.style.transform='scale('+v+')'; video.style.transformOrigin='center center'; return; }
+  var track=camStream.getVideoTracks()[0];
+  var caps=track&&track.getCapabilities?track.getCapabilities():{};
+  if(caps.zoom){
+    var hwMax=caps.zoom.max, hwMin=caps.zoom.min;
+    if(v<=hwMax){
+      var z=hwMin+(hwMax-hwMin)*((v-1)/29);
+      track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+      video.style.transform='scale(1)';
+    } else {
+      track.applyConstraints({advanced:[{zoom:hwMax}]}).catch(function(){});
+      var cssScale=v/hwMax;
+      video.style.transform='scale('+cssScale+')';
+      video.style.transformOrigin='center center';
+    }
+  } else {
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
+  }
 }
 
 function applySearch(cntr){
-  const last4=cntr.slice(-4);
+  var last4=cntr.slice(-4);
   document.getElementById('inp').value=last4;
   curQuery=last4; render();
-  setTimeout(()=>{ const c=document.querySelector('.card'); if(c) c.scrollIntoView({behavior:'smooth'}); },300);
+  // 카메라 모달 완전히 닫힌 후 스크롤 (모달 내 카드 오선택 방지)
+  setTimeout(function(){
+    var cards=document.querySelectorAll('#list .card');
+    if(cards.length>0) cards[0].scrollIntoView({behavior:'smooth'});
+  },500);
 }
 
-function parseCntr(text){
-  const up=text.toUpperCase().replace(/[^A-Z0-9]/g,'');
-  // 완전 패턴: 영문4 + 숫자7
-  const m=up.match(/[A-Z]{4}[0-9]{7}/g);
-  if(m) return m[0];
-  // O↔0, I↔1 교정 후 재시도
-  const fixed=up.replace(/O/g,'0').replace(/I(?=[0-9])/g,'1').replace(/(?<=[A-Z]{4})O/g,'0');
-  const m2=fixed.match(/[A-Z]{4}[0-9]{7}/g);
-  if(m2) return m2[0];
-  return null;
+function camManualSearch(){
+  var v=document.getElementById('camManual').value.replace(/\D/g,'').slice(-4);
+  if(v.length<4){ alert('끝 4자리를 입력하세요'); return; }
+  closeCamera();
+  document.getElementById('inp').value=v;
+  curQuery=v; render();
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
 }
-function camManualSearch(val){
-  const v=val.replace(/\s/g,'').toUpperCase();
-  const el=document.getElementById('camResult');
-  if(v.length<2){el.textContent='';return;}
-  const found=DATA.filter(r=>r.cntr.includes(v)||r.cntr.slice(-4)===v.slice(-4));
-  if(found.length>0){
-    el.textContent='✅  '+found[0].cntr;
-    el.style.color='#FFD700';
-    if(v.length>=4){
-      if(navigator.vibrate) navigator.vibrate(80);
-      setTimeout(()=>{ applySearch(found[0].cntr); closeCamera(); },600);
-    }
-  } else {
-    el.textContent=v.length>=3?'❌ 없음':'';
-    el.style.color='#FF6B6B';
-  }
-}
+
+render();
 
 render();
 
