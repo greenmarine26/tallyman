@@ -214,11 +214,21 @@ body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
   <button class="mode-btn"        id="btnOut" onclick="switchMode('out')">📦 선적 2607W <b>178</b></button>
 </div>
 <div class="sum-bar" id="sumBar">
-  <span id="modeLabel" style="font-weight:800;color:#4fc3f7">2606E 양하</span>
-  <span>전체 <b id="cntAll">150</b></span>
-  <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
-  <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
-</div>
+    <span id="modeLabel" style="font-weight:800;color:#4fc3f7">2606E 양하</span> <span>전체 <b id="cntAll">150</b></span>
+    <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
+    <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
+    <span>|</span>
+    <span>🔶특수 <b id="cntSP">0</b></span>
+    <span>🧊RF <b id="cntRF">0</b></span>
+    <span>⚠XRAY <b id="cntXR">0</b></span>
+    <span>|</span>
+    <span>풀(F) <b id="cntF">0</b></span>
+    <span>엠티(E) <b id="cntE">0</b></span>
+    <span>|</span>
+    <span>40HQ <b id="cntHQ">0</b></span>
+    <span>40RF <b id="cntRFsz">0</b></span>
+    <span>20DC <b id="cntDC">0</b></span>
+  </div>
 
   <div class="search-wrap">
     <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric" maxlength="4">
@@ -501,20 +511,20 @@ function updateSumBar(){
   var cntEl = document.getElementById('cntAll'); if(cntEl) cntEl.textContent = DATA.length;
 
   var cntSP  = DATA.filter(function(r){ return !!r.special; }).length;
-  var cntRF  = DATA.filter(function(r){ return r.size==='40RF'; }).length;
+  var cntRFsz= DATA.filter(function(r){ return r.size==='40RF'; }).length;
   var cntXR  = DATA.filter(function(r){ return !!r.xray; }).length;
   var cntF   = DATA.filter(function(r){ return r.fe==='F'; }).length;
   var cntE   = DATA.filter(function(r){ return r.fe==='E'; }).length;
-  var cntHC  = DATA.filter(function(r){ return r.size==='40HC'; }).length;
+  var cntHQ  = DATA.filter(function(r){ return r.size==='40HQ'||r.size==='40HC'; }).length;
   var cntDC  = DATA.filter(function(r){ return r.size==='20DC'; }).length;
-  var e; 
+  var e;
   e=document.getElementById('cntSP');   if(e) e.textContent=cntSP;
   e=document.getElementById('cntRF');   if(e) e.textContent=cntSP;
   e=document.getElementById('cntXR');   if(e) e.textContent=cntXR;
   e=document.getElementById('cntF');    if(e) e.textContent=cntF;
   e=document.getElementById('cntE');    if(e) e.textContent=cntE;
-  e=document.getElementById('cntRFsz'); if(e) e.textContent=cntRF;
-  e=document.getElementById('cntHC');   if(e) e.textContent=cntHC;
+  e=document.getElementById('cntHQ');   if(e) e.textContent=cntHQ;
+  e=document.getElementById('cntRFsz'); if(e) e.textContent=cntRFsz;
   e=document.getElementById('cntDC');   if(e) e.textContent=cntDC;
 }
 
