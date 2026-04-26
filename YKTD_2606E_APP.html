@@ -639,6 +639,12 @@ function startVoice() {
     btn.style.borderColor = 'rgba(255,80,80,0.9)';
     btn.textContent = '\uD83D\uDD34';
     showVoiceToast('\uD83C\uDFA4 숫자 4자리를 말씀해 주세요');
+    // speechSynthesis 권한 미리 확보 (무음 재생)
+    if (window.speechSynthesis) {
+      var warm = new SpeechSynthesisUtterance(' ');
+      warm.volume = 0; warm.lang = 'ko-KR';
+      window.speechSynthesis.speak(warm);
+    }
   };
   voiceRecog.onresult = function(e) {
     processVoiceInput(e.results[0][0].transcript.replace(/\s/g,''));
@@ -725,8 +731,8 @@ function speak(text) {
   window.speechSynthesis.cancel();
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
-  u.rate = 0.88;
-  u.pitch = 1.25;
+  u.rate = 0.82;
+  u.pitch = 1.0;
   u.volume = 1.0;
   // voices 로드 후 선택
   var doSpeak = function() {
@@ -744,11 +750,11 @@ function speakThen(first, second) {
   if (!window.speechSynthesis) return;
   window.speechSynthesis.cancel();
   var u1 = new SpeechSynthesisUtterance(first);
-  u1.lang = 'ko-KR'; u1.rate = 0.88; u1.pitch = 1.25; u1.volume = 1.0;
+  u1.lang = 'ko-KR'; u1.rate = 0.82; u1.pitch = 1.0; u1.volume = 1.0;
   u1.onend = function() {
     setTimeout(function() {
       var u2 = new SpeechSynthesisUtterance(second);
-      u2.lang = 'ko-KR'; u2.rate = 0.88; u2.pitch = 1.25; u2.volume = 1.0;
+      u2.lang = 'ko-KR'; u2.rate = 0.82; u2.pitch = 1.0; u2.volume = 1.0;
       var v = getFemaleVoice();
       if (v) u2.voice = v;
       window.speechSynthesis.speak(u2);
