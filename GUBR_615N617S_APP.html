@@ -943,15 +943,20 @@ var voiceRecog = null;
 var voiceActive = false;
 var voiceToastTimer = null;
 
+var pendingSpeech = null; // 버튼 클릭 후 대기 중인 음성
+
 function toggleVoice() {
-  // 버튼 클릭 제스처 컨텍스트에서 speechSynthesis 활성화
+  if (voiceActive) { stopVoice(); return; }
+  // 버튼 클릭 제스처 컨텍스트에서 speechSynthesis 세션 열기
   if (window.speechSynthesis) {
     window.speechSynthesis.cancel();
     var primer = new SpeechSynthesisUtterance(' ');
     primer.volume = 0; primer.lang = 'ko-KR';
+    // primer가 끝나도 세션 유지 — 이후 speak() 호출 가능
+    primer.onend = function() { /* 세션 활성 유지 */ };
     window.speechSynthesis.speak(primer);
   }
-  if (voiceActive) { stopVoice(); } else { startVoice(); }
+  startVoice();
 }
 function startVoice() {
   var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -1031,12 +1036,18 @@ function processVoiceInput(raw) {
 function getFemaleVoice() {
   var voices = window.speechSynthesis.getVoices();
   var pick = null;
-  for (var i=0;i<voices.length;i++) {
-    var v = voices[i];
-    if (v.lang.indexOf('ko') >= 0) {
-      if (!pick) pick = v;
-      if (/female|woman|yuna|sora|지영|나연|민아/i.test(v.name)) { pick = v; break; }
+  // 우선순위: 네이티브 고품질 한국어 음성 선택
+  var priority = ['Google 한국의','Google Korean','Yuna','유나','나연','지영','Nayeon','Jiyoung'];
+  for (var p=0; p<priority.length; p++) {
+    for (var i=0;i<voices.length;i++) {
+      if (voices[i].lang.indexOf('ko') >= 0 && voices[i].name.indexOf(priority[p]) >= 0) {
+        return voices[i];
+      }
     }
+  }
+  // 폴백: 한국어 첫번째
+  for (var i=0;i<voices.length;i++) {
+    if (voices[i].lang.indexOf('ko') >= 0) { pick = voices[i]; break; }
   }
   return pick;
 }
@@ -1052,10 +1063,10 @@ function sealToSpeech(seal) {
 }
 function speak(text) {
   if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  // cancel 하지 않음 — 세션 유지 상태에서 큐에 추가
   var u = new SpeechSynthesisUtterance(text);
   u.lang = 'ko-KR';
-  u.rate = 0.82;
+  u.rate = 0.95;
   u.pitch = 1.0;
   u.volume = 1.0;
   var doSpeak = function() {
@@ -1071,13 +1082,13 @@ function speak(text) {
 }
 function speakThen(first, second) {
   if (!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
+  // cancel 하지 않음 — 세션 유지
   var u1 = new SpeechSynthesisUtterance(first);
-  u1.lang = 'ko-KR'; u1.rate = 0.82; u1.pitch = 1.0; u1.volume = 1.0;
+  u1.lang = 'ko-KR'; u1.rate = 0.95; u1.pitch = 1.0; u1.volume = 1.0;
   u1.onend = function() {
     setTimeout(function() {
       var u2 = new SpeechSynthesisUtterance(second);
-      u2.lang = 'ko-KR'; u2.rate = 0.82; u2.pitch = 1.0; u2.volume = 1.0;
+      u2.lang = 'ko-KR'; u2.rate = 0.95; u2.pitch = 1.0; u2.volume = 1.0;
       var v = getFemaleVoice();
       if (v) u2.voice = v;
       window.speechSynthesis.speak(u2);
