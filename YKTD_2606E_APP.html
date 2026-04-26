@@ -21,16 +21,6 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .hdr-name{font-size:13px;font-weight:700;}
 .logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
 /* 이름 입력 모달 */
-/* ── 로그인 ── */
-#loginWrap{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
-.login-title{font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px;}
-.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:24px;}
-.login-label{font-size:12px;color:#555;font-weight:700;margin-bottom:6px;display:block;}
-.login-inp{width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;}
-.login-inp:focus{border-color:#2e6da4;}
-.login-btn{width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;}
-.login-err{color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none;}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center}
 .modal{background:#fff;border-radius:16px;padding:24px 20px;width:80%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
 .modal-logo{margin-bottom:10px;display:flex;justify-content:center}
@@ -139,20 +129,21 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 </div>
 <style>@keyframes scanLine{0%,100%{opacity:.3;transform:scaleX(.5)}50%{opacity:1;transform:scaleX(1)}}</style>
 <!-- 이름 입력 모달 -->
-<!-- 로그인 -->
-<div id="loginWrap">
-  <div class="login-box">
-    <div class="login-title">🚢 YKTD 2606E 검수</div>
-    <div class="login-sub">그린마린 검수팀</div>
-    <label class="login-label">이름</label>
-    <input class="login-inp" id="loginName" type="text" placeholder="이름 입력" autocomplete="off">
-    <label class="login-label">패스워드 (입사년월일 6자리)</label>
-    <input class="login-inp" id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric">
-    <button class="login-btn" onclick="doLogin()">로그인</button>
-    <div class="login-err" id="loginErr">이름 또는 패스워드가 올바르지 않습니다</div>
+<div id="loginWrap" style="position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999">
+  <div style="background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3)">
+    <div style="font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px">🚢 YKTD 2606E 검수</div>
+    <div style="font-size:12px;color:#888;text-align:center;margin-bottom:24px">그린마린 검수팀</div>
+    <div style="font-size:12px;color:#555;font-weight:700;margin-bottom:6px">이름</div>
+    <input id="loginName" type="text" placeholder="이름 입력" autocomplete="off"
+      style="width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;box-sizing:border-box">
+    <div style="font-size:12px;color:#555;font-weight:700;margin-bottom:6px">패스워드 (입사년월일 6자리)</div>
+    <input id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric"
+      style="width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;box-sizing:border-box">
+    <button onclick="doLogin()"
+      style="width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer">로그인</button>
+    <div id="loginErr" style="color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none"></div>
   </div>
-</div>
-<div class="hdr">
+</div><div class="hdr">
   <div class="hdr-top">
     <div class="hdr-title-wrap">
       <div class="hdr-company">🚢 그린마린 검수팀</div>
@@ -387,9 +378,9 @@ var STAFF_DB = {
 };
 
 function doLogin(){
-  var name = document.getElementById('loginName').value.trim();
-  var pw   = document.getElementById('loginPw').value.trim();
-  var err  = document.getElementById('loginErr');
+  var name=document.getElementById('loginName').value.trim();
+  var pw=document.getElementById('loginPw').value.trim();
+  var err=document.getElementById('loginErr');
   if(!name||!pw){err.style.display='block';err.textContent='이름과 패스워드를 입력하세요';return;}
   if(STAFF_DB[name]!==pw){err.style.display='block';err.textContent='이름 또는 패스워드가 올바르지 않습니다';return;}
   localStorage.setItem('gm_user_2606e',JSON.stringify({name:name,pw:pw}));
@@ -406,22 +397,20 @@ document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.k
 document.getElementById('loginName').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginPw').focus();});
 (function(){
   var saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'null');
-  if(saved&&saved.name&&STAFF_DB[saved.name]&&STAFF_DB[saved.name]===saved.pw){
+  if(saved&&saved.name&&STAFF_DB[saved.name]===saved.pw){
     document.getElementById('loginWrap').style.display='none';
     document.getElementById('userRoleDisp').textContent='검수원';
     document.getElementById('userNameDisp').textContent=saved.name;
   }
 })();
-
 // ── 로그아웃 ──────────────────────────────────
 function doLogout(){
   if(!confirm('로그아웃 하시겠습니까?')) return;
   localStorage.removeItem('gm_user_2606e');
   document.getElementById('userNameDisp').textContent='-';
   document.getElementById('userRoleDisp').textContent='-';
-  document.getElementById('loginPw').value='';
   document.getElementById('loginWrap').style.display='flex';
-  setTimeout(function(){document.getElementById('loginName').focus();},100);
+  setTimeout(()=>document.getElementById('nameInp').focus(),100);
 }
 
 // ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
@@ -753,6 +742,20 @@ function showVoiceToast(msg) {
     div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C00000;color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.4)';
     div.innerHTML = '⚠ 이 앱은 <u>크롬(Chrome) 브라우저</u>에서만 정상 작동합니다.<br>삼성/코멧 브라우저는 음성기능이 지원되지 않습니다.';
     document.body.insertBefore(div, document.body.firstChild);
+  }
+})();
+</script>
+<script>
+(function(){
+  var ua=navigator.userAgent;
+  var isChrome=/Chrome/.test(ua)&&/Google Inc/.test(navigator.vendor);
+  var isSamsung=/SamsungBrowser/.test(ua);
+  var isEdge=/Edg/.test(ua);
+  if(!isChrome||isSamsung||isEdge){
+    var d=document.createElement('div');
+    d.style.cssText='position:fixed;top:0;left:0;right:0;z-index:9999;background:#C00000;color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.6;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+    d.textContent='⚠ 이 앱은 크롬(Chrome) 브라우저에서만 정상 작동합니다. 삼성/코멧 브라우저는 음성기능이 지원되지 않습니다.';
+    document.body.insertBefore(d,document.body.firstChild);
   }
 })();
 </script>
