@@ -1,0 +1,1164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+  <!-- PWA 전체화면 -->
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#1F3864">
+<meta name="viewport" content="width=device-width,initial-scale=1.0,user-scalable=no">
+<title>YKTD 2606E/2607W 검수</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tesseract.js/4.1.1/tesseract.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{font-family:'맑은 고딕',sans-serif;background:#f0f4f8;color:#222;}
+/* ── 로그인 ── */
+#loginWrap{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.login-title{font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:24px;}
+.login-label{font-size:12px;color:#555;font-weight:700;margin-bottom:6px;display:block;}
+.login-inp{width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;}
+.login-inp:focus{border-color:#2e6da4;}
+.login-btn{width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;}
+.login-err{color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none;}
+/* ── 헤더 ── */
+.hdr{background:linear-gradient(135deg,#1a3a6b,#2e6da4);color:#fff;padding:10px 14px 8px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,.3);}
+.hdr-row{display:flex;align-items:center;justify-content:space-between;}
+.hdr h1{font-size:14px;font-weight:700;}
+.hdr-btns{display:flex;gap:6px;}
+.hdr-btn{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:6px;padding:5px 8px;font-size:13px;cursor:pointer;}
+.hdr-user{font-size:10px;opacity:.8;margin-top:2px;}
+/* ── 통계바 ── */
+.sum-bar{background:#1a3a6b;color:#fff;padding:7px 12px;font-size:11px;display:flex;gap:10px;flex-wrap:wrap;justify-content:center;border-top:1px solid rgba(255,255,255,.1);}
+.sum-bar span{opacity:.9;}
+.sum-bar b{opacity:1;}
+.sum-bar .done-cnt{color:#7BFF7B;}
+.sum-bar .remain-cnt{color:#FFD700;}
+/* ── 검색창 ── */
+.search-wrap{padding:10px 12px;background:#fff;border-bottom:1px solid #ddd;position:sticky;top:56px;z-index:99;display:flex;align-items:center;gap:8px;}
+#inp{flex:1;padding:10px 14px;font-size:18px;border:2px solid #2e6da4;border-radius:8px;outline:none;letter-spacing:2px;font-weight:700;text-align:center;}
+#searchIconBtn{display:none;background:#1F3864;border:none;color:#fff;border-radius:8px;padding:10px 14px;font-size:18px;cursor:pointer;flex-shrink:0;}
+/* ── 탭 ── */
+.tabs{display:flex;overflow-x:auto;background:#fff;border-bottom:2px solid #e0e8f0;padding:0 8px;gap:4px;scrollbar-width:none;position:sticky;top:112px;z-index:98;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{flex-shrink:0;padding:7px 12px;font-size:12px;font-weight:600;border-radius:6px 6px 0 0;cursor:pointer;border:none;background:transparent;color:#666;}
+.tab.active{background:#2e6da4;color:#fff;}
+/* ── 결과바 ── */
+.result-bar{padding:5px 12px;font-size:11px;color:#666;background:#f8fafc;border-bottom:1px solid #e8edf2;}
+/* ── 카드 ── */
+.list{padding:8px;}
+.card{border-radius:10px;margin-bottom:7px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.1);background:#fff;}
+.card.done-card{opacity:.6;}
+.card-main{display:flex;align-items:stretch;border-left:5px solid #2e6da4;cursor:pointer;}
+.card-main.xray-c{border-left-color:#cc0000;background:#fffef0;}
+.card-left{padding:8px 10px;flex:1;min-width:0;}
+.card-no{font-size:10px;color:#888;font-weight:600;}
+.card-cntr{font-size:15px;font-weight:700;font-family:monospace;letter-spacing:.5px;}
+.card-seal{font-size:13px;color:#1a3a6b;font-weight:700;margin-top:2px;font-family:monospace;}
+.card-seal.modified{color:#c05000;}
+.card-right{padding:8px 10px;text-align:right;display:flex;flex-direction:column;justify-content:space-between;min-width:100px;gap:4px;}
+.card-pos{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;background:#e8f0fb;border-radius:5px;padding:2px 6px;display:inline-block;}
+.card-oper{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;background:#d9e1f2;color:#1a3a6b;}
+.card-gui{font-size:11px;font-weight:800;padding:3px 7px;border-radius:8px;background:#1a3a6b;color:#fff;letter-spacing:.5px;text-align:center;}
+.card-gui.local{background:#28a745;color:#fff;}
+.card-gui.vnhph{background:#e67e00;color:#fff;}
+.card-gui.other{background:#6c3483;color:#fff;}
+.tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;}
+.tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;}
+.tag.rf{background:#d4edda;color:#155724;}
+.tag.xray{background:#cc0000;color:#fff;}
+.tag.sp{background:#fff0d0;color:#7a4000;}
+/* ── 확인(완료) 버튼 ── */
+.chk-btn{background:#28a745;color:#fff;border:none;border-radius:6px;padding:6px 12px;font-size:12px;font-weight:700;cursor:pointer;width:100%;margin-top:4px;}
+.chk-btn.done{background:#6c757d;}
+.done-badge{background:#28a745;color:#fff;font-size:10px;font-weight:700;padding:2px 6px;border-radius:8px;margin-left:4px;}
+.undo-btn{background:#dc3545;color:#fff;border:none;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;}
+/* ── 디테일 ── */
+.detail{display:none;padding:10px 14px;background:#f8fafc;border-top:1px dashed #ccd;}
+.detail table{width:100%;border-collapse:collapse;font-size:11px;}
+.detail td{padding:5px 6px;border-bottom:1px solid #eee;vertical-align:middle;}
+.detail td:first-child{color:#666;font-weight:600;width:80px;}
+/* ── 실번호 수정 ── */
+.seal-wrap{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.seal-val{font-size:14px;font-weight:700;font-family:monospace;color:#1a3a6b;}
+.seal-val.modified{color:#c05000;}
+.edit-btn{background:#fff;border:1px solid #2e6da4;color:#2e6da4;border-radius:5px;padding:2px 8px;font-size:11px;cursor:pointer;}
+.edit-inp{display:none;align-items:center;gap:6px;margin-top:4px;}
+.seal-input{padding:6px 10px;border:2px solid #2e6da4;border-radius:6px;font-size:14px;font-family:monospace;width:160px;font-weight:700;}
+.save-btn{background:#2e6da4;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+.cancel-btn{background:#999;color:#fff;border:none;border-radius:5px;padding:6px 10px;font-size:12px;cursor:pointer;}
+.mod-badge{font-size:9px;background:#fff0d0;color:#7a4000;padding:1px 5px;border-radius:8px;font-weight:700;}
+/* ── XRAY 봉인SEAL ── */
+.xray-banner{background:#cc0000;color:#fff;text-align:center;padding:6px;font-size:12px;font-weight:700;}
+.xray-seal-box{background:#fff8f8;border:2px solid #cc0000;border-radius:8px;padding:10px;margin-top:8px;}
+.xray-seal-title{color:#cc0000;font-size:11px;font-weight:700;margin-bottom:6px;}
+.xray-seal-row{display:flex;align-items:center;gap:6px;}
+.xray-seal-inp{padding:6px 10px;border:2px solid #cc0000;border-radius:6px;font-size:13px;font-family:monospace;flex:1;font-weight:700;}
+.xray-save-btn{background:#cc0000;color:#fff;border:none;border-radius:5px;padding:6px 12px;font-size:12px;cursor:pointer;}
+/* ── 카메라 모달 ── */
+#camModal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.6);flex-direction:column;align-items:center;justify-content:center;padding:0;}
+.cam-wrap{width:100%;max-width:420px;background:#000;border-radius:20px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.7);border:1.5px solid rgba(255,215,0,.35);}
+.cam-view{position:relative;width:100%;aspect-ratio:1/1;overflow:hidden;background:#000;}
+#camVideo{width:100%;height:100%;object-fit:cover;transition:transform .15s;}
+#camCanvas{display:none;}
+.cam-titlebar{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:linear-gradient(to bottom,rgba(0,0,0,.75),transparent);}
+.cam-scan-label{color:#FFD700;font-size:13px;font-weight:800;}
+.cam-close-btn{background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.4);color:#fff;border-radius:50%;width:30px;height:30px;font-size:15px;cursor:pointer;}
+.cam-guide-wrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none;}
+.cam-overlay{position:absolute;inset:0;background:rgba(0,0,0,.45);}
+.cam-scanbox{position:relative;z-index:1;width:92%;height:30%;border:2.5px solid #FFD700;border-radius:8px;box-shadow:0 0 0 2px rgba(255,215,0,.3);}
+.cam-bottom{background:#111;padding:12px 14px;}
+.cam-result{color:#FFD700;font-size:13px;font-weight:700;text-align:center;min-height:18px;margin-bottom:8px;}
+.cam-guide{color:#aaa;font-size:11px;text-align:center;margin-bottom:10px;}
+.cam-zoom-row{display:flex;align-items:center;gap:8px;}
+.cam-zoom-label{color:#fff;font-size:11px;font-weight:700;min-width:35px;}
+#zoomSlider{flex:1;height:4px;accent-color:#FFD700;}
+#zoomVal{color:#FFD700;font-size:11px;font-weight:700;min-width:38px;text-align:right;}
+.cam-manual-row{display:flex;gap:6px;margin-top:8px;}
+#camManual{flex:1;padding:8px 12px;border:1.5px solid #444;border-radius:8px;font-size:16px;background:#222;color:#fff;text-align:center;letter-spacing:2px;font-family:monospace;}
+.cam-manual-btn{background:#2e6da4;color:#fff;border:none;border-radius:8px;padding:8px 14px;font-size:14px;cursor:pointer;font-weight:700;}
+/* ── 빈 상태 ── */
+.empty{text-align:center;padding:40px 20px;color:#aaa;}
+/* ── 완료탭 스타일 ── */
+.done-info{font-size:10px;color:#28a745;font-weight:700;margin-top:2px;}
+.noseal-banner{background:#ff6600;color:#fff;text-align:center;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer;letter-spacing:.3px;}
+
+.hdr-top{display:flex;align-items:center;justify-content:space-between;}
+.hdr-company{font-size:15px;font-weight:800;letter-spacing:.5px;}
+.hdr-ship{font-size:10px;opacity:.8;margin-top:2px;}
+.hdr-user-row{display:flex;align-items:center;justify-content:space-between;margin-top:6px;padding-top:6px;border-top:1px solid rgba(255,255,255,.2);}
+.hdr-user-info{display:flex;align-items:center;gap:8px;}
+.hdr-role{font-size:10px;background:rgba(255,255,255,.2);padding:2px 7px;border-radius:10px;font-weight:600;}
+.hdr-name{font-size:13px;font-weight:700;}
+.logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
+
+.mode-switch{display:flex;gap:0;background:#0d2340;}
+.mode-btn{flex:1;padding:8px 4px;font-size:12px;font-weight:700;border:none;background:#0d2340;color:rgba(255,255,255,.5);cursor:pointer;transition:all .2s;}
+.mode-btn.active{background:#1F3864;color:#fff;border-bottom:3px solid #4fc3f7;}
+.pos-edit-btn{background:none;border:1px solid #aaa;border-radius:4px;padding:1px 4px;font-size:10px;cursor:pointer;margin-left:4px;}
+</style>
+
+<script type="application/json" id="JDATA_OUT">[{"no": 1, "cntr": "PHRU2504990", "seal": "DYL792912", "size": "20DC", "fe": "F", "pos": "23-08-04", "wgt": 1790, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 2, "cntr": "HALU2316684", "seal": "HAL084417", "size": "20DC", "fe": "F", "pos": "23-06-02", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 3, "cntr": "HALU2321422", "seal": "HAL084415", "size": "20DC", "fe": "F", "pos": "21-04-02", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 4, "cntr": "HALU2427142", "seal": "HAL084467", "size": "20DC", "fe": "F", "pos": "23-05-02", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 5, "cntr": "HALU2513560", "seal": "DWS2438783", "size": "20DC", "fe": "F", "pos": "21-07-04", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 6, "cntr": "HALU2518514", "seal": "P199866", "size": "20DC", "fe": "F", "pos": "23-04-04", "wgt": 10100, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 7, "cntr": "HALU2534069", "seal": "HAL084340", "size": "20DC", "fe": "F", "pos": "23-06-04", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 8, "cntr": "SKLU0535853", "seal": "HAL084349", "size": "20DC", "fe": "F", "pos": "21-06-04", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 9, "cntr": "SKLU1440984", "seal": "HAL084338", "size": "20DC", "fe": "F", "pos": "23-04-02", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 10, "cntr": "SKLU1505869", "seal": "HAL084297", "size": "20DC", "fe": "F", "pos": "23-03-04", "wgt": 14413, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 11, "cntr": "SKLU1905886", "seal": "SKR261882", "size": "20DC", "fe": "F", "pos": "21-08-04", "wgt": 4140, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 12, "cntr": "SKLU2301690", "seal": "587240", "size": "20DC", "fe": "F", "pos": "21-05-04", "wgt": 9886, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 13, "cntr": "BEAU2479461", "seal": "JD003874", "size": "20DC", "fe": "F", "pos": "23-07-04", "wgt": 2844, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 14, "cntr": "CXDU2304750", "seal": "SKR163742", "size": "20DC", "fe": "F", "pos": "21-03-04", "wgt": 12398, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 15, "cntr": "HALU2348418", "seal": "SKR150680", "size": "20DC", "fe": "F", "pos": "21-06-02", "wgt": 12480, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 16, "cntr": "HALU2360265", "seal": "SKR223605", "size": "20DC", "fe": "F", "pos": "07-04-04", "wgt": 12480, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 17, "cntr": "HALU2362904", "seal": "155090", "size": "20DC", "fe": "F", "pos": "19-00-84", "wgt": 4436, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 18, "cntr": "SKLU0703113", "seal": "162173", "size": "20DC", "fe": "F", "pos": "21-04-04", "wgt": 14540, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 19, "cntr": "SKLU1826869", "seal": "012136", "size": "20DC", "fe": "F", "pos": "22-00-82", "wgt": 2067, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 20, "cntr": "SKLU2027810", "seal": "003845", "size": "20DC", "fe": "F", "pos": "17-00-84", "wgt": 1835, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 21, "cntr": "SKLU2482027", "seal": "SKR169283", "size": "20DC", "fe": "F", "pos": "05-04-04", "wgt": 14413, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 22, "cntr": "DYLU5124037", "seal": "DYL792913", "size": "40HQ", "fe": "F", "pos": "22-00-86", "wgt": 16522, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 23, "cntr": "DYLU5142658", "seal": "JD01731", "size": "40HQ", "fe": "F", "pos": "30-01-84", "wgt": 9430, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 24, "cntr": "SEGU5207160", "seal": "DYL792916", "size": "40HQ", "fe": "F", "pos": "06-04-06", "wgt": 4530, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 25, "cntr": "HLHU8101251", "seal": "SKR152302", "size": "40HQ", "fe": "F", "pos": "22-07-82", "wgt": 16184, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 26, "cntr": "HLHU8101307", "seal": "HAL084505", "size": "40HQ", "fe": "F", "pos": "22-07-08", "wgt": 24160, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 27, "cntr": "HLHU8376794", "seal": "SKR152488", "size": "40HQ", "fe": "F", "pos": "22-06-08", "wgt": 25020, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 28, "cntr": "HLHU8393955", "seal": "SKR169402", "size": "40HQ", "fe": "F", "pos": "30-08-84", "wgt": 3959, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 29, "cntr": "HLHU8424995", "seal": "HAL085706", "size": "40HQ", "fe": "F", "pos": "22-03-82", "wgt": 26020, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 30, "cntr": "HLHU8467364", "seal": "HAL085704", "size": "40HQ", "fe": "F", "pos": "22-04-06", "wgt": 5967, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 31, "cntr": "HLHU8528496", "seal": "HAL084630", "size": "40HQ", "fe": "F", "pos": "22-02-06", "wgt": 25380, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 32, "cntr": "SKHU6305206", "seal": "HAL084363", "size": "40HQ", "fe": "F", "pos": "30-02-84", "wgt": 8280, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 33, "cntr": "SKHU6391950", "seal": "HAL084465", "size": "40HQ", "fe": "F", "pos": "22-04-08", "wgt": 25380, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 34, "cntr": "SKHU6396607", "seal": "516307", "size": "40HQ", "fe": "F", "pos": "22-01-04", "wgt": 25570, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 35, "cntr": "SKHU6450375", "seal": "SKR152304", "size": "40HQ", "fe": "F", "pos": "22-02-04", "wgt": 23750, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 36, "cntr": "SKHU9401137", "seal": "HAL083984", "size": "40HQ", "fe": "F", "pos": "22-03-08", "wgt": 24440, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 37, "cntr": "SKHU9419732", "seal": "HAL085946", "size": "40HQ", "fe": "F", "pos": "22-05-08", "wgt": 23510, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 38, "cntr": "SKHU9508315", "seal": "HAL084708", "size": "40HQ", "fe": "F", "pos": "22-08-08", "wgt": 25700, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 39, "cntr": "SKHU9527948", "seal": "HAL083841", "size": "40HQ", "fe": "F", "pos": "22-01-06", "wgt": 24870, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 40, "cntr": "SKHU9529679", "seal": "HAL084364", "size": "40HQ", "fe": "F", "pos": "30-00-84", "wgt": 8280, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 41, "cntr": "SKHU9933490", "seal": "HAL083906", "size": "40HQ", "fe": "F", "pos": "22-01-82", "wgt": 24000, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 42, "cntr": "TCNU8121299", "seal": "HAL084365", "size": "40HQ", "fe": "F", "pos": "22-04-82", "wgt": 26100, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 43, "cntr": "TCNU9885542", "seal": "HAL084409", "size": "40HQ", "fe": "F", "pos": "22-03-84", "wgt": 23264, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 44, "cntr": "BMOU4028190", "seal": "163719", "size": "40HQ", "fe": "F", "pos": "14-02-88", "wgt": 10096, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 45, "cntr": "BMOU5877102", "seal": "SKR150993", "size": "40HQ", "fe": "F", "pos": "22-02-82", "wgt": 17247, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 46, "cntr": "BMOU6064956", "seal": "SKR167418", "size": "40HQ", "fe": "F", "pos": "30-01-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 47, "cntr": "BMOU6094185", "seal": "SKR150992", "size": "40HQ", "fe": "F", "pos": "06-07-86", "wgt": 16049, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 48, "cntr": "DFSU7487738", "seal": "012089", "size": "40HQ", "fe": "F", "pos": "30-03-84", "wgt": 8282, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 49, "cntr": "FSCU8195206", "seal": "JD01716", "size": "40HQ", "fe": "F", "pos": "30-08-86", "wgt": 6000, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 50, "cntr": "GCXU6003761", "seal": "012156", "size": "40HQ", "fe": "F", "pos": "06-02-88", "wgt": 10899, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 51, "cntr": "GCXU6008341", "seal": "SKR189385", "size": "40HQ", "fe": "F", "pos": "22-04-84", "wgt": 22500, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 52, "cntr": "GESU5814494", "seal": "SKR159214", "size": "40HQ", "fe": "F", "pos": "30-04-84", "wgt": 8315, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 53, "cntr": "HALU5640845", "seal": "012114", "size": "40HQ", "fe": "F", "pos": "06-00-88", "wgt": 3541, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 54, "cntr": "HDGU5000231", "seal": "012083", "size": "40HQ", "fe": "F", "pos": "30-07-82", "wgt": 5244, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 55, "cntr": "HDGU5001475", "seal": "012123", "size": "40HQ", "fe": "F", "pos": "14-01-88", "wgt": 9907, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 56, "cntr": "HDGU5002240", "seal": "012093", "size": "40HQ", "fe": "F", "pos": "06-03-06", "wgt": 6899, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 57, "cntr": "HLHU6404599", "seal": "SKR169384", "size": "40HQ", "fe": "F", "pos": "22-08-86", "wgt": 13369, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 58, "cntr": "HLHU6417425", "seal": "SKR155455", "size": "40HQ", "fe": "F", "pos": "06-04-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 59, "cntr": "HLHU8104311", "seal": "SKR159062", "size": "40HQ", "fe": "F", "pos": "22-07-84", "wgt": 17637, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 60, "cntr": "HLHU8304433", "seal": "SKR163720", "size": "40HQ", "fe": "F", "pos": "06-07-82", "wgt": 4084, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 61, "cntr": "HLHU8305492", "seal": "162621", "size": "40HQ", "fe": "F", "pos": "30-05-80", "wgt": 3437, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 62, "cntr": "HLHU8314616", "seal": "012124", "size": "40HQ", "fe": "F", "pos": "14-06-88", "wgt": 5110, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 63, "cntr": "HLHU8324471", "seal": "SKR152662", "size": "40HQ", "fe": "F", "pos": "06-02-84", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 64, "cntr": "HLHU8329621", "seal": "SKR150897", "size": "40HQ", "fe": "F", "pos": "06-04-08", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 65, "cntr": "HLHU8355620", "seal": "012073", "size": "40HQ", "fe": "F", "pos": "30-08-82", "wgt": 4411, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 66, "cntr": "HLHU8371236", "seal": "012154", "size": "40HQ", "fe": "F", "pos": "06-01-88", "wgt": 9479, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 67, "cntr": "HLHU8373959", "seal": "012126", "size": "40HQ", "fe": "F", "pos": "14-05-88", "wgt": 8722, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 68, "cntr": "HLHU8427649", "seal": "SKR151146", "size": "40HQ", "fe": "F", "pos": "06-04-86", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 69, "cntr": "HLHU8435480", "seal": "SKR163665", "size": "40HQ", "fe": "F", "pos": "06-02-08", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 70, "cntr": "HLHU8443362", "seal": "SKR169373", "size": "40HQ", "fe": "F", "pos": "22-07-06", "wgt": 4895, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 71, "cntr": "HLHU8446037", "seal": "012157", "size": "40HQ", "fe": "F", "pos": "06-05-88", "wgt": 6346, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 72, "cntr": "HLHU8447711", "seal": "SKR169476", "size": "40HQ", "fe": "F", "pos": "06-03-86", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 73, "cntr": "HLHU8466060", "seal": "159209", "size": "40HQ", "fe": "F", "pos": "22-03-06", "wgt": 8615, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 74, "cntr": "HLHU8467770", "seal": "SKR190406", "size": "40HQ", "fe": "F", "pos": "06-01-08", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 75, "cntr": "HLHU8507127", "seal": "SKR169380", "size": "40HQ", "fe": "F", "pos": "06-06-84", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 76, "cntr": "HLHU8536932", "seal": "SKR163620", "size": "40HQ", "fe": "F", "pos": "06-05-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 77, "cntr": "HLHU8539150", "seal": "SKR217016", "size": "40HQ", "fe": "F", "pos": "22-07-86", "wgt": 15075, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 78, "cntr": "HLHU8575754", "seal": "433657", "size": "40HQ", "fe": "F", "pos": "14-04-88", "wgt": 8068, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 79, "cntr": "HLHU8576072", "seal": "HAL083866", "size": "40HQ", "fe": "F", "pos": "06-08-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 80, "cntr": "HLHU8597840", "seal": "SKR163739", "size": "40HQ", "fe": "F", "pos": "30-01-80", "wgt": 6790, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 81, "cntr": "SEGU4214231", "seal": "012115", "size": "40HQ", "fe": "F", "pos": "06-08-82", "wgt": 4508, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 82, "cntr": "SEKU4974497", "seal": "01730", "size": "40HQ", "fe": "F", "pos": "06-03-88", "wgt": 6424, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 83, "cntr": "SKHU6308910", "seal": "SKR169385", "size": "40HQ", "fe": "F", "pos": "06-02-06", "wgt": 8020, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 84, "cntr": "SKHU6315483", "seal": "SKR169275", "size": "40HQ", "fe": "F", "pos": "30-00-86", "wgt": 7150, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 85, "cntr": "SKHU6325075", "seal": "SKR159153", "size": "40HQ", "fe": "F", "pos": "30-03-86", "wgt": 5590, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 86, "cntr": "SKHU6334143", "seal": "SKR162234", "size": "40HQ", "fe": "F", "pos": "06-05-86", "wgt": 22429, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 87, "cntr": "SKHU6334230", "seal": "SKR169477", "size": "40HQ", "fe": "F", "pos": "22-08-06", "wgt": 2199, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 88, "cntr": "SKHU6358839", "seal": "189107", "size": "40HQ", "fe": "F", "pos": "14-03-88", "wgt": 8576, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 89, "cntr": "SKHU6377736", "seal": "SKR169386", "size": "40HQ", "fe": "F", "pos": "22-03-86", "wgt": 17490, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 90, "cntr": "SKHU6385602", "seal": "SKR169336", "size": "40HQ", "fe": "F", "pos": "30-05-86", "wgt": 6161, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 91, "cntr": "SKHU6389300", "seal": "SKR229272", "size": "40HQ", "fe": "F", "pos": "30-06-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 92, "cntr": "SKHU6411851", "seal": "SKR150995", "size": "40HQ", "fe": "F", "pos": "30-00-82", "wgt": 16114, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 93, "cntr": "SKHU6423512", "seal": "081437", "size": "40HQ", "fe": "F", "pos": "06-00-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 94, "cntr": "SKHU6431307", "seal": "WDF886938", "size": "40HQ", "fe": "F", "pos": "30-02-80", "wgt": 6100, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 95, "cntr": "SKHU6442261", "seal": "SKR162067", "size": "40HQ", "fe": "F", "pos": "22-05-84", "wgt": 22429, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 96, "cntr": "SKHU6448444", "seal": "SKR169377", "size": "40HQ", "fe": "F", "pos": "06-01-84", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 97, "cntr": "SKHU6458268", "seal": "SKR159159", "size": "40HQ", "fe": "F", "pos": "30-07-86", "wgt": 4862, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 98, "cntr": "SKHU6459731", "seal": "SKR163514", "size": "40HQ", "fe": "F", "pos": "06-02-86", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 99, "cntr": "SKHU6464213", "seal": "012146", "size": "40HQ", "fe": "F", "pos": "06-07-88", "wgt": 4914, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 100, "cntr": "SKHU6483384", "seal": "SKR150781", "size": "40HQ", "fe": "F", "pos": "22-05-06", "wgt": 4775, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 101, "cntr": "SKHU6483640", "seal": "SKR167171", "size": "40HQ", "fe": "F", "pos": "30-06-84", "wgt": 7220, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 102, "cntr": "SKHU6483810", "seal": "SKR169270", "size": "40HQ", "fe": "F", "pos": "22-08-84", "wgt": 17637, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 103, "cntr": "SKHU6515136", "seal": "SKR169318", "size": "40HQ", "fe": "F", "pos": "30-02-86", "wgt": 4339, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 104, "cntr": "SKHU6517838", "seal": "SKR220641", "size": "40HQ", "fe": "F", "pos": "30-03-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 105, "cntr": "SKHU6549481", "seal": "SKR163724", "size": "40HQ", "fe": "F", "pos": "06-01-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 106, "cntr": "SKHU6562760", "seal": "169346", "size": "40HQ", "fe": "F", "pos": "06-05-08", "wgt": 5435, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 107, "cntr": "SKHU6563406", "seal": "650357", "size": "40HQ", "fe": "F", "pos": "06-04-82", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 108, "cntr": "SKHU6565311", "seal": "SKR163538", "size": "40HQ", "fe": "F", "pos": "30-03-80", "wgt": 4068, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 109, "cntr": "SKHU6584420", "seal": "012095", "size": "40HQ", "fe": "F", "pos": "30-04-80", "wgt": 4492, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 110, "cntr": "SKHU6587141", "seal": "HAL083864", "size": "40HQ", "fe": "F", "pos": "06-06-86", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 111, "cntr": "SKHU6595661", "seal": "HAL096963", "size": "40HQ", "fe": "F", "pos": "30-04-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 112, "cntr": "SKHU8123181", "seal": "SKR191203", "size": "40HQ", "fe": "F", "pos": "30-05-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 113, "cntr": "SKHU8124552", "seal": "SKR166429", "size": "40HQ", "fe": "F", "pos": "06-03-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 114, "cntr": "SKHU8125287", "seal": "SKR150991", "size": "40HQ", "fe": "F", "pos": "06-01-06", "wgt": 4200, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 115, "cntr": "SKHU8415100", "seal": "012090", "size": "40HQ", "fe": "F", "pos": "06-06-08", "wgt": 4813, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 116, "cntr": "SKHU8417669", "seal": "SKR169320", "size": "40HQ", "fe": "F", "pos": "30-04-86", "wgt": 3745, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 117, "cntr": "SKHU8418053", "seal": "SKR162030", "size": "40HQ", "fe": "F", "pos": "06-03-08", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 118, "cntr": "SKHU8431482", "seal": "01701", "size": "40HQ", "fe": "F", "pos": "22-02-02", "wgt": 9155, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 119, "cntr": "SKHU9200127", "seal": "012143", "size": "40HQ", "fe": "F", "pos": "06-08-88", "wgt": 3794, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 120, "cntr": "SKHU9307497", "seal": "SKR169497", "size": "40HQ", "fe": "F", "pos": "06-05-82", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 121, "cntr": "SKHU9424981", "seal": "012148", "size": "40HQ", "fe": "F", "pos": "06-00-86", "wgt": 8786, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 122, "cntr": "SKHU9508737", "seal": "SKR169347", "size": "40HQ", "fe": "F", "pos": "22-02-86", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 123, "cntr": "SKHU9530915", "seal": "SKR165597", "size": "40HQ", "fe": "F", "pos": "30-02-82", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 124, "cntr": "SKHU9537458", "seal": "SKR163534", "size": "40HQ", "fe": "F", "pos": "30-05-84", "wgt": 6880, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 125, "cntr": "SKHU9540282", "seal": "SKR159110", "size": "40HQ", "fe": "F", "pos": "23-03-02", "wgt": 2354, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 126, "cntr": "SKHU9609774", "seal": "SKR169428", "size": "40HQ", "fe": "F", "pos": "06-06-82", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 127, "cntr": "SKHU9630323", "seal": "SKR169491", "size": "40HQ", "fe": "F", "pos": "06-03-82", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 128, "cntr": "SKHU9633132", "seal": "810995", "size": "40HQ", "fe": "F", "pos": "22-06-06", "wgt": 5101, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 129, "cntr": "SKHU9914485", "seal": "SKR208900", "size": "40HQ", "fe": "F", "pos": "22-01-86", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 130, "cntr": "SKHU9936144", "seal": "012085", "size": "40HQ", "fe": "F", "pos": "30-06-80", "wgt": 4724, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 131, "cntr": "SKHU9947262", "seal": "SKR151000", "size": "40HQ", "fe": "F", "pos": "06-08-86", "wgt": 16113, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 132, "cntr": "SKHU9972537", "seal": "159201", "size": "40HQ", "fe": "F", "pos": "22-01-02", "wgt": 6702, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 133, "cntr": "TCLU8569157", "seal": "SKR217043", "size": "40HQ", "fe": "F", "pos": "22-05-86", "wgt": 16080, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 134, "cntr": "TCNU4393508", "seal": "HAL083761", "size": "40HQ", "fe": "F", "pos": "06-02-82", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 135, "cntr": "TCNU6262050", "seal": "SKR169429", "size": "40HQ", "fe": "F", "pos": "06-07-84", "wgt": 24372, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 136, "cntr": "TCNU6912644", "seal": "012127", "size": "40HQ", "fe": "F", "pos": "07-01-02", "wgt": 3630, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 137, "cntr": "TEMU7225160", "seal": "SKR159063", "size": "40HQ", "fe": "F", "pos": "30-01-86", "wgt": 5855, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 138, "cntr": "TGBU4382571", "seal": "SKR163605", "size": "40HQ", "fe": "F", "pos": "22-06-84", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 139, "cntr": "TRHU4870543", "seal": "012088", "size": "40HQ", "fe": "F", "pos": "06-06-88", "wgt": 5932, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 140, "cntr": "TRHU6227351", "seal": "SKR152506", "size": "40HQ", "fe": "F", "pos": "06-01-86", "wgt": 24494, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 141, "cntr": "TRHU6357930", "seal": "012152", "size": "40HQ", "fe": "F", "pos": "06-04-88", "wgt": 4276, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 142, "cntr": "SKRU9000535", "seal": "SKR159158", "size": "40RF", "fe": "F", "pos": "22-01-84", "wgt": 24115, "oper": "SKR", "gui": "VNHPH", "special": "RF(-18.0C)", "xray": false}, {"no": 143, "cntr": "SKRU9400742", "seal": "SKR155668", "size": "40RF", "fe": "F", "pos": "22-02-84", "wgt": 23115, "oper": "SKR", "gui": "VNHPH", "special": "RF(-18.0C)", "xray": false}, {"no": 144, "cntr": "SKRU9603210", "seal": "SKR152074", "size": "40RF", "fe": "F", "pos": "22-00-84", "wgt": 23314, "oper": "SKR", "gui": "VNHPH", "special": "RF(-18.0C)", "xray": false}, {"no": 145, "cntr": "DJLU2013764", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-03-04", "wgt": 14660, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 146, "cntr": "DJLU2151969", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-06-06", "wgt": 6120, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 147, "cntr": "DJLU2153489", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-01-04", "wgt": 22240, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 148, "cntr": "DJLU2154361", "seal": "", "size": "40HQ", "fe": "F", "pos": "23-05-04", "wgt": 16593, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 149, "cntr": "DJLU2159830", "seal": "", "size": "40HQ", "fe": "F", "pos": "05-02-04", "wgt": 18300, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 150, "cntr": "DJLU2159975", "seal": "", "size": "40HQ", "fe": "F", "pos": "06-00-82", "wgt": 28194, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 151, "cntr": "DJLU2185362", "seal": "", "size": "40HQ", "fe": "F", "pos": "05-01-04", "wgt": 18300, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 152, "cntr": "DJLU2188886", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-05-06", "wgt": 4363, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 153, "cntr": "DJLU2230420", "seal": "", "size": "40HQ", "fe": "F", "pos": "21-05-02", "wgt": 12127, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 154, "cntr": "DJLU5223363", "seal": "", "size": "40HQ", "fe": "F", "pos": "30-06-86", "wgt": 8994, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 155, "cntr": "FTAU1614533", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-02-02", "wgt": 22240, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 156, "cntr": "FTAU1617131", "seal": "", "size": "40HQ", "fe": "F", "pos": "05-03-04", "wgt": 16593, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 157, "cntr": "PHRU2702001", "seal": "", "size": "40HQ", "fe": "F", "pos": "07-02-04", "wgt": 22098, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 158, "cntr": "TIIU2434227", "seal": "", "size": "40HQ", "fe": "F", "pos": "05-02-02", "wgt": 22240, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 159, "cntr": "TIIU4934366", "seal": "", "size": "40HQ", "fe": "F", "pos": "30-07-84", "wgt": 8562, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 160, "cntr": "TIIU5510676", "seal": "", "size": "40HQ", "fe": "F", "pos": "22-06-82", "wgt": 28194, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 161, "cntr": "SEGU2370240", "seal": "", "size": "20DC", "fe": "F", "pos": "05-01-02", "wgt": 22240, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 162, "cntr": "TIIU6426615", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-00-86", "wgt": 17620, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 163, "cntr": "DJLU5250883", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-01-86", "wgt": 13657, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 164, "cntr": "SEGU5187167", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-02-86", "wgt": 13846, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 165, "cntr": "HLHU8542869", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-03-86", "wgt": 12326, "oper": "HAS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 166, "cntr": "BMOU5941156", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-04-86", "wgt": 11818, "oper": "HAS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 167, "cntr": "DJLU5223321", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-05-86", "wgt": 12472, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 168, "cntr": "DYLU5124130", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-06-86", "wgt": 8860, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 169, "cntr": "HLHU8569284", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-07-86", "wgt": 9280, "oper": "HAS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 170, "cntr": "SKHU6367297", "seal": "", "size": "40HQ", "fe": "F", "pos": "14-08-86", "wgt": 9930, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 171, "cntr": "HALU2519167", "seal": "", "size": "20DC", "fe": "F", "pos": "17-00-82", "wgt": 4085, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 172, "cntr": "SKHU6428833", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-01-86", "wgt": 10497, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 173, "cntr": "DJLU5252269", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-02-86", "wgt": 12060, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 174, "cntr": "DYLU5117969", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-03-86", "wgt": 10180, "oper": "DYS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 175, "cntr": "CAAU4954032", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-04-86", "wgt": 10881, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 176, "cntr": "BEAU5407887", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-05-86", "wgt": 16904, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 177, "cntr": "SKHU6522990", "seal": "", "size": "40HQ", "fe": "F", "pos": "18-07-86", "wgt": 14465, "oper": "SKR", "gui": "VNHPH", "special": "", "xray": false}, {"no": 178, "cntr": "DJLU5155968", "seal": "", "size": "40HQ", "fe": "F", "pos": "19-00-82", "wgt": 6686, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 179, "cntr": "BMOU1558914", "seal": "", "size": "20DC", "fe": "F", "pos": "21-03-02", "wgt": 14648, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}, {"no": 180, "cntr": "DJLU5150755", "seal": "", "size": "40HQ", "fe": "F", "pos": "22-04-86", "wgt": 8475, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 181, "cntr": "DJLU5221421", "seal": "", "size": "40HQ", "fe": "F", "pos": "22-05-82", "wgt": 26129, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 182, "cntr": "BEAU5409977", "seal": "", "size": "40HQ", "fe": "F", "pos": "22-06-86", "wgt": 8735, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 183, "cntr": "DJLU5015360", "seal": "", "size": "40HQ", "fe": "F", "pos": "22-08-82", "wgt": 21337, "oper": "HSL", "gui": "VNHPH", "special": "", "xray": false}, {"no": 184, "cntr": "BMOU1560681", "seal": "", "size": "20DC", "fe": "F", "pos": "30-00-80", "wgt": 19814, "oper": "DJS", "gui": "VNHPH", "special": "", "xray": false}]</script>
+</head>
+<body>
+
+<!-- 로그인 -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">🚢 YKTD 2606E/2607W 검수</div>
+    <div class="login-sub">그린마린 검수팀</div>
+    <label class="login-label">이름</label>
+    <input class="login-inp" id="loginName" type="text" placeholder="이름 입력" autocomplete="off">
+    <label class="login-label">패스워드 (입사년월일 6자리)</label>
+    <input class="login-inp" id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr">이름 또는 패스워드가 올바르지 않습니다</div>
+  </div>
+</div>
+
+<!-- 카메라 모달 -->
+<div id="camModal" style="display:none">
+  <div class="cam-wrap">
+    <div class="cam-view">
+      <video id="camVideo" autoplay playsinline></video>
+      <canvas id="camCanvas"></canvas>
+      <div class="cam-titlebar">
+        <div class="cam-scan-label">🔍 자동 스캔중</div>
+        <button class="cam-close-btn" onclick="closeCamera()">✕</button>
+      </div>
+      <div class="cam-guide-wrap">
+        <div class="cam-overlay"></div>
+        <div class="cam-scanbox">
+          <div style="position:absolute;inset:-1px;border:1px dashed rgba(255,215,0,.4);border-radius:7px;"></div>
+        </div>
+      </div>
+    </div>
+    <div class="cam-bottom">
+      <div class="cam-result" id="camResult"></div>
+      <div class="cam-guide" id="camGuide">컨테이너 번호를 박스 안에 맞춰주세요</div>
+      <div class="cam-zoom-row">
+        <span class="cam-zoom-label">줌</span>
+        <input type="range" id="zoomSlider" min="1" max="30" step="0.5" value="1" oninput="setZoom(this.value)">
+        <span id="zoomVal">1.0x</span>
+      </div>
+      <div class="cam-manual-row">
+        <input id="camManual" type="tel" placeholder="끝 4자리 직접입력" maxlength="4" inputmode="numeric">
+        <button class="cam-manual-btn" onclick="camManualSearch()">검색</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 메인 앱 (로그인 후 표시) -->
+<div id="appWrap" style="display:none">
+  <div class="hdr">
+    <div class="hdr-top">
+      <div class="hdr-title-wrap">
+        <div class="hdr-company">🚢 그린마린 검수팀</div>
+        <div class="hdr-ship">YKTD 2606E/2607W | KRPTK 평택</div>
+      </div>
+      <div class="hdr-btns">
+        <button id="refreshBtn" class="hdr-btn" onclick="loadFromSheets()" title="새로고침">🔄</button>
+        <button class="hdr-btn cam-btn" onclick="openCamera()" title="카메라">📷</button>
+        <button class="hdr-btn" id="voiceBtn" onclick="toggleVoice()" title="음성 검색" style="background:rgba(0,200,100,0.25);border-color:rgba(0,200,100,0.6)">🎤</button>
+      </div>
+    </div>
+    <div class="hdr-user-row">
+      <div class="hdr-user-info">
+        <span class="hdr-role" id="hdrRole">-</span>
+        <span class="hdr-name" id="hdrName">-</span>
+      </div>
+      <button class="logout-btn" onclick="doLogout()">⏏ 로그아웃</button>
+    </div>
+  </div>
+
+  <div class="mode-switch">
+  <button class="mode-btn active" id="btnIn"  onclick="switchMode('in')">🚢 양하 2606E <b>150</b></button>
+  <button class="mode-btn"        id="btnOut" onclick="switchMode('out')">📦 선적 2607W <b>184</b></button>
+</div>
+<div class="sum-bar" id="sumBar">
+    <span id="modeLabel" style="font-weight:800;color:#4fc3f7">2606E 양하</span> <span>전체 <b id="cntAll">150</b></span>
+    <span>완료 <b class="done-cnt" id="sumDone">0</b></span>
+    <span>잔여 <b class="remain-cnt" id="sumRemain">150</b></span>
+    <span>|</span>
+    <span>🔶특수 <b id="cntSP">0</b></span>
+    <span>🧊RF <b id="cntRF">0</b></span>
+    <span>⚠XRAY <b id="cntXR">0</b></span>
+    <span>|</span>
+    <span>풀(F) <b id="cntF">0</b></span>
+    <span>엠티(E) <b id="cntE">0</b></span>
+    <span>|</span>
+    <span>40HQ <b id="cntHQ">0</b></span>
+    <span>40RF <b id="cntRFsz">0</b></span>
+    <span>20DC <b id="cntDC">0</b></span>
+  </div>
+
+  <div class="search-wrap">
+    <input id="inp" type="tel" placeholder="끝 4자리 입력" autocomplete="off" inputmode="numeric" maxlength="4">
+    <button id="searchIconBtn" onclick="toggleSearchInput()">🔍</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-f="all">전체</button>
+    <button class="tab" data-f="remain">잔여</button>
+    <button class="tab" data-f="done">✅완료</button>
+    <button class="tab" data-f="SP">🔶특수</button>
+    <button class="tab" data-f="RF">🧊리퍼</button>
+    <button class="tab" data-f="XRAY">⚠XRAY</button>
+    <button class="tab" data-f="FULL">풀(F)</button>
+    <button class="tab" data-f="EMPTY">엠티(E)</button>
+    <button class="tab" data-f="40RF">40RF</button>
+    <button class="tab" data-f="40HC">40HC</button>
+    <button class="tab" data-f="20DC">20DC</button>
+  </div>
+
+  <div class="result-bar" id="rbar"></div>
+  <div class="list" id="list"></div>
+</div>
+
+<script type="application/json" id="JDATA">[{"no": 1, "cntr": "DJLU2161606", "seal": "DJHN221019", "size": "20DC", "fe": "F", "pos": "05-01-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 2, "cntr": "DJLU2186878", "seal": "DJHN223020", "size": "20DC", "fe": "F", "pos": "23-05-02", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 3, "cntr": "DJLU2188103", "seal": "DJHN221011", "size": "20DC", "fe": "F", "pos": "07-03-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 4, "cntr": "DJLU2189310", "seal": "DJHN223014", "size": "20DC", "fe": "F", "pos": "07-02-02", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 5, "cntr": "DJLU2232823", "seal": "DJHN223201", "size": "20DC", "fe": "F", "pos": "07-05-06", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 6, "cntr": "DJLU2233049", "seal": "DJHN223154", "size": "20DC", "fe": "F", "pos": "21-06-02", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 7, "cntr": "DJLU2251660", "seal": "DJHN223110", "size": "20DC", "fe": "F", "pos": "23-05-04", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 8, "cntr": "PHRU2609440", "seal": "DJHN223120", "size": "20DC", "fe": "F", "pos": "07-04-04", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 9, "cntr": "PHRU2700631", "seal": "DJHN223155", "size": "20DC", "fe": "F", "pos": "07-06-06", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 10, "cntr": "TIIU2433426", "seal": "DJHN223209", "size": "20DC", "fe": "F", "pos": "21-08-04", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 11, "cntr": "TIIU2657278", "seal": "DJHN223035", "size": "20DC", "fe": "F", "pos": "21-05-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 12, "cntr": "TIIU2658084", "seal": "DJHN223044", "size": "20DC", "fe": "F", "pos": "05-03-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 13, "cntr": "DYLU2132764", "seal": "DYL836840", "size": "20DC", "fe": "F", "pos": "05-02-02", "wgt": 10000, "oper": "DYS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 14, "cntr": "SKLU2008851", "seal": "HAS1512765", "size": "20DC", "fe": "F", "pos": "21-00-82", "wgt": 11000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 15, "cntr": "HSLU2404267", "seal": "HSL001015", "size": "20DC", "fe": "F", "pos": "07-02-04", "wgt": 12000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 16, "cntr": "HALU2309643", "seal": "SHPH013214", "size": "20DC", "fe": "F", "pos": "05-01-02", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 17, "cntr": "HALU2316431", "seal": "SHPH013215", "size": "20DC", "fe": "F", "pos": "21-07-04", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 18, "cntr": "HALU2466658", "seal": "SHPH013211", "size": "20DC", "fe": "F", "pos": "05-04-04", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 19, "cntr": "HALU2468748", "seal": "SHPH013216", "size": "20DC", "fe": "F", "pos": "07-01-02", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 20, "cntr": "SKLU0534965", "seal": "SHPH013212", "size": "20DC", "fe": "F", "pos": "23-06-02", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 21, "cntr": "SKLU0584230", "seal": "SHPH013217", "size": "20DC", "fe": "F", "pos": "05-02-04", "wgt": 23000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 22, "cntr": "SKLU1815946", "seal": "268830", "size": "20DC", "fe": "F", "pos": "21-00-84", "wgt": 23800, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 23, "cntr": "SKLU1919998", "seal": "SHPH013213", "size": "20DC", "fe": "F", "pos": "23-08-04", "wgt": 23000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 24, "cntr": "SKLU2053758", "seal": "SHPH013169", "size": "20DC", "fe": "F", "pos": "21-05-02", "wgt": 12000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 25, "cntr": "SKLU2357067", "seal": "004507", "size": "20DC", "fe": "F", "pos": "23-07-04", "wgt": 14000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 26, "cntr": "SKLU2485509", "seal": "SHPH013170", "size": "20DC", "fe": "F", "pos": "07-01-04", "wgt": 12000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 27, "cntr": "SEKU9444170", "seal": "DJHN223048", "size": "20RF", "fe": "F", "pos": "23-00-84", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "RF(-20.0C)", "xray": false}, {"no": 28, "cntr": "SZLU2070020", "seal": "DJHN221018", "size": "20RF", "fe": "F", "pos": "23-00-82", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "RF(0.0C)", "xray": false}, {"no": 29, "cntr": "BEAU4646146", "seal": "DJHN228149", "size": "40HQ", "fe": "F", "pos": "06-06-08", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 30, "cntr": "DJLU5017296", "seal": "DJHN223204", "size": "40HQ", "fe": "F", "pos": "22-03-06", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 31, "cntr": "DJLU5017974", "seal": "DJHN228188", "size": "40HQ", "fe": "F", "pos": "06-03-06", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 32, "cntr": "DJLU5151860", "seal": "DJHN222764", "size": "40HQ", "fe": "F", "pos": "22-08-86", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 33, "cntr": "DJLU5153693", "seal": "DJHN223012", "size": "40HQ", "fe": "F", "pos": "22-06-86", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 34, "cntr": "DJLU5154365", "seal": "DJHN227525", "size": "40HQ", "fe": "F", "pos": "06-03-08", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 35, "cntr": "DJLU5154494", "seal": "DJHN229707", "size": "40HQ", "fe": "F", "pos": "22-02-86", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 36, "cntr": "DJLU5222140", "seal": "DJHN228199", "size": "40HQ", "fe": "F", "pos": "22-06-04", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 37, "cntr": "DJLU5234007", "seal": "DJHN228145", "size": "40HQ", "fe": "F", "pos": "22-07-08", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 38, "cntr": "FCIU7084404", "seal": "DJHN221015", "size": "40HQ", "fe": "F", "pos": "22-01-06", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 39, "cntr": "FFAU1735461", "seal": "DJHN223042", "size": "40HQ", "fe": "F", "pos": "22-02-06", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 40, "cntr": "FFAU1735950", "seal": "DJHN223059", "size": "40HQ", "fe": "F", "pos": "22-01-02", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 41, "cntr": "FFAU1875695", "seal": "DJHN228186", "size": "40HQ", "fe": "F", "pos": "22-05-08", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 42, "cntr": "FFAU1876285", "seal": "DJHN228197", "size": "40HQ", "fe": "F", "pos": "22-08-06", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 43, "cntr": "PHRU8604764", "seal": "DJHN221052", "size": "40HQ", "fe": "F", "pos": "06-03-82", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 44, "cntr": "PHRU8608570", "seal": "DJHN229701", "size": "40HQ", "fe": "F", "pos": "06-02-86", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 45, "cntr": "PHRU8609771", "seal": "DJHN221016", "size": "40HQ", "fe": "F", "pos": "22-02-02", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 46, "cntr": "PHRU8610263", "seal": "DJHN228185", "size": "40HQ", "fe": "F", "pos": "22-03-02", "wgt": 28000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 47, "cntr": "PHRU8610854", "seal": "DJHN223015", "size": "40HQ", "fe": "F", "pos": "22-08-84", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 48, "cntr": "TIIU5511219", "seal": "DJHN223073", "size": "40HQ", "fe": "F", "pos": "22-01-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 49, "cntr": "TIIU6748205", "seal": "DJHN223031", "size": "40HQ", "fe": "F", "pos": "22-04-04", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 50, "cntr": "SEGU5474043", "seal": "DYB403837", "size": "40HQ", "fe": "F", "pos": "30-06-84", "wgt": 18200, "oper": "DYS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 51, "cntr": "BMOU5102326", "seal": "HHPH017837", "size": "40HQ", "fe": "F", "pos": "06-04-84", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 52, "cntr": "BMOU5402046", "seal": "HHPH014025", "size": "40HQ", "fe": "F", "pos": "06-03-86", "wgt": 8000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 53, "cntr": "FCIU7253870", "seal": "HHPH014119", "size": "40HQ", "fe": "F", "pos": "06-05-84", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 54, "cntr": "HLHU6403226", "seal": "HHPH000987", "size": "40HQ", "fe": "F", "pos": "06-08-84", "wgt": 8000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 55, "cntr": "HLHU8359842", "seal": "HHPH002179", "size": "40HQ", "fe": "F", "pos": "22-08-82", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 56, "cntr": "HLHU8386405", "seal": "HHPH002113", "size": "40HQ", "fe": "F", "pos": "06-01-84", "wgt": 14000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 57, "cntr": "HLHU8427037", "seal": "HHPH002162", "size": "40HQ", "fe": "F", "pos": "06-03-84", "wgt": 14000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 58, "cntr": "HLHU8429092", "seal": "HHPH006628", "size": "40HQ", "fe": "F", "pos": "06-04-82", "wgt": 25000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 59, "cntr": "HLHU8443043", "seal": "HHPH000219", "size": "40HQ", "fe": "F", "pos": "06-01-08", "wgt": 20000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 60, "cntr": "HLHU8596227", "seal": "HASHK00506", "size": "40HQ", "fe": "F", "pos": "30-01-86", "wgt": 9100, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 61, "cntr": "SKHU6203647", "seal": "HHPH002111", "size": "40HQ", "fe": "F", "pos": "22-04-86", "wgt": 15000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 62, "cntr": "SKHU6323473", "seal": "HHPH004589", "size": "40HQ", "fe": "F", "pos": "06-05-82", "wgt": 23000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 63, "cntr": "SKHU6329614", "seal": "HHPH000988", "size": "40HQ", "fe": "F", "pos": "06-06-84", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 64, "cntr": "SKHU6398174", "seal": "HHPH014030", "size": "40HQ", "fe": "F", "pos": "06-02-84", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 65, "cntr": "SKHU6480050", "seal": "HASHK23015", "size": "40HQ", "fe": "F", "pos": "06-05-88", "wgt": 6800, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 66, "cntr": "SKHU8130637", "seal": "HAS1281489", "size": "40HQ", "fe": "F", "pos": "22-01-86", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 67, "cntr": "SKHU8930500", "seal": "HHPH000229", "size": "40HQ", "fe": "F", "pos": "06-00-84", "wgt": 10000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 68, "cntr": "SKHU9205582", "seal": "HHPH014211", "size": "40HQ", "fe": "F", "pos": "06-08-82", "wgt": 13000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 69, "cntr": "SKHU9317155", "seal": "HHPH002201", "size": "40HQ", "fe": "F", "pos": "22-06-06", "wgt": 26000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 70, "cntr": "SKHU9421771", "seal": "HASHK18490", "size": "40HQ", "fe": "F", "pos": "22-05-88", "wgt": 9600, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 71, "cntr": "SKHU9604453", "seal": "961518", "size": "40HQ", "fe": "F", "pos": "06-01-86", "wgt": 9000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 72, "cntr": "SKHU9613265", "seal": "961513", "size": "40HQ", "fe": "F", "pos": "06-07-84", "wgt": 8000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 73, "cntr": "SKHU9947513", "seal": "HHPH002206", "size": "40HQ", "fe": "F", "pos": "06-02-82", "wgt": 26000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 74, "cntr": "TCNU6008452", "seal": "HHPH014024", "size": "40HQ", "fe": "F", "pos": "06-02-08", "wgt": 21000, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 75, "cntr": "TGBU5179018", "seal": "HASHK23033", "size": "40HQ", "fe": "F", "pos": "06-04-88", "wgt": 6700, "oper": "HAS", "gui": "LOCAL", "special": "", "xray": false}, {"no": 76, "cntr": "DJLU5250306", "seal": "HSL001011", "size": "40HQ", "fe": "F", "pos": "22-07-84", "wgt": 23000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 77, "cntr": "HSLU8400947", "seal": "HSL001013", "size": "40HQ", "fe": "F", "pos": "22-07-06", "wgt": 26000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 78, "cntr": "HSLU8402678", "seal": "HSL001017", "size": "40HQ", "fe": "F", "pos": "22-07-82", "wgt": 22000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 79, "cntr": "HSLU8403550", "seal": "HSL001014", "size": "40HQ", "fe": "F", "pos": "22-03-04", "wgt": 23000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 80, "cntr": "HSLU8404599", "seal": "HSL001012", "size": "40HQ", "fe": "F", "pos": "06-02-06", "wgt": 19000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 81, "cntr": "HSLU8408995", "seal": "HSL001016", "size": "40HQ", "fe": "F", "pos": "22-02-04", "wgt": 17000, "oper": "HSL", "gui": "LOCAL", "special": "", "xray": false}, {"no": 82, "cntr": "BMOU4718148", "seal": "263896", "size": "40HQ", "fe": "F", "pos": "30-00-80", "wgt": 26700, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 83, "cntr": "BMOU5938738", "seal": "263897", "size": "40HQ", "fe": "F", "pos": "30-05-80", "wgt": 26700, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 84, "cntr": "BMOU6051218", "seal": "181097", "size": "40HQ", "fe": "F", "pos": "06-06-86", "wgt": 9400, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 85, "cntr": "CICU2713497", "seal": "AVN07348", "size": "40HQ", "fe": "F", "pos": "06-04-06", "wgt": 21000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 86, "cntr": "DFSU7711982", "seal": "263906", "size": "40HQ", "fe": "F", "pos": "30-00-84", "wgt": 15200, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 87, "cntr": "FCIU9720803", "seal": "SHPH013220", "size": "40HQ", "fe": "F", "pos": "06-05-08", "wgt": 27000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 88, "cntr": "FCIU9720974", "seal": "263898", "size": "40HQ", "fe": "F", "pos": "30-02-80", "wgt": 26700, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 89, "cntr": "FSCU8193688", "seal": "263900", "size": "40HQ", "fe": "F", "pos": "30-01-80", "wgt": 26800, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 90, "cntr": "GCXU6003674", "seal": "263907", "size": "40HQ", "fe": "F", "pos": "22-03-88", "wgt": 8500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 91, "cntr": "HALU5611282", "seal": "263882", "size": "40HQ", "fe": "F", "pos": "30-01-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 92, "cntr": "HLHU6412681", "seal": "273391", "size": "40HQ", "fe": "F", "pos": "22-01-88", "wgt": 8800, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 93, "cntr": "HLHU6424770", "seal": "SHPH013223", "size": "40HQ", "fe": "F", "pos": "06-01-82", "wgt": 12000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 94, "cntr": "HLHU8351707", "seal": "263870", "size": "40HQ", "fe": "F", "pos": "30-08-82", "wgt": 20300, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 95, "cntr": "HLHU8369060", "seal": "273372", "size": "40HQ", "fe": "F", "pos": "30-02-86", "wgt": 11200, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 96, "cntr": "HLHU8443418", "seal": "SHPH019730", "size": "40HQ", "fe": "F", "pos": "22-06-84", "wgt": 12000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 97, "cntr": "HLHU8448810", "seal": "263886", "size": "40HQ", "fe": "F", "pos": "30-04-80", "wgt": 26500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 98, "cntr": "HLHU8472479", "seal": "SHPH013165", "size": "40HQ", "fe": "F", "pos": "06-04-08", "wgt": 24000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 99, "cntr": "HLHU8486282", "seal": "961519", "size": "40HQ", "fe": "F", "pos": "06-00-82", "wgt": 11000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 100, "cntr": "HLHU8549035", "seal": "SHPH019719", "size": "40HQ", "fe": "F", "pos": "06-00-86", "wgt": 11000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 101, "cntr": "RFCU4050448", "seal": "AVN07349", "size": "40HQ", "fe": "F", "pos": "22-04-02", "wgt": 23000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 102, "cntr": "SKHU6319405", "seal": "263893", "size": "40HQ", "fe": "F", "pos": "30-06-80", "wgt": 26500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 103, "cntr": "SKHU6323508", "seal": "SHPH013224", "size": "40HQ", "fe": "F", "pos": "22-08-08", "wgt": 11000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 104, "cntr": "SKHU6347264", "seal": "SHPH013180", "size": "40HQ", "fe": "F", "pos": "22-05-06", "wgt": 23000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 105, "cntr": "SKHU6351480", "seal": "SHPH013117", "size": "40HQ", "fe": "F", "pos": "22-05-86", "wgt": 9000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 106, "cntr": "SKHU6356121", "seal": "273398", "size": "40HQ", "fe": "F", "pos": "06-08-86", "wgt": 8300, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 107, "cntr": "SKHU6369371", "seal": "263894", "size": "40HQ", "fe": "F", "pos": "30-06-82", "wgt": 26500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 108, "cntr": "SKHU6433850", "seal": "268898", "size": "40HQ", "fe": "F", "pos": "30-08-84", "wgt": 19900, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 109, "cntr": "SKHU6475028", "seal": "SHPH019715", "size": "40HQ", "fe": "F", "pos": "22-04-06", "wgt": 11000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 110, "cntr": "SKHU6501066", "seal": "SKSHK03734", "size": "40HQ", "fe": "F", "pos": "06-05-86", "wgt": 9600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 111, "cntr": "SKHU6575285", "seal": "263891", "size": "40HQ", "fe": "F", "pos": "30-05-84", "wgt": 26500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 112, "cntr": "SKHU6583824", "seal": "268827", "size": "40HQ", "fe": "F", "pos": "06-01-88", "wgt": 8500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 113, "cntr": "SKHU6593057", "seal": "273395", "size": "40HQ", "fe": "F", "pos": "22-00-86", "wgt": 11200, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 114, "cntr": "SKHU8110986", "seal": "273476", "size": "40HQ", "fe": "F", "pos": "22-02-88", "wgt": 8900, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 115, "cntr": "SKHU8403834", "seal": "SKSHK11597", "size": "40HQ", "fe": "F", "pos": "22-06-88", "wgt": 9100, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 116, "cntr": "SKHU8713803", "seal": "SKSHK11600", "size": "40HQ", "fe": "F", "pos": "30-04-84", "wgt": 13900, "oper": "SKR", "gui": "LOCAL", "special": "XRAY", "xray": true}, {"no": 117, "cntr": "SKHU8924961", "seal": "SKSHK00020", "size": "40HQ", "fe": "F", "pos": "06-06-88", "wgt": 8700, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 118, "cntr": "SKHU8925567", "seal": "263883", "size": "40HQ", "fe": "F", "pos": "30-00-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 119, "cntr": "SKHU8928545", "seal": "SHPH013113", "size": "40HQ", "fe": "F", "pos": "22-07-86", "wgt": 10000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 120, "cntr": "SKHU8934213", "seal": "SHPH013112", "size": "40HQ", "fe": "F", "pos": "22-03-86", "wgt": 10000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 121, "cntr": "SKHU9103615", "seal": "268897", "size": "40HQ", "fe": "F", "pos": "30-07-84", "wgt": 10900, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 122, "cntr": "SKHU9104479", "seal": "SKSHK03725", "size": "40HQ", "fe": "F", "pos": "06-03-88", "wgt": 8400, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 123, "cntr": "SKHU9301457", "seal": "SHPH013116", "size": "40HQ", "fe": "F", "pos": "06-06-82", "wgt": 10000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 124, "cntr": "SKHU9500660", "seal": "263888", "size": "40HQ", "fe": "F", "pos": "30-03-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 125, "cntr": "SKHU9531758", "seal": "SHPH013119", "size": "40HQ", "fe": "F", "pos": "06-04-86", "wgt": 10000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 126, "cntr": "SKHU9540940", "seal": "SKSHK11701", "size": "40HQ", "fe": "F", "pos": "06-00-88", "wgt": 8200, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 127, "cntr": "SKHU9614488", "seal": "647860", "size": "40HQ", "fe": "F", "pos": "06-02-88", "wgt": 9000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 128, "cntr": "SKHU9624742", "seal": "263895", "size": "40HQ", "fe": "F", "pos": "30-04-82", "wgt": 26800, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 129, "cntr": "SKHU9808539", "seal": "SKSHK11710", "size": "40HQ", "fe": "F", "pos": "30-02-84", "wgt": 20000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 130, "cntr": "SKHU9830620", "seal": "SKSHK11718", "size": "40HQ", "fe": "F", "pos": "06-07-86", "wgt": 7800, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 131, "cntr": "SKHU9936782", "seal": "263885", "size": "40HQ", "fe": "F", "pos": "30-02-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 132, "cntr": "SKHU9967145", "seal": "263884", "size": "40HQ", "fe": "F", "pos": "30-03-84", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 133, "cntr": "SUZU4044425", "seal": "AVN07342", "size": "40HQ", "fe": "F", "pos": "06-01-06", "wgt": 26000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 134, "cntr": "TCNU5129017", "seal": "263881", "size": "40HQ", "fe": "F", "pos": "30-03-80", "wgt": 26500, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 135, "cntr": "TCNU5396137", "seal": "263820", "size": "40HQ", "fe": "F", "pos": "22-04-88", "wgt": 9400, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 136, "cntr": "TCNU6517383", "seal": "263887", "size": "40HQ", "fe": "F", "pos": "30-07-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 137, "cntr": "TCNU6730193", "seal": "SHPH013239", "size": "40HQ", "fe": "F", "pos": "06-07-82", "wgt": 12000, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 138, "cntr": "TEMU6591502", "seal": "263892", "size": "40HQ", "fe": "F", "pos": "30-01-84", "wgt": 26700, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 139, "cntr": "TRHU6228419", "seal": "263899", "size": "40HQ", "fe": "F", "pos": "30-05-82", "wgt": 26600, "oper": "SKR", "gui": "LOCAL", "special": "", "xray": false}, {"no": 140, "cntr": "OTPU6565854", "seal": "DJHN223109", "size": "40RF", "fe": "F", "pos": "22-05-84", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "RF(-18.0C)", "xray": false}, {"no": 141, "cntr": "OTPU6672554", "seal": "DJHN223687", "size": "40RF", "fe": "F", "pos": "22-02-82", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 142, "cntr": "OTPU6776651", "seal": "DJHN223682", "size": "40RF", "fe": "F", "pos": "22-05-82", "wgt": 15000, "oper": "DJS", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 143, "cntr": "FBIU5092142", "seal": "SHPH004569", "size": "40RF", "fe": "F", "pos": "22-01-82", "wgt": 20000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-18.0C)", "xray": false}, {"no": 144, "cntr": "FBIU5368420", "seal": "SHPH004561", "size": "40RF", "fe": "F", "pos": "22-04-82", "wgt": 28000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 145, "cntr": "FBIU5370583", "seal": "SHPH004563", "size": "40RF", "fe": "F", "pos": "22-02-84", "wgt": 21000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 146, "cntr": "FSCU5834978", "seal": "SHPH004565", "size": "40RF", "fe": "F", "pos": "22-03-82", "wgt": 28000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 147, "cntr": "FSCU5908406", "seal": "SHPH004567", "size": "40RF", "fe": "F", "pos": "22-01-84", "wgt": 20000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-18.0C)", "xray": false}, {"no": 148, "cntr": "FSCU5911668", "seal": "SHPH004562", "size": "40RF", "fe": "F", "pos": "22-06-82", "wgt": 27000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 149, "cntr": "HALU8500256", "seal": "SHPH004564", "size": "40RF", "fe": "F", "pos": "22-04-84", "wgt": 21000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}, {"no": 150, "cntr": "SKRU9904620", "seal": "SHPH004566", "size": "40RF", "fe": "F", "pos": "22-03-84", "wgt": 29000, "oper": "SKR", "gui": "LOCAL", "special": "RF(-25.0C)", "xray": false}]</script>
+<script>
+// ── 패스워드 DB ──────────────────────────────────
+var STAFF_DB = {
+  '신성호':'630101','표인수':'101001','황창웅':'041001','최장욱':'010301','이현규':'220620',
+  '김명보':'241209','권수안':'230901','정영배':'020314','오승택':'140401','성창모':'150121',
+  '이강익':'240508','김유신':'200713','김석':'201102','전우수':'240801','김성일':'240902',
+  '장문영':'210215','김판석':'240108','최관식':'240109','김홍규':'240617','한성호':'240708',
+  '오종하':'250210','이인철':'250701','이종부':'250707','이종현':'250811','송제욱':'260421','최원형':'240710'
+};
+var ROLE_DB = {
+  '신성호':'대표이사','표인수':'상무이사','황창웅':'이사','최장욱':'실장',
+  '이현규':'부장·수석검수','김명보':'부장·수석검수','권수안':'차장',
+  '정영배':'차장','오승택':'차장·수석검수','성창모':'과장·수석검수',
+  '이강익':'과장·수석검수','김유신':'대리','김석':'대리',
+  '전우수':'대리·수석검수','김성일':'대리·부수석','장문영':'검수',
+  '김판석':'검수','최관식':'검수','김홍규':'검수','한성호':'검수',
+  '오종하':'검수','이인철':'검수','이종부':'검수','이종현':'검수',
+  '송제욱':'검수','최원형':'검수'
+};
+
+var currentUser = '';
+// GUBR 615N/617S 앱 - GAS URL 아래 설정
+var GAS_URL = 'https://script.google.com/macros/s/AKfycbyzdoQtC2mNaxAM_QtCmhK_I-xiijXeQkEyoc0o6hPhB4htnDz-OLxBeZ5IKJeDV4uL/exec';
+
+// ── 로그인 ──────────────────────────────────────
+function doLogin(){
+  var name = document.getElementById('loginName').value.trim();
+  var pw   = document.getElementById('loginPw').value.trim();
+  var err  = document.getElementById('loginErr');
+  if(!name || !pw){ err.style.display='block'; err.textContent='이름과 패스워드를 입력하세요'; return; }
+  if(STAFF_DB[name] !== pw){ err.style.display='block'; err.textContent='이름 또는 패스워드가 올바르지 않습니다'; return; }
+  currentUser = name;
+  // localStorage에 저장 (자동로그인)
+  localStorage.setItem('gm_yktd_user', JSON.stringify({name:name, pw:pw}));
+  showApp(name);
+  err.style.display='none';
+  setTimeout(function(){ loadFromSheets(); }, 800);
+  render();
+}
+
+function showApp(name){
+  currentUser = name;
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('appWrap').style.display='block';
+  document.getElementById('hdrRole').textContent = '검수원';
+  document.getElementById('hdrName').textContent = name;
+}
+
+function doLogout(){
+  if(!confirm('로그아웃 하시겠습니까?')) return;
+  localStorage.removeItem('gm_yktd_user');
+  currentUser = '';
+  document.getElementById('appWrap').style.display='none';
+  document.getElementById('loginWrap').style.display='flex';
+  document.getElementById('loginName').value='';
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginErr').style.display='none';
+  document.getElementById('loginName').focus();
+}
+
+// 자동로그인 체크 (페이지 로드시)
+(function(){
+  var saved = localStorage.getItem('gm_yktd_user');
+  if(saved){
+    try{
+      var u = JSON.parse(saved);
+      if(u && u.name && STAFF_DB[u.name] && STAFF_DB[u.name] === u.pw){
+        showApp(u.name);
+        setTimeout(function(){ loadFromSheets(); }, 800);
+        render();
+      }
+    }catch(e){}
+  }
+})();
+document.getElementById('loginPw').addEventListener('keydown', function(e){ if(e.key==='Enter') doLogin(); });
+
+// ── 데이터 ──────────────────────────────────────
+var DATA_IN  = JSON.parse(document.getElementById('JDATA').textContent);
+var DATA_OUT = JSON.parse(document.getElementById('JDATA_OUT').textContent);
+var DATA = DATA_IN;
+var curMode = 'in';
+
+function switchMode(mode){
+  curMode = mode;
+  DATA = (mode === 'in') ? DATA_IN : DATA_OUT;
+  document.getElementById('btnIn').className  = 'mode-btn' + (mode==='in'?' active':'');
+  document.getElementById('btnOut').className = 'mode-btn' + (mode==='out'?' active':'');
+  curFilter = 'all'; curQuery = '';
+  document.getElementById('inp').value = '';
+  // 탭 초기화
+  document.querySelectorAll('.tab').forEach(function(t){ t.classList.remove('active'); });
+  document.querySelector('.tab[data-f="all"]').classList.add('active');
+  // sum-bar 텍스트 변경
+  document.getElementById('modeLabel').textContent = mode==='in' ? '2606E 양하' : '2607W 선적';
+  render();
+  updateSumBar();
+}
+var origSealIn = {}, origSealOut = {};
+DATA_IN.forEach(function(r){ origSealIn[r.no] = r.seal; });
+DATA_OUT.forEach(function(r){ origSealOut[r.no] = r.seal; });
+
+var curFilter = 'all', curQuery = '';
+
+function isModified(r){ var os = (curMode==='out') ? origSealOut : origSealIn; return r.seal !== os[r.no]; }
+
+function matches(r, q, f){
+  if(q.length > 0 && r.cntr.slice(-4) !== q) return false;
+  if(f === 'all')    return true;
+  if(f === 'remain') return !r.checked;
+  if(f === 'done')   return !!r.checked;
+  // 전체/기타 탭에서는 완료된 것 제외
+  if(!!r.checked) return false;
+  if(f === 'FULL')  return r.fe === 'F';
+  if(f === 'EMPTY') return r.fe === 'E';
+  if(f === 'SP')     return !!r.special;
+  if(f === 'RF')     return r.special && r.special.indexOf('RF') === 0;
+  if(f === 'XRAY')   return !!r.xray;
+  if(f === '20DC')   return r.size === '20DC';
+  if(f === '20RF')   return r.size === '20RF';
+  if(f === '40HQ')   return r.size === '40HQ';
+  if(f === '40RF')   return r.size === '40RF';
+  if(f === 'SKR')    return r.oper === 'SKR';
+  if(f === 'DJS')    return r.oper === 'DJS';
+  if(f === 'HAS')    return r.oper === 'HAS';
+  return true;
+}
+
+function fmtWgt(w){ if(!w) return '-'; return parseInt(w).toLocaleString()+'kg'; }
+
+// ── 카드 렌더 ────────────────────────────────────
+function renderCard(r){
+  var isDone = !!r.checked;
+  var isXray = !!r.xray;
+  var isRf   = r.special && r.special.indexOf('RF') === 0;
+  var mod    = isModified(r);
+  var xraySeal = r.xray_seal || '';
+
+  var mainCls = 'card-main' + (isXray ? ' xray-c' : '');
+  var cardCls = 'card' + (isDone ? ' done-card' : '');
+
+  // 태그
+  var tags = '<span class="tag" style="background:#e8f4e8;color:#2d7a2d">'+r.size+'</span>';
+  if(isXray) tags += '<span class="tag xray">⚠ XRAY</span>';
+  if(isRf) tags += '<span class="tag rf">🧊 '+r.special+'</span>';
+  else if(!isXray && r.special) tags += '<span class="tag sp">'+r.special+'</span>';
+
+  var xrayBanner = isXray ? '<div class="xray-banner">🔴 XRAY 검사 대상 — 세관봉인 실번호 기록 필요</div>' : '';
+
+  var doneInfo = '';
+
+  // 확인버튼
+  var chkBtnHtml;
+  if(isDone){
+    chkBtnHtml = '<button class="chk-btn done" onclick="undoCheck('+r.no+');event.stopPropagation()">완료취소</button>';
+  } else {
+    chkBtnHtml = '<button class="chk-btn" onclick="doCheck('+r.no+');event.stopPropagation()">✔ 확인</button>';
+  }
+  // 실번호 없는 풀컨 경고 배너
+  var noSealBanner = '';
+  if(curMode==='out' && r.fe==='F' && (!r.seal || r.seal==='' || r.seal==='nan')){
+    noSealBanner = '<div class="noseal-banner" onclick="alertNoSeal('+r.no+');event.stopPropagation()">⚠️ 실번호 미입력 — 터치하여 입력</div>';
+  }
+
+  // XRAY 봉인SEAL
+  var xraySealBox = isXray ? (
+    '<div class="xray-seal-box">'+
+    '<div class="xray-seal-title">🔴 세관봉인 실번호 입력</div>'+
+    '<div id="xsv'+r.no+'" class="seal-wrap">'+
+      '<span class="seal-val" style="color:#C00000" id="xsval'+r.no+'">'+( xraySeal || '미입력'  )+'</span>'+
+      (xraySeal ? '<span class="mod-badge" style="background:#FFE0E0;color:#C00000">입력됨</span>' : '')+
+      '<button class="edit-btn" style="border-color:#C00000;color:#C00000" onclick="startXraySeal('+r.no+');event.stopPropagation()">✏️</button>'+
+    '</div>'+
+    '<div id="xse'+r.no+'" class="edit-inp">'+
+      '<input id="xsi'+r.no+'" type="text" placeholder="봉인SEAL 번호" class="seal-input" style="border-color:#C00000" onclick="event.stopPropagation()">'+
+      '<button class="save-btn" style="background:#C00000" onclick="saveXraySeal('+r.no+');event.stopPropagation()">저장</button>'+
+      '<button class="cancel-btn" onclick="cancelXraySeal('+r.no+');event.stopPropagation()">취소</button>'+
+    '</div>'+
+    '</div>'
+  ) : '';
+
+  return '<div class="'+cardCls+'" id="card'+r.no+'">'+
+    noSealBanner+
+    xrayBanner+
+    '<div class="'+mainCls+'" onclick="tog('+r.no+')">'+
+      '<div class="card-left">'+
+        '<div class="card-no">No.'+r.no+(mod?'<span class="mod-badge" style="margin-left:4px">수정됨</span>':'')+(isDone?'<span class="done-badge">✅완료</span>':'')+'</div>'+
+        '<div class="card-cntr">'+r.cntr+'</div>'+
+        '<div class="card-seal'+(mod?' modified':'')+'">'+r.seal+'</div>'+
+        doneInfo+
+        '<div class="tags">'+tags+'</div>'+
+      '</div>'+
+      '<div class="card-right">'+
+        '<div class="card-pos">'+
+          (curMode==='out'
+            ? (r.pos||'-')+'<button class="pos-edit-btn" onclick="editPos('+r.no+');event.stopPropagation()">✏️</button>'
+            : (r.pos||'-')
+          )+'</div>'+
+        (function(){var g=r.gui||'';var cls=g==='LOCAL'?'local':g==='VNHPH'?'vnhph':'other';var label=g==='LOCAL'?'🇰🇷 LOCAL':g==='VNHPH'?'🇻🇳 HAIPHONG':g||'-';return '<div class="card-gui '+cls+'">'+label+'</div>';})()+
+        '<div class="card-oper">'+r.oper+'</div>'+
+        chkBtnHtml+
+      '</div>'+
+    '</div>'+
+    '<div class="detail" id="d'+r.no+'">'+
+      '<table>'+
+        '<tr><td>컨테이너</td><td style="font-family:monospace;font-weight:700">'+r.cntr+'</td></tr>'+
+        '<tr><td>실 번호</td><td>'+
+          '<div class="seal-wrap" id="sv'+r.no+'">'+
+            '<span class="seal-val'+(mod?' modified':'')+'" id="sval'+r.no+'">'+r.seal+'</span>'+
+            (mod ? '<span class="mod-badge">수정됨</span><span style="font-size:10px;color:#999;margin-left:4px">(원본: '+(curMode==='out'?origSealOut[r.no]:origSealIn[r.no])+')</span>':'') +
+            '<button class="edit-btn" onclick="startEdit('+r.no+');event.stopPropagation()">✏️ 수정</button>'+
+          '</div>'+
+          '<div class="edit-inp" id="se'+r.no+'">'+
+            '<input id="si'+r.no+'" type="text" value="'+r.seal+'" class="seal-input" onclick="event.stopPropagation()">'+
+            '<button class="save-btn" onclick="saveSeal('+r.no+')">저장</button>'+
+            '<button class="cancel-btn" onclick="cancelEdit('+r.no+')">취소</button>'+
+          '</div>'+
+        '</td></tr>'+
+        '<tr><td>규격</td><td>'+r.size+'</td></tr>'+
+        '<tr><td>F/E</td><td>'+(r.fe==='F'?'FULL (화물)':'EMPTY')+'</td></tr>'+
+        '<tr><td>선내위치</td><td style="font-family:monospace;font-size:14px;font-weight:700;color:#1a3a6b">'+( r.pos||'-' )+'</td></tr>'+
+        '<tr><td>중량</td><td>'+fmtWgt(r.wgt)+'</td></tr>'+
+        '<tr><td>목적항</td><td style="font-weight:700;color:#1a5276">'+(r.gui==='LOCAL'?'🇰🇷 LOCAL (평택)':r.gui==='VNHPH'?'🇻🇳 HAIPHONG (베트남)':r.gui||'-')+'</td></tr>'+
+        '<tr><td>오퍼레이터</td><td>'+r.oper+'</td></tr>'+
+        (r.special?'<tr><td>특수화물</td><td style="color:#b00;font-weight:600">'+r.special+'</td></tr>':'')+
+        (r.checked?'<tr><td>검수완료</td><td style="color:#28a745;font-weight:700">✅ '+r.checked+'</td></tr>':'')+
+      '</table>'+
+      xraySealBox+
+    '</div>'+
+  '</div>';
+}
+
+// ── 렌더 ────────────────────────────────────────
+function editPos(no){
+  var r = DATA.find(function(x){ return x.no===no; });
+  if(!r) return;
+  var newPos = prompt('선내위치 수정 (현재: '+r.pos+')', r.pos);
+  if(newPos === null) return;
+  newPos = newPos.trim().toUpperCase();
+  if(!newPos) return;
+
+  // 중복 위치 체크
+  var dup = DATA.find(function(x){ return x.no!==no && x.pos===newPos; });
+  if(dup){
+    var ok = confirm('[위치중복] 입력위치 ['+newPos+'] 에 No.'+dup.no+' '+dup.cntr+' 이(가) 이미 있습니다. 계속하면 같은 위치에 2개가 됩니다. 그래도 변경하시겠습니까?');
+    if(!ok) return;
+  }
+
+  r.pos = newPos;
+  var card = document.getElementById('card'+no);
+  if(card){
+    var wasOpen = document.getElementById('d'+no).style.display==='block';
+    card.outerHTML = renderCard(r);
+    if(wasOpen) document.getElementById('d'+no).style.display='block';
+  }
+  saveToSheets(no, 'pos', newPos);
+}
+
+function updateSumBar(){
+  var done   = DATA.filter(function(r){ return !!r.checked; }).length;
+  var remain = DATA.length - done;
+  document.getElementById('sumDone').textContent   = done;
+  document.getElementById('sumRemain').textContent = remain;
+  var cntEl = document.getElementById('cntAll'); if(cntEl) cntEl.textContent = DATA.length;
+
+  var cntSP  = DATA.filter(function(r){ return !!r.special; }).length;
+  var cntRFsz= DATA.filter(function(r){ return r.size==='40RF'; }).length;
+  var cntXR  = DATA.filter(function(r){ return !!r.xray; }).length;
+  var cntF   = DATA.filter(function(r){ return r.fe==='F'; }).length;
+  var cntE   = DATA.filter(function(r){ return r.fe==='E'; }).length;
+  var cntHQ  = DATA.filter(function(r){ return r.size==='40HQ'||r.size==='40HC'; }).length;
+  var cntDC  = DATA.filter(function(r){ return r.size==='20DC'; }).length;
+  var e;
+  e=document.getElementById('cntSP');   if(e) e.textContent=cntSP;
+  e=document.getElementById('cntRF');   if(e) e.textContent=cntSP;
+  e=document.getElementById('cntXR');   if(e) e.textContent=cntXR;
+  e=document.getElementById('cntF');    if(e) e.textContent=cntF;
+  e=document.getElementById('cntE');    if(e) e.textContent=cntE;
+  e=document.getElementById('cntHQ');   if(e) e.textContent=cntHQ;
+  e=document.getElementById('cntRFsz'); if(e) e.textContent=cntRFsz;
+  e=document.getElementById('cntDC');   if(e) e.textContent=cntDC;
+}
+
+function render(){
+  var filtered = DATA.filter(function(r){ return matches(r, curQuery, curFilter); });
+  document.getElementById('rbar').textContent =
+    (curQuery || curFilter !== 'all') ? ('검색결과: '+filtered.length+'개') : ('전체 '+filtered.length+'개');
+  if(!filtered.length){
+    document.getElementById('list').innerHTML = '<div class="empty">🔍 검색 결과가 없습니다</div>';
+  } else {
+    document.getElementById('list').innerHTML = filtered.map(renderCard).join('');
+  }
+  updateSumBar();
+}
+
+// ── 토글 ────────────────────────────────────────
+function tog(no){
+  var el = document.getElementById('d'+no);
+  if(el) el.style.display = el.style.display === 'block' ? 'none' : 'block';
+}
+
+// ── 실번호 수정 ──────────────────────────────────
+function startEdit(no){
+  document.getElementById('sv'+no).style.display = 'none';
+  document.getElementById('se'+no).style.display = 'flex';
+  document.getElementById('si'+no).focus();
+}
+function cancelEdit(no){
+  document.getElementById('se'+no).style.display = 'none';
+  document.getElementById('sv'+no).style.display = 'flex';
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(r) document.getElementById('si'+no).value = r.seal;
+}
+function saveSeal(no){
+  var v = document.getElementById('si'+no).value.trim().toUpperCase();
+  if(!v){ alert('실번호를 입력하세요'); return; }
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.seal = v;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  saveToSheets(no, 'seal', v);
+}
+
+// ── XRAY 봉인SEAL ────────────────────────────────
+function startXraySeal(no){
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(sv) sv.style.display = 'none';
+  if(se) se.style.display = 'flex';
+  var inp = document.getElementById('xsi'+no);
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(inp && r) inp.value = r.xray_seal || '';
+  if(inp) inp.focus();
+}
+function cancelXraySeal(no){
+  var sv = document.getElementById('xsv'+no);
+  var se = document.getElementById('xse'+no);
+  if(se) se.style.display = 'none';
+  if(sv) sv.style.display = 'flex';
+}
+function saveXraySeal(no){
+  var inp = document.getElementById('xsi'+no);
+  if(!inp) return;
+  var v = inp.value.trim().toUpperCase();
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.xray_seal = v;
+  // DOM만 업데이트 - 카드 재렌더 없이 (detail 닫힘 방지)
+  var se = document.getElementById('xse'+no);
+  var sv = document.getElementById('xsv'+no);
+  var xval = document.getElementById('xsval'+no);
+  if(se) se.style.display = 'none';
+  if(xval) xval.textContent = v || '미입력';
+  if(sv) sv.style.display = 'flex';
+  saveToSheets(no, 'xray_seal', v);
+}
+
+// ── 확인(완료처리) ────────────────────────────────
+function doCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  var now = new Date();
+  var ts = ('0'+now.getHours()).slice(-2)+':'+('0'+now.getMinutes()).slice(-2);
+  r.checked = currentUser + ' ' + ts;
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', r.checked);
+}
+function undoCheck(no){
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  r.checked = '';
+  var wasOpen = document.getElementById('d'+no) && document.getElementById('d'+no).style.display === 'block';
+  var card = document.getElementById('card'+no);
+  if(card) card.outerHTML = renderCard(r);
+  if(wasOpen && document.getElementById('d'+no)) document.getElementById('d'+no).style.display = 'block';
+  updateSumBar();
+  saveToSheets(no, 'checked', '');
+}
+
+// ── Google Sheets 연동 ────────────────────────────
+function loadFromSheets(){
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?action=getData&mode='+curMode, true);
+  xhr.timeout = 10000;
+  xhr.ontimeout = function(){
+    alert('서버 응답 없음. 네트워크 확인하세요.');
+  };
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4) return;
+    if(xhr.status !== 200){ alert('로드 실패 ('+xhr.status+')'); return; }
+    try{
+      var res = JSON.parse(xhr.responseText);
+      if(res.data){
+        // no 대신 cntr로 매칭 (양하/선적 no가 겹치므로)
+        var cntrMap = {};
+        for(var j=0;j<DATA.length;j++) cntrMap[DATA[j].cntr] = j;
+        for(var i=0;i<res.data.length;i++){
+          var row = res.data[i];
+          var idx = (row.cntr !== undefined) ? cntrMap[row.cntr] : cntrMap[Object.keys(cntrMap).filter(function(k){ return DATA[cntrMap[k]].no==row.no; })[0]];
+          if(idx === undefined) continue;
+          if(row.seal) DATA[idx].seal = row.seal.toString().trim();
+          if(row.origSeal) { if(curMode==='out') origSealOut[DATA[idx].no]=row.origSeal; else origSealIn[DATA[idx].no]=row.origSeal; }
+          if(row.xray_seal !== undefined) DATA[idx].xray_seal = (row.xray_seal||'').toString();
+          if(row.checked) DATA[idx].checked = row.checked.toString();
+          if(row.pos && row.pos.toString().trim()) DATA[idx].pos = row.pos.toString().trim();
+        }
+        render();
+        updateSumBar();
+      }
+    } catch(e){ alert('데이터 오류: '+e.message); }
+  };
+  xhr.send();
+}
+
+function saveToSheets(no, field, value){
+  var params = 'action=updateSeal&mode='+curMode+'&no='+no+'&field='+field+'&value='+encodeURIComponent(value)+'&user='+encodeURIComponent(currentUser);
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', GAS_URL+'?'+params, true);
+  xhr.onreadystatechange = function(){
+    if(xhr.readyState !== 4) return;
+    console.log('Sheets 저장:', field, '=', value);
+  };
+  xhr.send();
+}
+
+// ── 탭/검색 ─────────────────────────────────────
+var tabs = document.querySelectorAll('.tab');
+for(var ti=0;ti<tabs.length;ti++){
+  (function(t){
+    t.addEventListener('click', function(){
+      for(var i=0;i<tabs.length;i++) tabs[i].classList.remove('active');
+      t.classList.add('active');
+      curFilter = t.getAttribute('data-f');
+      render();
+    });
+  })(tabs[ti]);
+}
+
+var inp = document.getElementById('inp');
+var lastVal = '';
+function checkInput(){
+  var v = inp.value.replace(/\D/g,'').slice(-4);
+  if(v !== lastVal){ lastVal = v; curQuery = v; render(); }
+}
+inp.addEventListener('input', checkInput);
+inp.addEventListener('keyup', checkInput);
+setInterval(checkInput, 100);
+
+// ── 검색창 토글 (카메라 열릴때) ──────────────────
+function toggleSearchInput(){
+  var inp2 = document.getElementById('inp');
+  if(inp2.style.display === 'none'){
+    inp2.style.display = '';
+    inp2.focus();
+  } else {
+    inp2.style.display = 'none';
+  }
+}
+
+// ── 카메라 ──────────────────────────────────────
+var camStream = null, camTimer = null, camBusy = false, camLast = '', currentZoom = 1;
+
+function openCamera(){
+  var m = document.getElementById('camModal');
+  m.style.display = 'flex'; m.style.flexDirection = 'column';
+  document.getElementById('camResult').textContent = '';
+  document.getElementById('camManual').value = '';
+  document.getElementById('zoomSlider').value = 1;
+  document.getElementById('zoomVal').textContent = '1.0x';
+  camLast = '';
+  // 검색창 숨기고 아이콘 표시
+  document.getElementById('inp').style.display = 'none';
+  document.getElementById('searchIconBtn').style.display = 'block';
+  startCam();
+}
+
+function closeCamera(){
+  stopCam();
+  document.getElementById('camVideo').style.transform = 'scale(1)';
+  document.getElementById('camModal').style.display = 'none';
+  // 검색창 복원
+  document.getElementById('inp').style.display = '';
+  document.getElementById('searchIconBtn').style.display = 'none';
+}
+
+function startCam(){
+  if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 미지원';
+    return;
+  }
+  navigator.mediaDevices.getUserMedia({
+    video:{ facingMode:'environment', width:{ideal:1920}, height:{ideal:1080} }
+  }).then(function(stream){
+    camStream = stream;
+    var v = document.getElementById('camVideo');
+    v.srcObject = stream;
+    v.onloadedmetadata = function(){ v.play(); };
+    v.onplaying = function(){ startAutoScan(); };
+    setTimeout(function(){ if(!camTimer) startAutoScan(); }, 3000);
+  }).catch(function(err){
+    document.getElementById('camResult').style.color='#FF6B6B';
+    document.getElementById('camResult').textContent='📵 카메라 오류 — 직접 입력해주세요';
+  });
+}
+
+function stopCam(){
+  if(camTimer){ clearInterval(camTimer); camTimer=null; }
+  if(camStream){ camStream.getTracks().forEach(function(t){ t.stop(); }); camStream=null; }
+  camBusy = false;
+}
+
+function startAutoScan(){
+  if(camTimer) clearInterval(camTimer);
+  var guide = document.getElementById('camGuide');
+  if(typeof Tesseract === 'undefined'){
+    guide.textContent = '⏳ OCR 로딩 중...';
+    var wait = setInterval(function(){
+      if(typeof Tesseract !== 'undefined'){
+        clearInterval(wait);
+        guide.textContent = '🔍 자동 스캔 중...';
+        camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+      }
+    }, 500);
+    return;
+  }
+  guide.textContent = '🔍 자동 스캔 중...';
+  camTimer = setInterval(function(){ if(!camBusy) doOCR(); }, 3000);
+}
+
+function preprocessCanvas(srcCanvas){
+  var w=srcCanvas.width, h=srcCanvas.height;
+  var dst=document.createElement('canvas');
+  var maxW=1200;
+  var scale=w>maxW?maxW/w:1;
+  dst.width=Math.round(w*scale);
+  dst.height=Math.round(h*scale);
+  var ctx=dst.getContext('2d');
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality='high';
+  var z=currentZoom||1;
+  var contrast,brightness,saturate;
+  if(z<=3){contrast=1.3;brightness=1.0;saturate=1.0;}
+  else if(z<=10){contrast=1.6;brightness=1.05;saturate=0.8;}
+  else{contrast=2.0;brightness=1.1;saturate=0.5;}
+  ctx.filter='contrast('+contrast+') brightness('+brightness+') saturate('+saturate+')';
+  ctx.drawImage(srcCanvas,0,0,dst.width,dst.height);
+  ctx.filter='none';
+  if(z>=10){
+    var imgData=ctx.getImageData(0,0,dst.width,dst.height);
+    var d=imgData.data;
+    for(var i=0;i<d.length;i+=4){
+      var gray=0.299*d[i]+0.587*d[i+1]+0.114*d[i+2];
+      var bin=gray>128?255:0;
+      d[i]=d[i+1]=d[i+2]=bin;
+      d[i+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+  }
+  return dst;
+}
+
+function doOCR(){
+  var video=document.getElementById('camVideo');
+  var canvas=document.getElementById('camCanvas');
+  if(!video.srcObject||video.paused||video.videoWidth===0){ return; }
+  camBusy=true;
+  var el=document.getElementById('camResult');
+  var guide=document.getElementById('camGuide');
+  var vw=video.videoWidth, vh=video.videoHeight;
+  var cropX=Math.round(vw*0.02);
+  var cropW=Math.round(vw*0.96);
+  var cropY=Math.round(vh*0.25);
+  var cropH=Math.round(vh*0.50);
+  canvas.width=cropW; canvas.height=cropH;
+  var ctx=canvas.getContext('2d');
+  ctx.drawImage(video,cropX,cropY,cropW,cropH,0,0,cropW,cropH);
+  var processed=preprocessCanvas(canvas);
+  Tesseract.recognize(processed,'eng',{
+    logger:function(){},
+    tessedit_char_whitelist:'0123456789',
+    tessedit_pageseg_mode:'7',
+    preserve_interword_spaces:'0'
+  }).then(function(r){
+    var nums=r.data.text.replace(/[^0-9]/g,'');
+    var found=findByNumbers(nums);
+    if(found){
+      var match=null;
+      for(var i=0;i<DATA.length;i++){ if(DATA[i].cntr===found){ match=DATA[i]; break; } }
+      if(match && found!==camLast){
+        camLast=found;
+        el.textContent='✅ '+match.cntr+' 인식됨!';
+        el.style.color='#FFD700';
+        guide.textContent='✅ 찾았습니다!';
+        if(navigator.vibrate) navigator.vibrate([80,40,80]);
+        setTimeout(function(){ applySearch(match.cntr); closeCamera(); }, 700);
+      }
+    } else {
+      el.textContent='';
+      guide.textContent='🔍 자동 스캔 중...';
+    }
+    camBusy=false;
+  }).catch(function(){ camBusy=false; });
+}
+
+function findByNumbers(nums){
+  if(nums.length<4) return null;
+  if(nums.length>=7){
+    for(var s=0;s<=nums.length-7;s++){
+      var sub7=nums.substr(s,7);
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-7)===sub7) return DATA[i].cntr;
+      }
+    }
+  }
+  if(nums.length>=4){
+    for(var s=0;s<=nums.length-4;s++){
+      var sub4=nums.substr(s,4);
+      var matches=[];
+      for(var i=0;i<DATA.length;i++){
+        if(DATA[i].cntr.slice(-4)===sub4) matches.push(DATA[i].cntr);
+      }
+      if(matches.length===1) return matches[0];
+    }
+  }
+  return null;
+}
+
+function setZoom(val){
+  var v=parseFloat(val);
+  currentZoom=v;
+  document.getElementById('zoomVal').textContent=v.toFixed(1)+'x';
+  var video=document.getElementById('camVideo');
+  if(!camStream){ video.style.transform='scale('+v+')'; video.style.transformOrigin='center center'; return; }
+  var track=camStream.getVideoTracks()[0];
+  var caps=track&&track.getCapabilities?track.getCapabilities():{};
+  if(caps.zoom){
+    var hwMax=caps.zoom.max, hwMin=caps.zoom.min;
+    if(v<=hwMax){
+      var z=hwMin+(hwMax-hwMin)*((v-1)/29);
+      track.applyConstraints({advanced:[{zoom:z}]}).catch(function(){});
+      video.style.transform='scale(1)';
+    } else {
+      track.applyConstraints({advanced:[{zoom:hwMax}]}).catch(function(){});
+      var cssScale=v/hwMax;
+      video.style.transform='scale('+cssScale+')';
+      video.style.transformOrigin='center center';
+    }
+  } else {
+    video.style.transform='scale('+v+')';
+    video.style.transformOrigin='center center';
+  }
+}
+
+function applySearch(cntr){
+  var last4=cntr.slice(-4);
+  document.getElementById('inp').value=last4;
+  curQuery=last4; render();
+  // 카메라 모달 완전히 닫힌 후 스크롤 (모달 내 카드 오선택 방지)
+  setTimeout(function(){
+    var cards=document.querySelectorAll('#list .card');
+    if(cards.length>0) cards[0].scrollIntoView({behavior:'smooth'});
+  },500);
+}
+
+function camManualSearch(){
+  var v=document.getElementById('camManual').value.replace(/\D/g,'').slice(-4);
+  if(v.length<4){ alert('끝 4자리를 입력하세요'); return; }
+  closeCamera();
+  document.getElementById('inp').value=v;
+  curQuery=v; render();
+  setTimeout(function(){
+    var c=document.querySelector('.card');
+    if(c) c.scrollIntoView({behavior:'smooth'});
+  },300);
+}
+
+render();
+
+// ── 음성인식 + TTS (여성목소리) ───────────────────
+var voiceRecog = null;
+var voiceActive = false;
+var voiceToastTimer = null;
+
+var pendingSpeech = null; // 버튼 클릭 후 대기 중인 음성
+
+function toggleVoice() {
+  if (voiceActive) { stopVoice(); return; }
+  // 버튼 클릭 제스처 컨텍스트에서 speechSynthesis 세션 열기
+  if (window.speechSynthesis) {
+    window.speechSynthesis.cancel();
+    var primer = new SpeechSynthesisUtterance(' ');
+    primer.volume = 0; primer.lang = 'ko-KR';
+    // primer가 끝나도 세션 유지 — 이후 speak() 호출 가능
+    primer.onend = function() { /* 세션 활성 유지 */ };
+    window.speechSynthesis.speak(primer);
+  }
+  startVoice();
+}
+function startVoice() {
+  var SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { showVoiceToast('❌ Chrome 브라우저에서 사용해주세요'); return; }
+  voiceRecog = new SR();
+  voiceRecog.lang = 'ko-KR';
+  voiceRecog.continuous = false;
+  voiceRecog.interimResults = false;
+  voiceRecog.onstart = function() {
+    voiceActive = true;
+    var btn = document.getElementById('voiceBtn');
+    btn.style.background = 'rgba(255,50,50,0.6)';
+    btn.style.borderColor = 'rgba(255,80,80,0.9)';
+    btn.textContent = '🔴';
+    showVoiceToast('🎤 숫자 4자리를 말씀해 주세요');
+  };
+  voiceRecog.onresult = function(e) {
+    processVoiceInput(e.results[0][0].transcript.replace(/\s/g,''));
+  };
+  voiceRecog.onerror = function(e) {
+    showVoiceToast('❌ ' + e.error + ' — 다시 시도해주세요');
+    resetVoiceBtn();
+  };
+  voiceRecog.onend = function() { resetVoiceBtn(); };
+  voiceRecog.start();
+}
+function stopVoice() {
+  if (voiceRecog) { voiceRecog.stop(); voiceRecog = null; }
+  resetVoiceBtn();
+}
+function resetVoiceBtn() {
+  voiceActive = false;
+  var btn = document.getElementById('voiceBtn');
+  if (!btn) return;
+  btn.style.background = 'rgba(0,200,100,0.25)';
+  btn.style.borderColor = 'rgba(0,200,100,0.6)';
+  btn.textContent = '🎤';
+}
+function korToNum(str) {
+  if (/^[0-9]+$/.test(str)) return str;
+  var map = {'영':'0','공':'0','일':'1','하나':'1','이':'2','둘':'2','삼':'3','셋':'3','사':'4','넷':'4','오':'5','다섯':'5','육':'6','여섯':'6','칠':'7','일곱':'7','팔':'8','여덟':'8','구':'9','아홉':'9'};
+  var res = str;
+  var keys = Object.keys(map).sort(function(a,b){return b.length-a.length;});
+  for (var i=0;i<keys.length;i++) res = res.split(keys[i]).join(map[keys[i]]);
+  return res;
+}
+function processVoiceInput(raw) {
+  var digits = korToNum(raw).replace(/[^0-9]/g,'');
+  var last4 = digits.slice(-4);
+  if (last4.length < 4) {
+    showVoiceToast('⚠ 4자리를 인식 못했어요 ("' + raw + '") — 다시 말씀해 주세요');
+    setTimeout(startVoice, 1800);
+    return;
+  }
+  document.getElementById('inp').value = last4;
+  curQuery = last4; render();
+  var found = DATA.filter(function(r){ return r.cntr.slice(-4) === last4; });
+  if (found.length > 0) {
+    var r = found[0];
+    var isXray = r.xray || (r.special && r.special.indexOf('XRAY') >= 0);
+    showVoiceToast('✅ ' + r.cntr + ' | 실: ' + r.seal + (isXray ? ' | ⚠XRAY':''));
+    if (navigator.vibrate) navigator.vibrate([80,40,80]);
+    var sealMsg = '실번호 ' + sealToSpeech(r.seal) + ' 입니다.';
+    var xrayMsg = isXray ? '엑스레이 대상입니다. 실 달아주세요.' : '';
+    // 🎤 버튼의 사용자 제스처 컨텍스트 안에서 speak 실행
+    if (isXray) {
+      speakThen(sealMsg, xrayMsg);
+    } else {
+      speak(sealMsg);
+    }
+    setTimeout(function(){ var cards=document.querySelectorAll('#list .card'); if(cards.length>0) cards[0].scrollIntoView({behavior:'smooth'}); }, 500);
+  } else {
+    showVoiceToast('❌ ' + last4 + ' — 목록에 없습니다');
+    speak(last4 + ' 없습니다');
+  }
+}
+function getFemaleVoice() {
+  var voices = window.speechSynthesis.getVoices();
+  var pick = null;
+  // 우선순위: 네이티브 고품질 한국어 음성 선택
+  var priority = ['Google 한국의','Google Korean','Yuna','유나','나연','지영','Nayeon','Jiyoung'];
+  for (var p=0; p<priority.length; p++) {
+    for (var i=0;i<voices.length;i++) {
+      if (voices[i].lang.indexOf('ko') >= 0 && voices[i].name.indexOf(priority[p]) >= 0) {
+        return voices[i];
+      }
+    }
+  }
+  // 폴백: 한국어 첫번째
+  for (var i=0;i<voices.length;i++) {
+    if (voices[i].lang.indexOf('ko') >= 0) { pick = voices[i]; break; }
+  }
+  return pick;
+}
+function sealToSpeech(seal) {
+  var numMap = {'0':'공','1':'일','2':'이','3':'삼','4':'사','5':'오','6':'육','7':'칠','8':'팔','9':'구'};
+  var result = '';
+  for (var i=0; i<seal.length; i++) {
+    var c = seal[i];
+    if (numMap[c]) result += numMap[c] + ' ';
+    else result += c + ' ';
+  }
+  return result.trim();
+}
+function alertNoSeal(no) {
+  var r = null;
+  for(var i=0;i<DATA.length;i++){ if(DATA[i].no===no){ r=DATA[i]; break; } }
+  if(!r) return;
+  // 음성 경고
+  speak('실번호가 없습니다. 실번호를 입력해 주세요.');
+  if(navigator.vibrate) navigator.vibrate([100,50,100,50,100]);
+  // 디테일 열고 수정창 포커스
+  var det = document.getElementById('d'+no);
+  if(det) det.style.display='block';
+  setTimeout(function(){
+    var sv = document.getElementById('sv'+no);
+    if(sv) startEdit(no);
+  }, 300);
+}
+function speak(text) {
+  if (!window.speechSynthesis) return;
+  // cancel 하지 않음 — 세션 유지 상태에서 큐에 추가
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'ko-KR';
+  u.rate = 0.95;
+  u.pitch = 1.0;
+  u.volume = 1.0;
+  var doSpeak = function() {
+    var v = getFemaleVoice();
+    if (v) u.voice = v;
+    window.speechSynthesis.speak(u);
+  };
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
+  }
+}
+function speakThen(first, second) {
+  if (!window.speechSynthesis) return;
+  // cancel 하지 않음 — 세션 유지
+  var u1 = new SpeechSynthesisUtterance(first);
+  u1.lang = 'ko-KR'; u1.rate = 0.95; u1.pitch = 1.0; u1.volume = 1.0;
+  u1.onend = function() {
+    setTimeout(function() {
+      var u2 = new SpeechSynthesisUtterance(second);
+      u2.lang = 'ko-KR'; u2.rate = 0.95; u2.pitch = 1.0; u2.volume = 1.0;
+      var v = getFemaleVoice();
+      if (v) u2.voice = v;
+      window.speechSynthesis.speak(u2);
+    }, 300);
+  };
+  var doSpeak = function() {
+    var v = getFemaleVoice();
+    if (v) u1.voice = v;
+    window.speechSynthesis.speak(u1);
+  };
+  if (window.speechSynthesis.getVoices().length > 0) {
+    doSpeak();
+  } else {
+    window.speechSynthesis.onvoiceschanged = function() { doSpeak(); };
+  }
+}
+function showVoiceToast(msg) {
+  var t = document.getElementById('voiceToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'voiceToast';
+    t.style.cssText = 'position:fixed;top:68px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.88);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:700;z-index:999;max-width:92%;text-align:center;transition:opacity .3s;box-shadow:0 4px 16px rgba(0,0,0,.4);pointer-events:none';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg; t.style.opacity = '1';
+  if (voiceToastTimer) clearTimeout(voiceToastTimer);
+  voiceToastTimer = setTimeout(function(){ t.style.opacity='0'; }, 3500);
+}
+
+</script>
+<!-- 크롬 브라우저 확인 -->
+<script>
+(function() {
+  var isChrome = /Chrome/.test(navigator.userAgent) && /Google Inc/.test(navigator.vendor);
+  var isSamsung = /SamsungBrowser/.test(navigator.userAgent);
+  var isEdge = /Edg/.test(navigator.userAgent);
+  if (!isChrome || isSamsung || isEdge) {
+    var div = document.createElement('div');
+    div.style.cssText = 'position:fixed;top:0;left:0;right:0;z-index:9999;background:#C00000;color:#fff;text-align:center;padding:10px 14px;font-size:13px;font-weight:700;line-height:1.5;box-shadow:0 2px 8px rgba(0,0,0,.4)';
+    div.innerHTML = '⚠ 이 앱은 <u>크롬(Chrome) 브라우저</u>에서만 정상 작동합니다.<br>삼성/코멧 브라우저는 음성기능이 지원되지 않습니다.';
+    document.body.insertBefore(div, document.body.firstChild);
+  }
+})();
+</script>
+</body>
+</html>
