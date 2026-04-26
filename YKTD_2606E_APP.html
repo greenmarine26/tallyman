@@ -21,6 +21,16 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 .hdr-name{font-size:13px;font-weight:700;}
 .logout-btn{background:rgba(255,80,80,.25);border:1px solid rgba(255,120,120,.5);color:#fff;border-radius:8px;padding:4px 10px;font-size:11px;font-weight:600;cursor:pointer;}
 /* 이름 입력 모달 */
+/* ── 로그인 ── */
+#loginWrap{position:fixed;inset:0;background:linear-gradient(135deg,#1a3a6b,#2e6da4);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.login-box{background:#fff;border-radius:16px;padding:32px 24px;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.3);}
+.login-title{font-size:18px;font-weight:800;color:#1a3a6b;text-align:center;margin-bottom:4px;}
+.login-sub{font-size:12px;color:#888;text-align:center;margin-bottom:24px;}
+.login-label{font-size:12px;color:#555;font-weight:700;margin-bottom:6px;display:block;}
+.login-inp{width:100%;padding:12px;font-size:16px;border:2px solid #ddd;border-radius:8px;outline:none;margin-bottom:16px;text-align:center;}
+.login-inp:focus{border-color:#2e6da4;}
+.login-btn{width:100%;padding:14px;background:#1a3a6b;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:700;cursor:pointer;}
+.login-err{color:#c00;font-size:12px;text-align:center;margin-top:8px;display:none;}
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:200;display:flex;align-items:center;justify-content:center}
 .modal{background:#fff;border-radius:16px;padding:24px 20px;width:80%;max-width:300px;box-shadow:0 8px 32px rgba(0,0,0,.25)}
 .modal-logo{margin-bottom:10px;display:flex;justify-content:center}
@@ -129,67 +139,17 @@ body{font-family:'Apple SD Gothic Neo',Arial,sans-serif;background:#f0f2f5;color
 </div>
 <style>@keyframes scanLine{0%,100%{opacity:.3;transform:scaleX(.5)}50%{opacity:1;transform:scaleX(1)}}</style>
 <!-- 이름 입력 모달 -->
-<div class="modal-bg" id="modalBg">
-  <div class="modal" style="text-align:center;padding:30px 24px">
-    <div class="modal-logo">
-<svg width="82" height="82" viewBox="0 0 82 82" xmlns="http://www.w3.org/2000/svg">
-  <defs>
-    <radialGradient id="bgG" cx="40%" cy="35%" r="60%">
-      <stop offset="0%" stop-color="#1a6b4a"/>
-      <stop offset="100%" stop-color="#0d3d2a"/>
-    </radialGradient>
-    <linearGradient id="waveG" x1="0%" y1="0%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#4fc3f7" stop-opacity="0.9"/>
-      <stop offset="100%" stop-color="#81d4fa" stop-opacity="0.6"/>
-    </linearGradient>
-    <filter id="glow">
-      <feGaussianBlur stdDeviation="2.5" result="blur"/>
-      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <filter id="shadow">
-      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#0d3d2a" flood-opacity="0.5"/>
-    </filter>
-  </defs>
-  <!-- 원형 배경 -->
-  <circle cx="41" cy="41" r="39" fill="url(#bgG)" filter="url(#shadow)"/>
-  <circle cx="41" cy="41" r="39" fill="none" stroke="#2ecc71" stroke-width="1.5" opacity="0.4"/>
-  <!-- 외곽 링 점선 -->
-  <circle cx="41" cy="41" r="36" fill="none" stroke="#4fc3f7" stroke-width="0.6" stroke-dasharray="3 4" opacity="0.5"/>
-  <!-- 선박 실루엣 -->
-  <g filter="url(#glow)">
-    <!-- 선체 -->
-    <path d="M14 50 Q41 58 68 50 L64 56 Q41 63 18 56 Z" fill="#2ecc71" opacity="0.95"/>
-    <!-- 갑판 -->
-    <rect x="22" y="44" width="38" height="7" rx="2" fill="#27ae60"/>
-    <!-- 선교 -->
-    <rect x="34" y="34" width="14" height="11" rx="1.5" fill="#1abc9c"/>
-    <rect x="36" y="30" width="10" height="5" rx="1" fill="#16a085"/>
-    <!-- 창문 -->
-    <rect x="36" y="35" width="3" height="3" rx="0.5" fill="#4fc3f7" opacity="0.9"/>
-    <rect x="41" y="35" width="3" height="3" rx="0.5" fill="#4fc3f7" opacity="0.9"/>
-    <!-- 크레인/마스트 -->
-    <line x1="41" y1="30" x2="41" y2="20" stroke="#f1c40f" stroke-width="1.5"/>
-    <line x1="41" y1="22" x2="52" y2="28" stroke="#f1c40f" stroke-width="1"/>
-    <!-- 컨테이너들 -->
-    <rect x="23" y="39" width="9" height="6" rx="0.5" fill="#e74c3c" opacity="0.85"/>
-    <rect x="23" y="39" width="9" height="2" fill="#c0392b" opacity="0.5"/>
-    <rect x="50" y="39" width="9" height="6" rx="0.5" fill="#3498db" opacity="0.85"/>
-    <rect x="50" y="39" width="9" height="2" fill="#2980b9" opacity="0.5"/>
-  </g>
-  <!-- 파도 -->
-  <path d="M10 55 Q20 51 30 55 Q40 59 50 55 Q60 51 72 55" fill="none" stroke="url(#waveG)" stroke-width="2" opacity="0.7"/>
-  <path d="M8 59 Q19 55 30 59 Q41 63 52 59 Q63 55 74 59" fill="none" stroke="url(#waveG)" stroke-width="1.5" opacity="0.4"/>
-  <!-- 상단 텍스트 GM -->
-  <text x="41" y="17" text-anchor="middle" font-family="Arial" font-weight="900" font-size="7" fill="#2ecc71" letter-spacing="3" opacity="0.8">GREEN MARINE</text>
-</svg>
-</div>
-    <div class="modal-title">그린마린 검수팀</div>
-    <div class="modal-sub">GREEN MARINE INSPECTION</div>
-    <div class="modal-row">
-      <input id="nameInp" type="text" placeholder="사용자명 입력" maxlength="10" autocomplete="off">
-      <button class="modal-enter" onclick="setName()">↵</button>
-    </div>
-    <div class="modal-preview" id="rolePreview"></div>
+<!-- 로그인 -->
+<div id="loginWrap">
+  <div class="login-box">
+    <div class="login-title">🚢 YKTD 2606E 검수</div>
+    <div class="login-sub">그린마린 검수팀</div>
+    <label class="login-label">이름</label>
+    <input class="login-inp" id="loginName" type="text" placeholder="이름 입력" autocomplete="off">
+    <label class="login-label">패스워드 (입사년월일 6자리)</label>
+    <input class="login-inp" id="loginPw" type="password" placeholder="예: 240508" maxlength="6" inputmode="numeric">
+    <button class="login-btn" onclick="doLogin()">로그인</button>
+    <div class="login-err" id="loginErr">이름 또는 패스워드가 올바르지 않습니다</div>
   </div>
 </div>
 <div class="hdr">
@@ -429,36 +389,30 @@ const STAFF_DB = {
   '송제욱':'검수','최원형':'검수'
 };
 
-function setName(){
-  const name=document.getElementById('nameInp').value.trim();
-  if(!name){document.getElementById('nameInp').focus();return;}
-  const role='검수원';
-  localStorage.setItem('gm_user_2606e',JSON.stringify({name,role}));
+function doLogin(){
+  var name = document.getElementById('loginName').value.trim();
+  var pw   = document.getElementById('loginPw').value.trim();
+  var err  = document.getElementById('loginErr');
+  if(!name||!pw){err.style.display='block';err.textContent='이름과 패스워드를 입력하세요';return;}
+  if(STAFF_DB[name]!==pw){err.style.display='block';err.textContent='이름 또는 패스워드가 올바르지 않습니다';return;}
+  localStorage.setItem('gm_user_2606e',JSON.stringify({name:name,pw:pw}));
+  document.getElementById('loginWrap').style.display='none';
+  document.getElementById('userRoleDisp').textContent='검수원';
   document.getElementById('userNameDisp').textContent=name;
-  document.getElementById('userRoleDisp').textContent=role;
-  document.getElementById('modalBg').style.display='none';
+  err.style.display='none';
 }
 function reEnterName(){
-  const saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'{}');
-  document.getElementById('nameInp').value=saved.name||'';
-  if(saved.name) updateRolePreview(saved.name);
-  document.getElementById('modalBg').style.display='flex';
-  setTimeout(()=>document.getElementById('nameInp').focus(),100);
+  document.getElementById('loginWrap').style.display='flex';
+  setTimeout(function(){document.getElementById('loginName').focus();},100);
 }
-function updateRolePreview(name){
-  const role=STAFF_DB[name];
-  const el=document.getElementById('rolePreview');
-  if(!el) return;
-  el.textContent=name?'👤 '+name:'';
-}
-document.getElementById('nameInp').addEventListener('input',function(){updateRolePreview(this.value.trim());});
-document.getElementById('nameInp').addEventListener('keyup',function(e){if(e.key==='Enter')setName();});
+document.getElementById('loginPw').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('loginName').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('loginPw').focus();});
 (function(){
-  const saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'null');
-  if(saved&&saved.name){
-    document.getElementById('userNameDisp').textContent=saved.name;
+  var saved=JSON.parse(localStorage.getItem('gm_user_2606e')||'null');
+  if(saved&&saved.name&&STAFF_DB[saved.name]&&STAFF_DB[saved.name]===saved.pw){
+    document.getElementById('loginWrap').style.display='none';
     document.getElementById('userRoleDisp').textContent='검수원';
-    document.getElementById('modalBg').style.display='none';
+    document.getElementById('userNameDisp').textContent=saved.name;
   }
 })();
 
@@ -468,8 +422,9 @@ function doLogout(){
   localStorage.removeItem('gm_user_2606e');
   document.getElementById('userNameDisp').textContent='-';
   document.getElementById('userRoleDisp').textContent='-';
-  document.getElementById('modalBg').style.display='flex';
-  setTimeout(()=>document.getElementById('nameInp').focus(),100);
+  document.getElementById('loginPw').value='';
+  document.getElementById('loginWrap').style.display='flex';
+  setTimeout(function(){document.getElementById('loginName').focus();},100);
 }
 
 // ── 카메라 조회 (전체화면 + 자동 연속인식) ────────
