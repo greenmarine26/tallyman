@@ -61,11 +61,15 @@ html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff
 .bay-lbl{flex-shrink:0;font-size:7px;font-weight:900;color:#3a7ab0;text-align:center;padding:1px 0;background:#08121e;border-bottom:1px solid #1a3050;letter-spacing:.3px}
 
 /* 셀 그리드 */
-.cell-grid{flex:1;display:flex;flex-direction:column;padding:1px;gap:1px;overflow:hidden;min-height:0}
-.cell-row{display:flex;gap:1px;flex:1;min-height:0}
+.cell-grid{display:flex;flex-direction:column;padding:1px;gap:1px;justify-content:flex-end}
+.deck-sec .cell-grid{height:calc(100% - 19px)}
+.hold-sec .cell-grid{height:calc(100% - 19px)}
+.cell-row{display:flex;gap:1px;flex-shrink:0}
+.deck-sec .cell-row{height:var(--deck-row-h,32px)}
+.hold-sec .cell-row{height:var(--hold-row-h,32px)}
 
 /* 셀 */
-.cell{flex:1;border-radius:2px;border:1px solid;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:filter .1s;min-width:0;min-height:0}
+.cell{flex:1;border-radius:2px;border:1px solid;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:filter .1s;min-width:0}
 .cell:hover{filter:brightness(1.5);z-index:5}
 .cell.empty{opacity:.12;cursor:default;pointer-events:none;border-style:dashed}
 .st-normal{background:#122038;border-color:#1e4060}
@@ -109,10 +113,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff
 .pop-sec-lbl{flex-shrink:0;font-size:9px;font-weight:900;letter-spacing:2px;text-align:center;padding:3px;border-bottom:1px solid #1a3050}
 .pop-deck .pop-sec-lbl{color:#3a7ab0;background:#060f1e}
 .pop-hold .pop-sec-lbl{color:#2a5a7a;background:#060f1e}
-.pop-grid{flex:1;display:flex;flex-direction:column;padding:6px;gap:4px;overflow:hidden;min-height:0}
+.pop-grid{flex:1;display:flex;flex-direction:column;padding:6px;gap:4px;overflow:hidden;min-height:0;justify-content:flex-end}
 .pop-row-lbl{display:flex;gap:4px;padding-left:28px;flex-shrink:0}
 .pop-row-lbl span{flex:1;text-align:center;font-size:8px;color:#3a6a8a;font-family:Consolas}
-.pop-cell-row{display:flex;gap:4px;flex:1;min-height:0}
+.pop-cell-row{display:flex;gap:4px;height:var(--pop-row-h,60px);flex-shrink:0}
 .pop-tier-lbl{width:24px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;font-size:8px;color:#3a6a8a;font-family:Consolas;padding-right:4px}
 .pop-cell{
   flex:1;border-radius:4px;border:1.5px solid;
@@ -364,6 +368,16 @@ function openBayPopup(bay){
   document.getElementById('bayOverlay').style.display='block';
   var pp=document.getElementById('bayPopup');
   pp.style.display='flex';
+  // 팝업 단당 높이 계산
+  setTimeout(function(){
+    var body=document.getElementById('bayPopBody');
+    var availH=body.clientHeight - 20;
+    // DECK 50% / HOLD 50%, 4단 기준 셀 높이
+    var deckA = availH*0.5 - 16 - 3;
+    var holdA = availH*0.5 - 16;
+    var popRowH = Math.min(Math.floor(deckA/4), Math.floor(holdA/4));
+    document.documentElement.style.setProperty('--pop-row-h', popRowH+'px');
+  },10);
 }
 
 function mkPopCell(c){
@@ -473,8 +487,31 @@ function updateStats(){
 function p2(n){return n<10?'0'+n:''+n;}
 
 buildShip();
+calcRowHeight();
+window.addEventListener('resize', calcRowHeight);
 loadFB();
 setInterval(loadFB,10000);
+
+function calcRowHeight(){
+  var shipMain = document.querySelector('.ship-main');
+  if(!shipMain) return;
+  var totalH = shipMain.clientHeight;
+  var lblH = 16; // sec-lbl 높이
+
+  // DECK 50% 안에서 4단 기준 셀 높이
+  var deckAvail = (totalH * 0.5) - lblH - 3; // border 3px
+  var deckRowH  = Math.floor(deckAvail / 4);  // 4단 기준
+
+  // HOLD 50% 안에서 4단 기준 셀 높이
+  var holdAvail = (totalH * 0.5) - lblH;
+  var holdRowH  = Math.floor(holdAvail / 4);  // 4단 기준
+
+  // DECK/HOLD 셀 높이 동일하게 맞춤 (더 작은 값 기준)
+  var rowH = Math.min(deckRowH, holdRowH);
+
+  document.documentElement.style.setProperty('--deck-row-h', rowH + 'px');
+  document.documentElement.style.setProperty('--hold-row-h', rowH + 'px');
+}
 </script>
 </body>
 </html>
