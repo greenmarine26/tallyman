@@ -10,110 +10,64 @@
 *{box-sizing:border-box;margin:0;padding:0}
 html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff0;font-family:"맑은 고딕",Consolas,sans-serif}
 
-/* ── 전체 레이아웃: 헤더 고정 + 나머지 꽉채움 ── */
 .wrap{display:flex;flex-direction:column;height:100vh;width:100vw}
 
 /* ── 헤더 ── */
-.hdr{
-  flex-shrink:0;
-  background:#060c16;border-bottom:2px solid #2e5a8a;
-  padding:6px 16px;display:flex;align-items:center;gap:16px;
-}
-.ship-name{font-size:15px;font-weight:900;color:#7ec8f0;letter-spacing:1px}
-.voyage{font-size:10px;color:#5a8ab0;margin-top:1px}
-.dot{width:8px;height:8px;border-radius:50%;background:#2dba52;animation:blink 1.4s infinite;flex-shrink:0}
+.hdr{flex-shrink:0;background:#060c16;border-bottom:2px solid #2e5a8a;padding:5px 14px;display:flex;align-items:center;gap:12px;flex-wrap:nowrap}
+.ship-name{font-size:14px;font-weight:900;color:#7ec8f0;letter-spacing:1px;white-space:nowrap}
+.voyage{font-size:9px;color:#5a8ab0;margin-top:1px;white-space:nowrap}
+.dot{width:7px;height:7px;border-radius:50%;background:#2dba52;animation:blink 1.4s infinite;flex-shrink:0}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
-.sync-t{font-size:10px;color:#3a6a8a}
-.stat{text-align:center;min-width:44px;flex-shrink:0}
-.stat-n{font-size:18px;font-weight:900;line-height:1}
-.stat-l{font-size:8px;color:#4a7a9b;font-weight:700;letter-spacing:.3px;margin-top:1px}
-.vline{width:1px;height:28px;background:#1e3a5a;flex-shrink:0}
-.prog-wrap{flex:1;max-width:200px}
-.prog-bg{background:#0c1a28;border-radius:4px;height:10px;overflow:hidden;border:1px solid #1e3a5a}
+.sync-t{font-size:9px;color:#3a6a8a;white-space:nowrap}
+.stat{text-align:center;min-width:36px;flex-shrink:0}
+.stat-n{font-size:16px;font-weight:900;line-height:1}
+.stat-l{font-size:7px;color:#4a7a9b;font-weight:700;margin-top:1px;text-transform:uppercase}
+.vline{width:1px;height:24px;background:#1e3a5a;flex-shrink:0}
+.prog-wrap{min-width:120px;max-width:160px}
+.prog-bg{background:#0c1a28;border-radius:4px;height:8px;overflow:hidden;border:1px solid #1e3a5a}
 .prog-fill{background:linear-gradient(90deg,#0b5a22,#2dba52);height:100%;border-radius:4px;transition:width .5s}
-.prog-txt{font-size:10px;color:#5a8ab0;margin-top:2px;text-align:right;font-weight:700}
-.leg{display:flex;align-items:center;gap:4px;font-size:10px;color:#5a8ab0;font-weight:600;flex-shrink:0}
-.lb{width:14px;height:10px;border-radius:1px;border:1.5px solid;flex-shrink:0}
+.prog-txt{font-size:9px;color:#5a8ab0;margin-top:2px;text-align:right;font-weight:700}
+.leg{display:flex;align-items:center;gap:3px;font-size:9px;color:#5a8ab0;font-weight:600;white-space:nowrap;flex-shrink:0}
+.lb{width:12px;height:8px;border-radius:1px;border:1.5px solid;flex-shrink:0}
 
 /* ── 선박 영역 ── */
-.ship-area{
-  flex:1;display:flex;align-items:stretch;overflow:hidden;padding:6px 10px;gap:0;
-}
-
-/* 선수/선미 */
-.ship-end{
-  width:32px;flex-shrink:0;
-  background:#0c1a28;border:2px solid #2e5a8a;
-  display:flex;align-items:center;justify-content:center;
-  writing-mode:vertical-rl;font-size:9px;font-weight:900;
-  color:#2e5a8a;letter-spacing:2px;
-}
-.stern{border-radius:12px 0 0 12px;border-right:none}
-.bow  {border-radius:0 12px 12px 0;border-left:none}
+.ship-area{flex:1;display:flex;align-items:stretch;padding:5px 8px;gap:0;overflow:hidden;min-height:0}
+.ship-end{width:28px;flex-shrink:0;background:#0c1a28;border:2px solid #2e5a8a;display:flex;align-items:center;justify-content:center;writing-mode:vertical-rl;font-size:8px;font-weight:900;color:#2e5a8a;letter-spacing:2px}
+.stern{border-radius:10px 0 0 10px;border-right:none}
+.bow  {border-radius:0 10px 10px 0;border-left:none}
 
 /* ── 선박 본체 ── */
-.ship-main{
-  flex:1;display:flex;flex-direction:column;
-  border:2px solid #2e5a8a;background:#0c1624;
-  overflow:hidden;
-}
+.ship-main{flex:1;display:flex;flex-direction:column;border:2px solid #2e5a8a;background:#0c1624;overflow:hidden;min-width:0}
 
-/* DECK 섹션 */
-.deck-sec{
-  flex-shrink:0;
-  background:#0a1e34;
-  border-bottom:3px solid #2e5a8a;
-  display:flex;flex-direction:column;
-}
-.deck-lbl{
-  font-size:8px;color:#3a7ab0;font-weight:900;letter-spacing:2px;
-  text-align:center;padding:2px 0;background:#060f1e;border-bottom:1px solid #1a3050;
-}
-.deck-bays{display:flex;flex:1}
+/* DECK 50% / HOLD 50% */
+.deck-sec{flex:0 0 50%;display:flex;flex-direction:column;background:#0a1e34;border-bottom:3px solid #3a7ab0;overflow:hidden;min-height:0}
+.hold-sec{flex:0 0 50%;display:flex;flex-direction:column;background:#0c1624;overflow:hidden;min-height:0}
 
-/* HOLD 섹션 */
-.hold-sec{
-  flex:1;display:flex;flex-direction:column;overflow:hidden;
-}
-.hold-lbl{
-  font-size:8px;color:#2a5a7a;font-weight:900;letter-spacing:2px;
-  text-align:center;padding:2px 0;background:#060f1e;border-bottom:1px solid #1a3050;flex-shrink:0;
-}
-.hold-bays{display:flex;flex:1;overflow:hidden}
+.sec-lbl{flex-shrink:0;font-size:7px;font-weight:900;letter-spacing:2px;text-align:center;padding:2px 0;border-bottom:1px solid #1a3050}
+.deck-sec .sec-lbl{color:#3a7ab0;background:#06101e}
+.hold-sec .sec-lbl{color:#2a5a7a;background:#060f1e}
 
-/* ── 베이 컬럼 ── */
-.bay-col{
-  flex:1;display:flex;flex-direction:column;
-  border-right:2px solid #1e3a5a;
-  position:relative;
-}
+/* 베이들 가로 배치 */
+.bays-row{flex:1;display:flex;min-height:0;overflow:hidden}
+
+/* 베이 컬럼 */
+.bay-col{flex:1;display:flex;flex-direction:column;border-right:2px solid #1a3a5a;cursor:pointer;transition:background .15s;min-width:0;overflow:hidden}
 .bay-col:last-child{border-right:none}
-/* 홀수/짝수 베이 배경 구분 */
-.bay-col.even{background:rgba(255,255,255,.012)}
-.bay-col.odd {background:rgba(0,0,0,.1)}
+.bay-col.even{background:rgba(20,40,70,.3)}
+.bay-col.odd {background:rgba(10,20,40,.3)}
+.bay-col:hover{background:rgba(46,90,138,.25) !important}
+.bay-col.selected{background:rgba(46,90,138,.4) !important;border-right:2px solid #3a7ab0}
 
-.bay-lbl{
-  font-size:8px;font-weight:900;color:#4a8ab5;
-  text-align:center;padding:2px 0;
-  background:#08121e;border-bottom:1px solid #1a3050;
-  letter-spacing:.5px;flex-shrink:0;
-}
+.bay-lbl{flex-shrink:0;font-size:7px;font-weight:900;color:#3a7ab0;text-align:center;padding:1px 0;background:#08121e;border-bottom:1px solid #1a3050;letter-spacing:.3px}
 
 /* 셀 그리드 */
-.cell-grid{flex:1;display:flex;flex-direction:column;padding:2px;gap:2px;overflow:hidden}
-.cell-row{display:flex;gap:2px;flex:1}
+.cell-grid{flex:1;display:flex;flex-direction:column;padding:1px;gap:1px;overflow:hidden;min-height:0}
+.cell-row{display:flex;gap:1px;flex:1;min-height:0}
 
-/* 컨테이너 셀 */
-.cell{
-  flex:1;border-radius:3px;border:1.5px solid;
-  cursor:pointer;position:relative;
-  display:flex;flex-direction:column;align-items:center;justify-content:center;
-  overflow:hidden;transition:all .1s;min-width:0;
-}
-.cell:hover{filter:brightness(1.4);z-index:20;transform:scale(1.04)}
-.cell.empty{opacity:.15;cursor:default;pointer-events:none;border-style:dashed}
-
-/* 상태 색상 */
+/* 셀 */
+.cell{flex:1;border-radius:2px;border:1px solid;cursor:pointer;position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;transition:filter .1s;min-width:0;min-height:0}
+.cell:hover{filter:brightness(1.5);z-index:5}
+.cell.empty{opacity:.12;cursor:default;pointer-events:none;border-style:dashed}
 .st-normal{background:#122038;border-color:#1e4060}
 .st-done  {background:#082a14;border-color:#2dba52}
 .st-rf    {background:#081830;border-color:#1a6aff}
@@ -122,33 +76,66 @@ html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff
 .st-done.st-rf  {background:#062a1a;border-color:#00bb77}
 .st-done.st-dg  {background:#182000;border-color:#88bb00}
 .st-done.st-xray{background:#1a1000;border-color:#cc8800}
-
-/* 셀 내용 */
-.c-num{font-size:6.5px;color:rgba(255,255,255,.45);line-height:1;font-family:Consolas}
-.c-id {font-size:8px;font-weight:800;color:#fff;line-height:1.1;font-family:Consolas;letter-spacing:.3px}
-.c-sz {font-size:6px;color:rgba(255,255,255,.6);line-height:1}
-.c-tick{position:absolute;top:1px;right:2px;font-size:9px;color:#2dba52;font-weight:900;line-height:1}
-.c-sp{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:6px;font-weight:900;padding:1px 0;letter-spacing:.3px}
+.c-id{font-size:6px;font-weight:800;color:#fff;line-height:1;font-family:Consolas}
+.c-sz{font-size:5px;color:rgba(255,255,255,.55);line-height:1}
+.c-tick{position:absolute;top:0px;right:1px;font-size:7px;color:#2dba52;font-weight:900;line-height:1}
+.c-sp{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:5px;font-weight:900;padding:0}
 .sp-rf  {background:#0055bb;color:#aaccff}
 .sp-dg  {background:#884400;color:#ffcc88}
 .sp-xray{background:#880000;color:#ffaaaa}
 
-/* 팝업 */
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:200}
-.popup{
+/* ── 베이 상세 팝업 ── */
+.bay-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:300;cursor:pointer}
+.bay-popup{
   display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
-  background:#0c1a2c;border:2px solid #2e6da4;border-radius:10px;
-  padding:16px;z-index:201;min-width:260px;
-  box-shadow:0 4px 30px rgba(0,150,255,.15);
+  background:#0c1a2c;border:2px solid #3a7ab0;border-radius:12px;
+  z-index:301;width:80vw;max-width:1000px;height:75vh;
+  display:none;flex-direction:column;
+  box-shadow:0 8px 40px rgba(0,100,200,.3);
 }
-.pop-x{position:absolute;top:8px;right:12px;cursor:pointer;color:#5a8ab0;font-size:18px;line-height:1}
-.pop-cntr{font-size:14px;font-weight:900;color:#7ec8f0;margin-bottom:10px;font-family:Consolas;padding-right:20px}
-.pop-row{display:flex;justify-content:space-between;gap:12px;font-size:11px;padding:4px 0;border-bottom:1px solid #1a3050}
-.pop-row:last-child{border:none}
-.pop-l{color:#5a8ab0}
-.pop-v{color:#c8dff0;font-weight:700;font-family:Consolas;text-align:right}
-.pop-done{color:#2dba52;font-weight:900}
-.pop-rem {color:#e74c3c;font-weight:900}
+.bay-pop-hdr{
+  flex-shrink:0;background:#08121e;border-bottom:2px solid #2e5a8a;
+  border-radius:10px 10px 0 0;padding:10px 16px;
+  display:flex;align-items:center;gap:12px;
+}
+.bay-pop-title{font-size:16px;font-weight:900;color:#7ec8f0;letter-spacing:1px}
+.bay-pop-stats{font-size:12px;color:#5a8ab0;margin-left:auto}
+.bay-pop-close{cursor:pointer;color:#5a8ab0;font-size:20px;line-height:1;margin-left:12px}
+.bay-pop-body{flex:1;display:flex;flex-direction:column;overflow:hidden;padding:10px;gap:8px;min-height:0}
+
+/* 팝업 내 DECK/HOLD */
+.pop-deck{flex:0 0 50%;display:flex;flex-direction:column;background:#0a1e34;border-radius:6px;border:1px solid #1e3a5a;overflow:hidden;min-height:0}
+.pop-hold{flex:0 0 calc(50% - 8px);display:flex;flex-direction:column;background:#0c1624;border-radius:6px;border:1px solid #1e3a5a;overflow:hidden;min-height:0}
+.pop-sec-lbl{flex-shrink:0;font-size:9px;font-weight:900;letter-spacing:2px;text-align:center;padding:3px;border-bottom:1px solid #1a3050}
+.pop-deck .pop-sec-lbl{color:#3a7ab0;background:#060f1e}
+.pop-hold .pop-sec-lbl{color:#2a5a7a;background:#060f1e}
+.pop-grid{flex:1;display:flex;flex-direction:column;padding:6px;gap:4px;overflow:hidden;min-height:0}
+.pop-row-lbl{display:flex;gap:4px;padding-left:28px;flex-shrink:0}
+.pop-row-lbl span{flex:1;text-align:center;font-size:8px;color:#3a6a8a;font-family:Consolas}
+.pop-cell-row{display:flex;gap:4px;flex:1;min-height:0}
+.pop-tier-lbl{width:24px;flex-shrink:0;display:flex;align-items:center;justify-content:flex-end;font-size:8px;color:#3a6a8a;font-family:Consolas;padding-right:4px}
+.pop-cell{
+  flex:1;border-radius:4px;border:1.5px solid;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  cursor:pointer;position:relative;transition:filter .1s;overflow:hidden;min-width:0;
+}
+.pop-cell:hover{filter:brightness(1.4);z-index:5}
+.pop-cell.empty{opacity:.15;cursor:default;pointer-events:none;border-style:dashed}
+.pop-cell .pc-id{font-size:10px;font-weight:900;color:#fff;font-family:Consolas;letter-spacing:.5px}
+.pop-cell .pc-sz{font-size:8px;color:rgba(255,255,255,.65)}
+.pop-cell .pc-sp{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:7px;font-weight:900;padding:1px}
+.pop-cell .pc-tick{position:absolute;top:2px;right:3px;font-size:11px;color:#2dba52;font-weight:900}
+.pop-cell .pc-num{position:absolute;top:2px;left:3px;font-size:7px;color:rgba(255,255,255,.4);font-family:Consolas}
+
+/* 컨테이너 상세 팝업 */
+.cntr-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400}
+.cntr-popup{display:none;position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#0c1a2c;border:2px solid #2e6da4;border-radius:10px;padding:16px;z-index:401;min-width:260px;box-shadow:0 4px 30px rgba(0,100,200,.2)}
+.cntr-x{position:absolute;top:8px;right:12px;cursor:pointer;color:#5a8ab0;font-size:18px;line-height:1}
+.cntr-no{font-size:14px;font-weight:900;color:#7ec8f0;margin-bottom:10px;font-family:Consolas;padding-right:20px}
+.cntr-row{display:flex;justify-content:space-between;gap:12px;font-size:11px;padding:4px 0;border-bottom:1px solid #1a3050}
+.cntr-row:last-child{border:none}
+.cntr-l{color:#5a8ab0}
+.cntr-v{color:#c8dff0;font-weight:700;font-family:Consolas;text-align:right}
 </style>
 </head>
 <body>
@@ -156,25 +143,21 @@ html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff
 
 <!-- 헤더 -->
 <div class="hdr">
-  <div>
-    <div class="ship-name">XINQUNDAO V.2617E</div>
-    <div class="voyage">DLC &#8594; 평택(PTK) &nbsp;|&nbsp; 양하 275개</div>
-  </div>
+  <div><div class="ship-name">XINQUNDAO V.2617E</div><div class="voyage">DLC &#8594; 평택 | 양하 275개</div></div>
   <div class="vline"></div>
-  <div class="stat"><div class="stat-n" style="color:#7ec8f0" id="sTotal">275</div><div class="stat-l">전체</div></div>
+  <div class="stat"><div class="stat-n" style="color:#7ec8f0">275</div><div class="stat-l">전체</div></div>
   <div class="stat"><div class="stat-n" style="color:#2dba52" id="sDone">0</div><div class="stat-l">완료</div></div>
   <div class="stat"><div class="stat-n" style="color:#e74c3c" id="sRem">275</div><div class="stat-l">잔여</div></div>
   <div class="vline"></div>
-  <div class="stat"><div class="stat-n" style="color:#1a8aff" id="sRf">25</div><div class="stat-l">RF</div></div>
-  <div class="stat"><div class="stat-n" style="color:#cc7700" id="sDg">2</div><div class="stat-l">DG</div></div>
-  <div class="stat"><div class="stat-n" style="color:#cc2222" id="sXr">3</div><div class="stat-l">XRAY</div></div>
+  <div class="stat"><div class="stat-n" style="color:#1a8aff">25</div><div class="stat-l">RF</div></div>
+  <div class="stat"><div class="stat-n" style="color:#cc7700">2</div><div class="stat-l">DG</div></div>
+  <div class="stat"><div class="stat-n" style="color:#cc2222">3</div><div class="stat-l">XRAY</div></div>
   <div class="vline"></div>
   <div class="prog-wrap">
     <div class="prog-bg"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
     <div class="prog-txt" id="progTxt">0 / 275 (0%)</div>
   </div>
   <div class="vline"></div>
-  <!-- 범례 -->
   <div class="leg"><div class="lb" style="background:#122038;border-color:#1e4060"></div>미완료</div>
   <div class="leg"><div class="lb" style="background:#082a14;border-color:#2dba52"></div>완료</div>
   <div class="leg"><div class="lb" style="background:#081830;border-color:#1a6aff"></div>RF</div>
@@ -182,25 +165,47 @@ html,body{width:100%;height:100%;overflow:hidden;background:#080f1a;color:#c8dff
   <div class="leg"><div class="lb" style="background:#200808;border-color:#cc2222"></div>XRAY</div>
   <div class="vline"></div>
   <div class="dot"></div>
-  <div style="font-size:10px;color:#2dba52;font-weight:700">LIVE</div>
+  <div style="font-size:9px;color:#2dba52;font-weight:700">LIVE</div>
   <div class="sync-t" id="syncT">동기화 중...</div>
 </div>
 
-<!-- 선박 영역 -->
+<!-- 선박 -->
 <div class="ship-area">
   <div class="ship-end stern">STERN</div>
-  <div class="ship-main" id="shipMain"></div>
+  <div class="ship-main">
+    <!-- DECK 50% -->
+    <div class="deck-sec">
+      <div class="sec-lbl">&#9650; ON DECK</div>
+      <div class="bays-row" id="deckBays"></div>
+    </div>
+    <!-- HOLD 50% -->
+    <div class="hold-sec">
+      <div class="sec-lbl">&#9660; UNDER DECK (HOLD)</div>
+      <div class="bays-row" id="holdBays"></div>
+    </div>
+  </div>
   <div class="ship-end bow">BOW</div>
 </div>
 
-</div><!-- wrap -->
+</div>
 
-<!-- 팝업 -->
-<div class="overlay" id="overlay" onclick="closePopup()"></div>
-<div class="popup" id="popup">
-  <span class="pop-x" onclick="closePopup()">&#10005;</span>
-  <div class="pop-cntr" id="popCntr"></div>
-  <div id="popBody"></div>
+<!-- 베이 상세 팝업 -->
+<div class="bay-overlay" id="bayOverlay" onclick="closeBayPopup()"></div>
+<div class="bay-popup" id="bayPopup">
+  <div class="bay-pop-hdr">
+    <div class="bay-pop-title" id="bayPopTitle">BAY 003</div>
+    <div class="bay-pop-stats" id="bayPopStats"></div>
+    <span class="bay-pop-close" onclick="closeBayPopup()">&#10005;</span>
+  </div>
+  <div class="bay-pop-body" id="bayPopBody"></div>
+</div>
+
+<!-- 컨테이너 상세 팝업 -->
+<div class="cntr-overlay" id="cntrOverlay" onclick="closeCntr()"></div>
+<div class="cntr-popup" id="cntrPopup">
+  <span class="cntr-x" onclick="closeCntr()">&#10005;</span>
+  <div class="cntr-no" id="cntrNo"></div>
+  <div id="cntrBody"></div>
 </div>
 
 <script>
@@ -208,47 +213,28 @@ var BAYS      = JSON.parse(document.getElementById('JBAYS').textContent);
 var BASE_DATA = JSON.parse(document.getElementById('JDATA').textContent);
 var FB_URL    = "https://greenmarine-ee29a-default-rtdb.asia-southeast1.firebasedatabase.app";
 var FB_PATH   = "XUD_2617E";
-var fbChecked = {};
-var fbSeal    = {};
-var baseMap   = {};
+var fbChecked = {}, fbSeal = {}, baseMap = {};
 BASE_DATA.forEach(function(r){baseMap[r.cntr]=r;});
-
 var BAY_ORDER  = Object.keys(BAYS).sort();
 var HOLD_TIERS = [6,4,2];
+var curBayPopup = null;
 
-// ── 선박 구조 빌드 ─────────────────────────────
+// ── 메인 선박 빌드 ──────────────────────────────
 function buildShip(){
-  var main = document.getElementById('shipMain');
-
-  // DECK 섹션
-  var deckSec = document.createElement('div');
-  deckSec.className='deck-sec';
-  var dl=document.createElement('div');dl.className='deck-lbl';dl.textContent='▲  ON DECK';
-  deckSec.appendChild(dl);
-  var deckBays=document.createElement('div');deckBays.className='deck-bays';
+  var deckEl = document.getElementById('deckBays');
+  var holdEl = document.getElementById('holdBays');
   BAY_ORDER.forEach(function(bay,i){
-    deckBays.appendChild(buildCol(bay,i,'deck'));
+    deckEl.appendChild(buildMiniCol(bay,i,'deck'));
+    holdEl.appendChild(buildMiniCol(bay,i,'hold'));
   });
-  deckSec.appendChild(deckBays);
-  main.appendChild(deckSec);
-
-  // HOLD 섹션
-  var holdSec=document.createElement('div');
-  holdSec.className='hold-sec';
-  var hl=document.createElement('div');hl.className='hold-lbl';hl.textContent='▼  UNDER DECK  (HOLD)';
-  holdSec.appendChild(hl);
-  var holdBays=document.createElement('div');holdBays.className='hold-bays';
-  BAY_ORDER.forEach(function(bay,i){
-    holdBays.appendChild(buildCol(bay,i,'hold'));
-  });
-  holdSec.appendChild(holdBays);
-  main.appendChild(holdSec);
 }
 
-function buildCol(bay,idx,mode){
+function buildMiniCol(bay,idx,mode){
   var col=document.createElement('div');
   col.className='bay-col '+(idx%2===0?'even':'odd');
-  col.id=mode+'-'+bay;
+  col.id='mini-'+mode+'-'+bay;
+  col.title='BAY '+parseInt(bay)+' 클릭하여 상세보기';
+  col.onclick=function(){openBayPopup(bay);};
 
   var lbl=document.createElement('div');
   lbl.className='bay-lbl';
@@ -262,48 +248,43 @@ function buildCol(bay,idx,mode){
   var grid=document.createElement('div');grid.className='cell-grid';
 
   if(mode==='deck'){
-    var maxR=items.length?Math.max.apply(null,items.map(function(c){return c.row;})):8;
-    var row=document.createElement('div');row.className='cell-row';
-    for(var r=1;r<=maxR;r++){
-      var c=items.find(function(x){return x.row===r;});
-      row.appendChild(c?mkCell(c):mkEmpty());
-    }
-    grid.appendChild(row);
-  } else {
-    var maxR2=items.length?Math.max.apply(null,items.map(function(c){return c.row;})):7;
-    HOLD_TIERS.forEach(function(t){
-      var row2=document.createElement('div');row2.className='cell-row';
-      for(var r=1;r<=maxR2;r++){
-        var c=items.find(function(x){return x.row===r&&x.tier===t;});
-        row2.appendChild(c?mkCell(c):mkEmpty());
+    var maxR=items.length?Math.max.apply(null,items.map(function(c){return c.row;})):0;
+    if(maxR>0){
+      var row=document.createElement('div');row.className='cell-row';
+      for(var r=1;r<=maxR;r++){
+        var c=items.find(function(x){return x.row===r;});
+        row.appendChild(c?mkMiniCell(c):mkEmpty());
       }
-      grid.appendChild(row2);
-    });
+      grid.appendChild(row);
+    }
+  } else {
+    var maxR2=items.length?Math.max.apply(null,items.map(function(c){return c.row;})):0;
+    if(maxR2>0){
+      HOLD_TIERS.forEach(function(t){
+        var row2=document.createElement('div');row2.className='cell-row';
+        for(var r=1;r<=maxR2;r++){
+          var c=items.find(function(x){return x.row===r&&x.tier===t;});
+          row2.appendChild(c?mkMiniCell(c):mkEmpty());
+        }
+        grid.appendChild(row2);
+      });
+    }
   }
   col.appendChild(grid);
   return col;
 }
 
-function mkCell(c){
+function mkMiniCell(c){
   var done=!!fbChecked[c.cntr];
-  var cls='cell st-'+c.type+(done?' st-done':'');
   var el=document.createElement('div');
-  el.className=cls;
+  el.className='cell st-'+c.type+(done?' st-done':'');
   el.dataset.cntr=c.cntr;
-  el.onclick=function(){showPopup(c.cntr);};
-
   if(done){var tk=document.createElement('span');tk.className='c-tick';tk.textContent='✔';el.appendChild(tk);}
-
-  var num=document.createElement('div');num.className='c-num';num.textContent='#'+c.no;
-  var id =document.createElement('div');id.className='c-id'; id.textContent=c.cntr.slice(-4);
-  var sz =document.createElement('div');sz.className='c-sz'; sz.textContent=c.size;
-  el.appendChild(num);el.appendChild(id);el.appendChild(sz);
-
+  var id=document.createElement('div');id.className='c-id';id.textContent=c.cntr.slice(-4);el.appendChild(id);
+  var sz=document.createElement('div');sz.className='c-sz';sz.textContent=c.size;el.appendChild(sz);
   if(c.type!=='normal'){
-    var sp=document.createElement('div');
-    sp.className='c-sp sp-'+c.type;
-    sp.textContent=c.type==='rf'?'RF':c.type==='dg'?'DG':'X-RAY';
-    el.appendChild(sp);
+    var sp=document.createElement('div');sp.className='c-sp sp-'+c.type;
+    sp.textContent=c.type==='rf'?'RF':c.type==='dg'?'DG':'XR';el.appendChild(sp);
   }
   return el;
 }
@@ -312,43 +293,131 @@ function mkEmpty(){
   var el=document.createElement('div');el.className='cell empty st-normal';return el;
 }
 
-// ── 셀 갱신 ───────────────────────────────────
-function refreshCells(){
-  document.querySelectorAll('.cell[data-cntr]').forEach(function(el){
-    var cntr=el.dataset.cntr;
-    var done=!!fbChecked[cntr];
-    var wasDone=el.classList.contains('st-done');
-    if(done===wasDone) return;
-    el.classList.toggle('st-done',done);
-    var tk=el.querySelector('.c-tick');
-    if(done&&!tk){tk=document.createElement('span');tk.className='c-tick';tk.textContent='✔';el.insertBefore(tk,el.firstChild);}
-    else if(!done&&tk){tk.remove();}
-  });
+// ── 베이 상세 팝업 ──────────────────────────────
+function openBayPopup(bay){
+  curBayPopup=bay;
+  var items=BAYS[bay]||[];
+  var deck=items.filter(function(c){return c.tier===82;});
+  var hold=items.filter(function(c){return c.tier!==82;});
+  var doneCnt=items.filter(function(c){return fbChecked[c.cntr];}).length;
+
+  document.getElementById('bayPopTitle').textContent='BAY '+parseInt(bay);
+  document.getElementById('bayPopStats').textContent=
+    '총 '+items.length+'개 | 완료 '+doneCnt+'개 | 잔여 '+(items.length-doneCnt)+'개';
+
+  var body=document.getElementById('bayPopBody');
+  body.innerHTML='';
+
+  // DECK
+  var deckDiv=document.createElement('div');deckDiv.className='pop-deck';
+  var dl=document.createElement('div');dl.className='pop-sec-lbl';dl.textContent='▲ ON DECK';
+  deckDiv.appendChild(dl);
+  var dg=document.createElement('div');dg.className='pop-grid';
+  if(deck.length){
+    var maxR=Math.max.apply(null,deck.map(function(c){return c.row;}));
+    var rows=[];for(var r=1;r<=maxR;r++) rows.push(r);
+    // row 라벨
+    var rl=document.createElement('div');rl.className='pop-row-lbl';
+    rows.forEach(function(r){var s=document.createElement('span');s.textContent='R'+p2(r);rl.appendChild(s);});
+    dg.appendChild(rl);
+    var row=document.createElement('div');row.className='pop-cell-row';
+    var tl=document.createElement('div');tl.className='pop-tier-lbl';tl.textContent='82';row.appendChild(tl);
+    rows.forEach(function(r){
+      var c=deck.find(function(x){return x.row===r;});
+      row.appendChild(c?mkPopCell(c):mkPopEmpty());
+    });
+    dg.appendChild(row);
+  } else {
+    dg.innerHTML='<div style="display:flex;align-items:center;justify-content:center;flex:1;color:#2a5a7a;font-size:11px">데크 적재 없음</div>';
+  }
+  deckDiv.appendChild(dg);
+  body.appendChild(deckDiv);
+
+  // HOLD
+  var holdDiv=document.createElement('div');holdDiv.className='pop-hold';
+  var hl=document.createElement('div');hl.className='pop-sec-lbl';hl.textContent='▼ UNDER DECK';
+  holdDiv.appendChild(hl);
+  var hg=document.createElement('div');hg.className='pop-grid';
+  if(hold.length){
+    var maxR2=Math.max.apply(null,hold.map(function(c){return c.row;}));
+    var rows2=[];for(var r2=1;r2<=maxR2;r2++) rows2.push(r2);
+    var tiers=[...new Set(hold.map(function(c){return c.tier;}))].sort(function(a,b){return b-a;});
+    // row 라벨
+    var rl2=document.createElement('div');rl2.className='pop-row-lbl';
+    rows2.forEach(function(r){var s=document.createElement('span');s.textContent='R'+p2(r);rl2.appendChild(s);});
+    hg.appendChild(rl2);
+    tiers.forEach(function(t){
+      var row2=document.createElement('div');row2.className='pop-cell-row';
+      var tl2=document.createElement('div');tl2.className='pop-tier-lbl';tl2.textContent=t;row2.appendChild(tl2);
+      rows2.forEach(function(r){
+        var c=hold.find(function(x){return x.row===r&&x.tier===t;});
+        row2.appendChild(c?mkPopCell(c):mkPopEmpty());
+      });
+      hg.appendChild(row2);
+    });
+  } else {
+    hg.innerHTML='<div style="display:flex;align-items:center;justify-content:center;flex:1;color:#2a5a7a;font-size:11px">홀드 적재 없음</div>';
+  }
+  holdDiv.appendChild(hg);
+  body.appendChild(holdDiv);
+
+  document.getElementById('bayOverlay').style.display='block';
+  var pp=document.getElementById('bayPopup');
+  pp.style.display='flex';
 }
 
-// ── 팝업 ──────────────────────────────────────
-function showPopup(cntr){
+function mkPopCell(c){
+  var done=!!fbChecked[c.cntr];
+  var el=document.createElement('div');
+  el.className='pop-cell st-'+c.type+(done?' st-done':'');
+  el.onclick=function(e){e.stopPropagation();showCntr(c.cntr);};
+
+  if(done){var tk=document.createElement('span');tk.className='pc-tick';tk.textContent='✔';el.appendChild(tk);}
+  var num=document.createElement('div');num.className='pc-num';num.textContent='#'+c.no;el.appendChild(num);
+  var id=document.createElement('div');id.className='pc-id';id.textContent=c.cntr.slice(-4);el.appendChild(id);
+  var sz=document.createElement('div');sz.className='pc-sz';sz.textContent=c.size;el.appendChild(sz);
+  if(c.type!=='normal'){
+    var sp=document.createElement('div');sp.className='pc-sp sp-'+c.type;
+    sp.textContent=c.type==='rf'?'RF':c.type==='dg'?'DG':'X-RAY';el.appendChild(sp);
+  }
+  return el;
+}
+
+function mkPopEmpty(){
+  var el=document.createElement('div');el.className='pop-cell empty st-normal';return el;
+}
+
+function closeBayPopup(){
+  document.getElementById('bayOverlay').style.display='none';
+  document.getElementById('bayPopup').style.display='none';
+  curBayPopup=null;
+}
+
+// ── 컨테이너 상세 ───────────────────────────────
+function showCntr(cntr){
   var base=baseMap[cntr]||{};
   var done=fbChecked[cntr]||'';
   var seal=fbSeal[cntr]||base.seal||'-';
-  document.getElementById('popCntr').textContent=cntr;
+  document.getElementById('cntrNo').textContent=cntr;
   var rows=[
     ['실번호',seal],['규격',base.size||'-'],['위치',base.pos||'-'],
     ['특수',base.special||'없음'],
-    ['상태',done?'<span class="pop-done">&#10003; 완료</span>':'<span class="pop-rem">&#9650; 미완료</span>']
+    ['상태',done?'<span style="color:#2dba52;font-weight:900">&#10003; 완료</span>':'<span style="color:#e74c3c;font-weight:900">미완료</span>']
   ];
-  if(base.xray) rows.push(['XRAY','&#9888; 대상']);
-  var h='';rows.forEach(function(r){h+='<div class="pop-row"><span class="pop-l">'+r[0]+'</span><span class="pop-v">'+r[1]+'</span></div>';});
-  document.getElementById('popBody').innerHTML=h;
-  document.getElementById('popup').style.display='block';
-  document.getElementById('overlay').style.display='block';
+  if(base.xray) rows.push(['XRAY','<span style="color:#cc2222;font-weight:900">&#9888; 대상</span>']);
+  var h='';rows.forEach(function(r){
+    h+='<div class="cntr-row"><span class="cntr-l">'+r[0]+'</span><span class="cntr-v">'+r[1]+'</span></div>';
+  });
+  document.getElementById('cntrBody').innerHTML=h;
+  document.getElementById('cntrOverlay').style.display='block';
+  document.getElementById('cntrPopup').style.display='block';
 }
-function closePopup(){
-  document.getElementById('popup').style.display='none';
-  document.getElementById('overlay').style.display='none';
+function closeCntr(){
+  document.getElementById('cntrOverlay').style.display='none';
+  document.getElementById('cntrPopup').style.display='none';
 }
 
-// ── Firebase ───────────────────────────────────
+// ── Firebase ────────────────────────────────────
 function loadFB(){
   var xhr=new XMLHttpRequest();
   xhr.open('GET',FB_URL+'/'+FB_PATH+'/in.json?t='+Date.now(),true);
@@ -362,16 +431,32 @@ function loadFB(){
         Object.keys(rows).forEach(function(k){
           var r=rows[k];if(!r||!r.cntr)return;
           if(r.checked)fbChecked[r.cntr]=r.checked;
-          if(r.seal)   fbSeal[r.cntr]=r.seal;
+          if(r.seal)fbSeal[r.cntr]=r.seal;
         });
-        refreshCells();
-        updateStats();
-        var n=new Date(),p=function(x){return x<10?'0'+x:''+x;};
-        document.getElementById('syncT').textContent=p(n.getHours())+':'+p(n.getMinutes())+':'+p(n.getSeconds());
+        refreshCells();updateStats();
+        var n=new Date();
+        document.getElementById('syncT').textContent=p2(n.getHours())+':'+p2(n.getMinutes())+':'+p2(n.getSeconds());
+        if(curBayPopup) openBayPopup(curBayPopup);
       }catch(e){console.error(e);}
     }
   };
   xhr.send();
+}
+
+function refreshCells(){
+  document.querySelectorAll('.cell[data-cntr],.pop-cell[data-cntr]').forEach(function(el){
+    var cntr=el.dataset.cntr;
+    var done=!!fbChecked[cntr];
+    var wasDone=el.classList.contains('st-done');
+    if(done===wasDone) return;
+    el.classList.toggle('st-done',done);
+    var tk=el.querySelector('.c-tick,.pc-tick');
+    if(done&&!tk){
+      tk=document.createElement('span');
+      tk.className=el.classList.contains('pop-cell')?'pc-tick':'c-tick';
+      tk.textContent='✔';el.insertBefore(tk,el.firstChild);
+    } else if(!done&&tk){tk.remove();}
+  });
 }
 
 function updateStats(){
@@ -384,6 +469,8 @@ function updateStats(){
   document.getElementById('progFill').style.width=pct+'%';
   document.getElementById('progTxt').textContent=done+' / '+total+' ('+pct+'%)';
 }
+
+function p2(n){return n<10?'0'+n:''+n;}
 
 buildShip();
 loadFB();
