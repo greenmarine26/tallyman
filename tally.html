@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#0f4c75">
+<title>평택항 검수 시스템</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:#f5f6f8;color:#1a1a1a;font-size:15px;overflow-x:hidden}
+button,input,select,textarea{font-family:inherit;font-size:inherit;outline:none}
+button{cursor:pointer;border:none;background:none}
+input,select,textarea{-webkit-appearance:none;appearance:none}
+
+.screen{display:none;min-height:100vh;flex-direction:column}
+.screen.active{display:flex}
+
+/* ============ 시작 화면 ============ */
+.start{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(180deg,#0f4c75 0%,#3282b8 100%)}
+.start-box{background:#fff;border-radius:16px;padding:28px 24px;width:100%;max-width:440px;box-shadow:0 10px 40px rgba(0,0,0,0.15)}
+.start-logo{font-size:26px;font-weight:800;color:#0f4c75;margin-bottom:4px;letter-spacing:-1px}
+.start-sub{font-size:13px;color:#6a737d;margin-bottom:24px}
+.start-section{margin-bottom:20px}
+.start-label{display:block;font-size:13px;font-weight:600;color:#24292e;margin-bottom:8px}
+.upload-zone{border:2px dashed #d1d5da;border-radius:12px;padding:24px 12px;text-align:center;background:#fafbfc;transition:all 0.2s}
+.upload-zone.active{border-color:#0f4c75;background:#e7f0f7}
+.upload-zone-text{font-size:13px;color:#6a737d;margin-bottom:12px}
+.btn-upload{display:inline-block;padding:10px 24px;background:#0f4c75;color:#fff;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer}
+.upload-list{margin-top:12px;font-size:12px;max-height:200px;overflow-y:auto}
+.upload-item{padding:6px 10px;border-radius:6px;margin-bottom:4px;display:flex;justify-content:space-between;align-items:center}
+.upload-item.ok{background:#f0fff4;border-left:3px solid #28a745;color:#1d6e3a}
+.upload-item.err{background:#ffeef0;border-left:3px solid #d73a49;color:#86181d}
+.input{width:100%;padding:12px;border:1px solid #d1d5da;border-radius:8px;font-size:15px;background:#fff}
+.input:focus{border-color:#0f4c75;box-shadow:0 0 0 3px rgba(15,76,117,0.15)}
+.input.lg{font-size:18px;font-weight:600;padding:14px;letter-spacing:1px}
+.btn-start{width:100%;padding:14px;background:#0f4c75;color:#fff;border-radius:10px;font-size:16px;font-weight:700;margin-top:8px}
+.btn-start:disabled{background:#a0a8b1;cursor:not-allowed}
+.hint{font-size:11px;color:#6a737d;margin-top:6px}
+
+/* ============ 메인 레이아웃 ============ */
+.app{display:flex;flex-direction:column;height:100vh;width:100%}
+.topbar{background:#0f4c75;color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;box-shadow:0 2px 4px rgba(0,0,0,0.1);z-index:50}
+.tb-info{flex:1;min-width:0}
+.tb-title{font-size:15px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub{font-size:11px;opacity:0.9;margin-top:2px}
+.tb-mode{display:inline-block;padding:1px 8px;border-radius:8px;font-size:10px;font-weight:700;margin-left:6px}
+.mode-D{background:#fff3cd;color:#856404}
+.mode-L{background:#d1ecf1;color:#0c5460}
+.tb-btn{background:rgba(255,255,255,0.2);color:#fff;padding:6px 10px;border-radius:6px;font-size:12px;margin-left:4px}
+.tb-btn:active{background:rgba(255,255,255,0.3)}
+
+.body{flex:1;display:flex;overflow:hidden}
+
+/* 좌측 - 컨테이너 리스트 */
+.list-pane{flex:1;display:flex;flex-direction:column;background:#fff;border-right:1px solid #e1e4e8;min-width:0;overflow:hidden}
+.list-search{padding:10px;background:#fff;border-bottom:1px solid #e1e4e8;display:flex;gap:6px;align-items:center}
+.list-search input{flex:1}
+.filter-bar{display:flex;gap:6px;padding:8px 10px;background:#fafbfc;border-bottom:1px solid #e1e4e8;overflow-x:auto;white-space:nowrap}
+.filter-chip{padding:5px 12px;border-radius:14px;background:#fff;border:1px solid #d1d5da;font-size:12px;font-weight:600;color:#586069;flex-shrink:0}
+.filter-chip.active{background:#0f4c75;border-color:#0f4c75;color:#fff}
+.filter-chip.special{border-color:#0070d6;color:#0070d6}
+.filter-chip.special.active{background:#0070d6;border-color:#0070d6;color:#fff}
+.filter-chip.xray{border-color:#bf360c;color:#bf360c}
+.filter-chip.xray.active{background:#bf360c;border-color:#bf360c;color:#fff}
+.list-scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.list-stats{padding:8px 12px;background:#f6f8fa;font-size:11px;color:#586069;border-bottom:1px solid #e1e4e8;display:flex;justify-content:space-between}
+.cont-row{padding:10px 12px;border-bottom:1px solid #f0f3f6;display:flex;align-items:center;gap:10px;cursor:pointer}
+.cont-row:active{background:#f0f3f6}
+.cont-row.selected{background:#e7f0f7;border-left:3px solid #0f4c75;padding-left:9px}
+.cont-row.done{background:#f0fff4}
+.cont-row.done .cont-cno{color:#1d6e3a;text-decoration:line-through;text-decoration-color:#28a745}
+.cont-checkbox{width:20px;height:20px;border:2px solid #d1d5da;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff}
+.cont-row.done .cont-checkbox{background:#28a745;border-color:#28a745}
+.cont-info{flex:1;min-width:0}
+.cont-cno{font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:14px;letter-spacing:0.3px}
+.cont-meta{font-size:11px;color:#586069;margin-top:2px;display:flex;gap:8px;flex-wrap:wrap}
+.cont-loc{font-family:ui-monospace,monospace;color:#0f4c75;font-weight:600}
+.cont-tags{display:flex;gap:4px;flex-shrink:0}
+.tag{font-size:10px;padding:1px 6px;border-radius:8px;font-weight:700;white-space:nowrap}
+.tag-rf{background:#d1ecf1;color:#0c5460}
+.tag-dg{background:#f8d7da;color:#721c24}
+.tag-fr{background:#fff3cd;color:#856404}
+.tag-ot{background:#e2e3e5;color:#383d41}
+.tag-xr{background:#ffccbc;color:#bf360c;font-weight:800}
+.tag-tw{background:#d4edda;color:#155724}
+.tag-dmg{background:#fce4ec;color:#880e4f}
+.empty-list{padding:40px 20px;text-align:center;color:#6a737d;font-size:13px}
+
+/* 중앙 - 상세 패널 */
+.detail-pane{display:none;flex:1.2;flex-direction:column;background:#fafbfc;overflow:hidden;min-width:0}
+.detail-pane.active{display:flex}
+.detail-head{background:#fff;padding:14px;border-bottom:1px solid #e1e4e8}
+.detail-cno{font-family:ui-monospace,monospace;font-size:22px;font-weight:800;color:#0f4c75;letter-spacing:0.5px}
+.detail-loc{font-family:ui-monospace,monospace;font-size:14px;color:#586069;margin-top:4px}
+.detail-tags{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+.detail-body{flex:1;overflow-y:auto;padding:14px;-webkit-overflow-scrolling:touch}
+.field-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.field-grid.one{grid-template-columns:1fr}
+.field{background:#fff;border:1px solid #e1e4e8;border-radius:8px;padding:10px}
+.field-label{font-size:10px;color:#6a737d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px}
+.field-value{font-size:14px;font-weight:600;margin-top:4px;color:#24292e;word-break:break-all}
+.field-value.mono{font-family:ui-monospace,monospace}
+.field input{width:100%;padding:6px 0;border:none;border-bottom:1px solid #e1e4e8;background:transparent;font-size:14px;font-weight:600;margin-top:2px}
+.field input:focus{border-bottom-color:#0f4c75}
+
+.section{background:#fff;border:1px solid #e1e4e8;border-radius:8px;padding:12px;margin-bottom:12px}
+.section-title{font-size:12px;font-weight:700;color:#586069;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.dmg-toggle{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px}
+.dmg-btn{padding:10px;border:2px solid #e1e4e8;border-radius:8px;background:#fff;font-weight:700;font-size:14px;color:#586069}
+.dmg-btn.no.active{background:#28a745;border-color:#28a745;color:#fff}
+.dmg-btn.yes.active{background:#dc3545;border-color:#dc3545;color:#fff}
+
+.complete-bar{padding:14px;background:#fff;border-top:1px solid #e1e4e8;display:flex;gap:10px}
+.btn-complete{flex:1;padding:14px;background:#28a745;color:#fff;font-size:16px;font-weight:700;border-radius:10px}
+.btn-complete:active{background:#218838}
+.btn-complete.done{background:#6a737d}
+.btn-cancel{padding:14px 16px;background:#fff;border:1px solid #d1d5da;color:#586069;font-weight:600;border-radius:10px}
+
+.no-detail{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#6a737d;padding:40px}
+.no-detail-icon{font-size:48px;margin-bottom:12px;opacity:0.4}
+
+/* 우측 - 통계 (PC만) */
+.stats-pane{display:none;width:280px;background:#fff;border-left:1px solid #e1e4e8;flex-direction:column;overflow:hidden}
+.stats-head{padding:12px;background:#f6f8fa;border-bottom:1px solid #e1e4e8;font-size:12px;font-weight:700;color:#24292e}
+.stats-body{flex:1;overflow-y:auto;padding:12px}
+.stat-card{background:#f6f8fa;border-radius:8px;padding:10px;margin-bottom:10px}
+.stat-card-title{font-size:11px;color:#6a737d;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px}
+.progress{height:6px;background:#e1e4e8;border-radius:3px;overflow:hidden;margin:6px 0}
+.progress-fill{height:100%;background:linear-gradient(90deg,#28a745,#34d058);transition:width 0.3s}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:3px 0}
+.kv-k{color:#586069}
+.kv-v{font-weight:700;font-family:ui-monospace,monospace}
+.bar-row{display:flex;align-items:center;gap:6px;margin:4px 0;font-size:12px}
+.bar-row .name{width:42px;font-weight:700;color:#0f4c75;font-family:ui-monospace,monospace;font-size:11px}
+.bar-row .bar{flex:1;height:14px;background:#e1e4e8;border-radius:3px;overflow:hidden;position:relative}
+.bar-row .bar-f{height:100%;background:#28a745}
+.bar-row .num{font-size:11px;color:#586069;font-weight:600;min-width:36px;text-align:right}
+
+/* 하단 모바일 탭 */
+.tabbar{display:none;background:#fff;border-top:1px solid #e1e4e8;justify-content:space-around;padding:4px 0;z-index:50}
+.tab{flex:1;padding:8px 4px;text-align:center;color:#6a737d;font-size:10px;font-weight:600}
+.tab.active{color:#0f4c75}
+.tab-icon{font-size:18px;display:block;margin-bottom:2px}
+.tab-badge{position:absolute;top:2px;right:25%;background:#dc3545;color:#fff;font-size:9px;padding:1px 5px;border-radius:8px;font-weight:700}
+
+/* 토스트 */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1a1a1a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;z-index:300;opacity:0;transition:opacity 0.3s;max-width:90%;pointer-events:none}
+.toast.show{opacity:1}
+.toast.err{background:#d73a49}
+.toast.ok{background:#28a745}
+
+/* 모달 */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;align-items:flex-end;justify-content:center}
+.modal-bg.show{display:flex}
+.modal{background:#fff;border-radius:16px 16px 0 0;padding:20px 16px 24px;width:100%;max-width:500px;max-height:85vh;overflow-y:auto}
+
+/* ============ 반응형 ============ */
+/* 모바일 (~ 768px) */
+@media (max-width: 767px) {
+  .body{flex-direction:column}
+  .list-pane{flex:1;border-right:none}
+  .detail-pane{position:fixed;inset:0;z-index:100;background:#f5f6f8}
+  .detail-pane.active{display:flex}
+  .stats-pane{display:none !important}
+  .tabbar{display:flex}
+  .topbar{padding:8px 12px}
+  .tb-title{font-size:13px}
+  .tb-sub{font-size:10px}
+}
+
+/* 태블릿 (768px ~ 1023px) */
+@media (min-width: 768px) and (max-width: 1023px) {
+  .list-pane{flex:1;max-width:380px}
+  .detail-pane.active{display:flex}
+  .detail-pane{display:flex}
+  .stats-pane{display:none}
+}
+
+/* PC (1024px+) */
+@media (min-width: 1024px) {
+  .list-pane{max-width:420px}
+  .detail-pane{display:flex}
+  .stats-pane{display:flex}
+  .topbar{padding:12px 18px}
+  .tb-title{font-size:17px}
+  .body{max-width:1400px;margin:0 auto;width:100%;border-left:1px solid #e1e4e8;border-right:1px solid #e1e4e8}
+}
+
+/* 매우 큰 화면 */
+@media (min-width: 1400px) {
+  .list-pane{max-width:480px}
+  .stats-pane{width:340px}
+}
+
+/* 스크롤바 */
+.list-scroll::-webkit-scrollbar,.detail-body::-webkit-scrollbar,.stats-body::-webkit-scrollbar{width:6px}
+.list-scroll::-webkit-scrollbar-thumb,.detail-body::-webkit-scrollbar-thumb,.stats-body::-webkit-scrollbar-thumb{background:#d1d5da;border-radius:3px}
+
+/* 추가 공통 */
+.row{display:flex;align-items:center;gap:8px}
+.spacer{flex:1}
+.hide{display:none !important}
+</style>
+</head>
+<body>
+
+<!-- ============ 시작 화면 ============ -->
+<div id="screen-start" class="screen active">
+  <div class="start">
+    <div class="start-box">
+      <div class="start-logo">평택항 검수</div>
+      <div class="start-sub">Tallyman System v1.0</div>
+
+      <div class="start-section">
+        <label class="start-label">자료 파일 업로드</label>
+        <div class="upload-zone" id="upload-zone">
+          <div class="upload-zone-text">ASC · EDI · 양하 LIST · X-RAY 자료를<br>한꺼번에 선택하세요</div>
+          <label class="btn-upload" for="file-input">파일 선택</label>
+          <input type="file" id="file-input" multiple accept=".asc,.ASC,.edi,.EDI,.xls,.xlsx,.txt" style="display:none">
+        </div>
+        <div class="upload-list" id="upload-list"></div>
+      </div>
+
+      <div class="start-section">
+        <label class="start-label">검수원 이름</label>
+        <input type="text" class="input" id="worker-name" placeholder="홍길동" autocomplete="off">
+      </div>
+
+      <div class="start-section">
+        <label class="start-label">Google Sheets URL (선택)</label>
+        <input type="text" class="input" id="gas-url" placeholder="https://script.google.com/..." autocomplete="off" style="font-size:12px">
+        <div class="hint">비워두면 브라우저에만 저장됩니다</div>
+      </div>
+
+      <button class="btn-start" id="btn-go" disabled>시작하기</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- ============ 메인 화면 ============ -->
+<div id="screen-app" class="screen">
+  <div class="app">
+    <!-- 상단바 -->
+    <div class="topbar">
+      <div class="tb-info">
+        <div class="tb-title" id="tb-title">선박 / 항차 <span class="tb-mode mode-D" id="tb-mode">양하</span></div>
+        <div class="tb-sub"><span id="tb-worker"></span> · <span id="tb-progress">0/0</span></div>
+      </div>
+      <div>
+        <button class="tb-btn" onclick="exportData()">↓</button>
+        <button class="tb-btn" onclick="goStart()">⚙</button>
+      </div>
+    </div>
+
+    <div class="body">
+      <!-- 좌: 컨테이너 리스트 -->
+      <div class="list-pane">
+        <div class="list-search">
+          <input type="text" class="input" id="search-box" placeholder="검색 (끝4자리, 위치, 선사)" autocomplete="off" autocapitalize="characters">
+          <button class="tb-btn" style="background:#e1e4e8;color:#586069" onclick="clearSearch()">✕</button>
+        </div>
+        <div class="filter-bar" id="filter-bar">
+          <!-- 동적 생성 -->
+        </div>
+        <div class="list-stats" id="list-stats">
+          <span id="ls-count">0건</span>
+          <span id="ls-progress">완료 0건</span>
+        </div>
+        <div class="list-scroll" id="list-scroll">
+          <!-- 동적 생성 -->
+        </div>
+      </div>
+
+      <!-- 중: 상세 패널 -->
+      <div class="detail-pane" id="detail-pane">
+        <div class="detail-head">
+          <div class="row">
+            <button class="tb-btn" style="background:#e1e4e8;color:#0f4c75" onclick="closeDetail()">‹ 목록</button>
+            <div class="spacer"></div>
+            <span class="tag tag-rf hide" id="dt-tag-mode">양하</span>
+          </div>
+          <div class="detail-cno" id="dt-cno" style="margin-top:8px">-</div>
+          <div class="detail-loc" id="dt-loc">-</div>
+          <div class="detail-tags" id="dt-tags"></div>
+        </div>
+        <div class="detail-body">
+          <div class="field-grid">
+            <div class="field"><div class="field-label">규격/타입</div><div class="field-value" id="dt-type">-</div></div>
+            <div class="field"><div class="field-label">F/E</div><div class="field-value" id="dt-fe">-</div></div>
+            <div class="field"><div class="field-label">선사</div><div class="field-value" id="dt-op">-</div></div>
+            <div class="field"><div class="field-label">중량 (kg)</div><div class="field-value" id="dt-wt">-</div></div>
+            <div class="field"><div class="field-label">적재항</div><div class="field-value" id="dt-pol">-</div></div>
+            <div class="field"><div class="field-label">양하항</div><div class="field-value" id="dt-pod">-</div></div>
+            <div class="field hide" id="dt-temp-wrap"><div class="field-label">리퍼 온도</div><div class="field-value" id="dt-temp">-</div></div>
+            <div class="field hide" id="dt-mbl-wrap"><div class="field-label">M-B/L</div><div class="field-value mono" id="dt-mbl">-</div></div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">봉인 번호 <span style="font-weight:400;color:#6a737d;font-size:10px">자동 + 수정 가능</span></div>
+            <div class="field-grid one">
+              <div class="field"><div class="field-label">실 (Seal)</div><input type="text" id="dt-seal" placeholder="실 번호"></div>
+              <div class="field"><div class="field-label">선사 봉인</div><input type="text" id="dt-seal-line" placeholder="선택"></div>
+              <div class="field"><div class="field-label">세관 봉인</div><input type="text" id="dt-seal-cust" placeholder="선택"></div>
+            </div>
+          </div>
+
+          <div class="section">
+            <div class="section-title">데미지</div>
+            <div class="dmg-toggle">
+              <button class="dmg-btn no active" id="dmg-no" onclick="setDamage(false)">없음 (Sound)</button>
+              <button class="dmg-btn yes" id="dmg-yes" onclick="setDamage(true)">손상 있음</button>
+            </div>
+            <input type="text" class="input" id="dt-dmg-memo" placeholder="손상 부위·메모" style="display:none;font-size:13px">
+          </div>
+
+          <div class="section">
+            <div class="section-title">메모</div>
+            <input type="text" class="input" id="dt-memo" placeholder="추가 메모 (선택)" style="font-size:13px">
+          </div>
+        </div>
+
+        <div class="complete-bar">
+          <button class="btn-cancel" onclick="closeDetail()">닫기</button>
+          <button class="btn-complete" id="btn-complete" onclick="completeContainer()">검수 완료</button>
+        </div>
+      </div>
+
+      <!-- 우: 통계 (PC만) -->
+      <div class="stats-pane">
+        <div class="stats-head">진행 현황</div>
+        <div class="stats-body" id="stats-body">
+          <!-- 동적 생성 -->
+        </div>
+      </div>
+    </div>
+
+    <!-- 하단 탭 (모바일) -->
+    <div class="tabbar" id="tabbar">
+      <button class="tab active" data-filter="all" onclick="setFilter('all')">
+        <span class="tab-icon">📋</span>전체
+      </button>
+      <button class="tab" data-filter="todo" onclick="setFilter('todo')">
+        <span class="tab-icon">⏳</span>미완료
+      </button>
+      <button class="tab" data-filter="reefer" onclick="setFilter('reefer')">
+        <span class="tab-icon">❄</span>리퍼
+      </button>
+      <button class="tab" data-filter="xray" onclick="setFilter('xray')">
+        <span class="tab-icon">🔍</span>X-RAY
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =============================================================
+   평택항 검수 시스템 - tally.html
+   ============================================================= */
+const S = {
+  vessel: '', voyage: '', pol: '', pod: '',
+  containers: [],
+  records: {},        // {cno: {seal, sealLine, sealCust, dmg, dmgMemo, memo, time, worker, mode}}
+  worker: '', gasUrl: '',
+  filter: 'all',
+  searchQ: '',
+  selected: null,
+  modeMap: {}         // {cno: 'D' or 'L'}
+};
+
+// =================== 시작 화면 ===================
+const $ = id => document.getElementById(id);
+$('file-input').addEventListener('change', handleFiles);
+
+const dropZone = $('upload-zone');
+['dragenter','dragover'].forEach(e => dropZone.addEventListener(e, ev => {ev.preventDefault();dropZone.classList.add('active')}));
+['dragleave','drop'].forEach(e => dropZone.addEventListener(e, ev => {ev.preventDefault();dropZone.classList.remove('active')}));
+dropZone.addEventListener('drop', ev => {
+  const files = Array.from(ev.dataTransfer.files);
+  handleFiles({target: {files}});
+});
+
+window.addEventListener('DOMContentLoaded', () => {
+  const w = localStorage.getItem('tally-worker');
+  const g = localStorage.getItem('tally-gas');
+  if (w) $('worker-name').value = w;
+  if (g) $('gas-url').value = g;
+});
+
+$('btn-go').addEventListener('click', startApp);
+
+async function handleFiles(ev) {
+  const files = Array.from(ev.target.files);
+  if (!files.length) return;
+  const list = $('upload-list');
+
+  let combined = {vessel:'',voyage:'',pol:'',pod:'',containers:[]};
+  let seals = {}, xraySet = new Set();
+
+  for (const f of files) {
+    const ext = f.name.toLowerCase();
+    try {
+      if (ext.endsWith('.asc') || ext.endsWith('.txt')) {
+        const txt = await readText(f);
+        const r = parseASC(txt);
+        if (r.containers.length) {
+          combined = mergeData(combined, r);
+          addUploadItem(`✓ ${f.name} → ${r.containers.length}건`);
+        } else addUploadItem(`✗ ${f.name} → ASC 형식 인식 실패`, true);
+      } else if (ext.endsWith('.edi')) {
+        const txt = await readText(f);
+        const r = parseEDI(txt);
+        if (r.containers.length) {
+          combined = mergeData(combined, r);
+          addUploadItem(`✓ ${f.name} → ${r.containers.length}건 (EDI)`);
+        } else addUploadItem(`✗ ${f.name} → EDI 인식 실패`, true);
+      } else if (ext.endsWith('.xls') || ext.endsWith('.xlsx')) {
+        const ab = await readBin(f);
+        const r = parseExcel(ab, f.name);
+        if (r.type === 'xray') {
+          r.cnos.forEach(c => xraySet.add(c));
+          addUploadItem(`✓ ${f.name} → X-RAY ${r.cnos.length}건`);
+        } else {
+          Object.assign(seals, r.seals);
+          addUploadItem(`✓ ${f.name} → 실번호 ${Object.keys(r.seals).length}건`);
+        }
+      }
+    } catch (e) {
+      addUploadItem(`✗ ${f.name}: ${e.message}`, true);
+    }
+  }
+
+  // 머지
+  for (const c of combined.containers) {
+    if (seals[c.cno]) {
+      c.seal = seals[c.cno].seal;
+      c.mbl = seals[c.cno].mbl;
+      c.lineCode = seals[c.cno].line;
+    }
+    c.xray = xraySet.has(c.cno);
+  }
+
+  if (combined.containers.length) {
+    S.vessel = combined.vessel;
+    S.voyage = combined.voyage;
+    S.pol = combined.pol;
+    S.pod = combined.pod;
+    S.containers = combined.containers;
+    addUploadItem(`▶ 총 ${combined.containers.length}건 / ${combined.vessel} ${combined.voyage}`);
+    $('btn-go').disabled = false;
+  }
+}
+
+function addUploadItem(text, err) {
+  const div = document.createElement('div');
+  div.className = 'upload-item ' + (err ? 'err' : 'ok');
+  div.textContent = text;
+  $('upload-list').appendChild(div);
+}
+
+function readText(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    // 한글 인코딩 시도: utf-8 → cp949
+    r.readAsText(f, 'utf-8');
+  }).then(t => {
+    // 깨진 글자 감지 시 cp949 재시도
+    if (t.includes('\uFFFD')) {
+      return new Promise((res, rej) => {
+        const r2 = new FileReader();
+        r2.onload = e => res(e.target.result);
+        r2.onerror = rej;
+        r2.readAsText(f, 'euc-kr');
+      });
+    }
+    return t;
+  });
+}
+
+function readBin(f) {
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = e => res(e.target.result);
+    r.onerror = rej;
+    r.readAsArrayBuffer(f);
+  });
+}
+
+// ASC 파서 (CASP 표준)
+function parseASC(text) {
+  const containers = [];
+  let vessel='',voyage='',pol='',pod='';
+  for (const line of text.split(/\r?\n/)) {
+    if (line.startsWith('$604')) {
+      const p = line.substring(4).split('/');
+      if (p.length >= 5) {
+        vessel = (p[1]||'').trim();
+        voyage = (p[2]||'').trim();
+        const m = (p[4]||'').match(/POD:(\w+)/);
+        if (m) pod = m[1];
+      }
+    }
+    if (line.length < 50 || !/^\d/.test(line[0])) continue;
+    const cno = line.substring(7,18).trim();
+    if (!/^[A-Z]{4}\d{7}$/.test(cno)) continue;
+    const loc = line.substring(0,6);
+    const ctype = line.substring(44,48).trim();
+    const wRaw = line.substring(48,51).trim();
+    const fe = line.substring(51,52);
+    let temp = null;
+    if (line.length > 55) {
+      const m = line.substring(52,62).match(/(-?\d{2,3})C/);
+      if (m) temp = parseInt(m[1]);
+    }
+    const ak = line.length > 52 && line.substring(52,65).includes('AK');
+    containers.push({
+      loc, cno,
+      bay: loc.substring(0,2),
+      row: loc.substring(2,4),
+      tier: loc.substring(4,6),
+      op: line.substring(19,22).trim(),
+      pol: line.substring(27,30).trim(),
+      pod: line.substring(30,33).trim(),
+      ctype, fe,
+      wt: wRaw && /^\d+$/.test(wRaw) ? parseInt(wRaw)*100 : 0,
+      temp, ak
+    });
+  }
+  if (!pol && containers.length) pol = containers[0].pol;
+  return {vessel,voyage,pol,pod,containers};
+}
+
+// EDI BAPLIE 파서
+function parseEDI(text) {
+  const segs = text.split("'").map(s => s.trim()).filter(Boolean);
+  const containers = [];
+  let vessel='',voyage='',pol='',pod='',curLoc=null;
+  for (const s of segs) {
+    if (s.startsWith('TDT+')) {
+      const p = s.split('+');
+      if (p[2]) voyage = p[2];
+      if (p[8]) {
+        const v = p[8].split(':');
+        vessel = v[3] || '';
+      }
+    } else if (s.startsWith('LOC+5+')) {
+      const m = s.match(/LOC\+5\+(\w+):/);
+      if (m) pol = m[1].slice(-3);
+    } else if (s.startsWith('LOC+61+')) {
+      const m = s.match(/LOC\+61\+(\w+):/);
+      if (m) pod = m[1].slice(-3);
+    } else if (s.startsWith('LOC+147+')) {
+      const m = s.match(/LOC\+147\+(\d+)/);
+      if (m) curLoc = m[1].slice(-6).padStart(6,'0');
+    } else if (s.startsWith('EQD+CN+')) {
+      const m = s.match(/EQD\+CN\+([A-Z]{4} ?\d{7})\+([A-Z0-9]+)/);
+      if (m && curLoc) {
+        const cno = m[1].replace(/\s/g,'');
+        const iso = m[2];
+        // ISO → 추정 ctype
+        let ctype = '';
+        if (/^2[02]G/.test(iso)) ctype = '20GP';
+        else if (/^4[052]G/.test(iso) || /^45G/.test(iso)) ctype = '40HC';
+        else if (/^4[052]R/.test(iso) || /^45R/.test(iso)) ctype = '40HR';
+        else if (/^2[02]R/.test(iso)) ctype = '20RF';
+        else if (/^4[052]P/.test(iso)) ctype = '40FP';
+        else if (/^4[052]U/.test(iso) || /OT/.test(iso)) ctype = '45OT';
+        containers.push({
+          loc: curLoc, cno,
+          bay: curLoc.substring(0,2),
+          row: curLoc.substring(2,4),
+          tier: curLoc.substring(4,6),
+          isoType: iso, ctype, fe: 'F'
+        });
+      }
+    }
+  }
+  return {vessel,voyage,pol,pod,containers};
+}
+
+// 엑셀 파서
+function parseExcel(ab, filename) {
+  const wb = XLSX.read(ab, {type:'array'});
+  const isXray = /검수업체|xray|x-?ray/i.test(filename);
+  const ws = wb.Sheets[wb.SheetNames[0]];
+  const rows = XLSX.utils.sheet_to_json(ws, {defval:''});
+
+  if (isXray) {
+    const cnos = [];
+    for (const r of rows) {
+      for (const k of Object.keys(r)) {
+        const v = String(r[k]||'').trim();
+        if (/^[A-Z]{4}\d{7}$/.test(v)) {
+          cnos.push(v);
+          break;
+        }
+      }
+    }
+    return {type:'xray', cnos};
+  }
+
+  const seals = {};
+  for (const r of rows) {
+    let cno = null;
+    for (const k of Object.keys(r)) {
+      const v = String(r[k]||'').trim();
+      if (/^[A-Z]{4}\d{7}$/.test(v)) {cno = v; break;}
+    }
+    if (!cno) continue;
+    let seal = '';
+    for (const k of Object.keys(r)) {
+      if (/seal\s?no?\s?1?$/i.test(k) || /^실번호/.test(k) || /^실$/.test(k)) {
+        const v = String(r[k]||'').trim();
+        if (v) {seal = v; break;}
+      }
+    }
+    seals[cno] = {seal, mbl: String(r['M-B/L']||r['MBL']||'').trim(), line: String(r['선사부호']||r['선사']||'').trim()};
+  }
+  return {type:'list', seals};
+}
+
+function mergeData(a, b) {
+  if (!a.vessel) a.vessel = b.vessel;
+  if (!a.voyage) a.voyage = b.voyage;
+  if (!a.pol) a.pol = b.pol;
+  if (!a.pod) a.pod = b.pod;
+  const map = {};
+  for (const c of a.containers) map[c.cno] = c;
+  for (const c of b.containers) {
+    if (map[c.cno]) {
+      // 빈 값만 채움
+      for (const k of Object.keys(c)) {
+        if ((map[c.cno][k] == null || map[c.cno][k] === '') && c[k] != null && c[k] !== '') {
+          map[c.cno][k] = c[k];
+        }
+      }
+    } else map[c.cno] = c;
+  }
+  a.containers = Object.values(map);
+  return a;
+}
+
+function startApp() {
+  const w = $('worker-name').value.trim();
+  if (!w) {alert('검수원 이름을 입력하세요'); return;}
+  S.worker = w;
+  S.gasUrl = $('gas-url').value.trim();
+  localStorage.setItem('tally-worker', w);
+  if (S.gasUrl) localStorage.setItem('tally-gas', S.gasUrl);
+
+  // 모드 자동 감지: pod이 KR로 시작 또는 한국항이면 양하
+  const krPorts = ['PTK','PUS','KAN','INC','KWY','UWN'];
+  for (const c of S.containers) {
+    S.modeMap[c.cno] = krPorts.includes(c.pod) ? 'D' : 'L';
+  }
+  // 전체 모드 추정: 다수 결정
+  const dCount = Object.values(S.modeMap).filter(m=>m==='D').length;
+  const overallMode = dCount > S.containers.length / 2 ? 'D' : 'L';
+
+  $('tb-title').innerHTML = `${S.vessel} / ${S.voyage} <span class="tb-mode mode-${overallMode}">${overallMode==='D'?'양하':'적하'}</span>`;
+  $('tb-worker').textContent = S.worker;
+
+  // 이전 기록 로드 (브라우저)
+  const saved = localStorage.getItem('tally-records-' + S.voyage);
+  if (saved) {
+    try { S.records = JSON.parse(saved); } catch(e) {}
+  }
+
+  goScreen('app');
+  buildFilters();
+  renderList();
+  renderStats();
+  $('search-box').addEventListener('input', e => {
+    S.searchQ = e.target.value.toUpperCase().trim();
+    renderList();
+  });
+
+  // GAS에서 기존 기록 동기화
+  if (S.gasUrl) syncFromSheet();
+}
+
+function goScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  $('screen-'+name).classList.add('active');
+}
+
+function goStart() {
+  if (confirm('시작 화면으로 돌아가면 자료를 다시 업로드해야 합니다. 계속할까요?')) {
+    location.reload();
+  }
+}
+
+// =================== 필터·검색·리스트 ===================
+function buildFilters() {
+  const ctypes = {};
+  let reefer=0, xray=0, fr=0, ot=0, dg=0;
+  for (const c of S.containers) {
+    if (['40HR','20RF','22RT','45RT'].includes(c.ctype)) reefer++;
+    if (c.xray) xray++;
+    if (c.ctype === '40FP' || c.ctype === '20FR') fr++;
+    if (c.ctype === '45OT' || c.ctype === '20OT') ot++;
+    if (c.ak) dg++;
+  }
+  const html = `
+    <button class="filter-chip active" data-f="all" onclick="setFilter('all')">전체 ${S.containers.length}</button>
+    <button class="filter-chip" data-f="todo" onclick="setFilter('todo')">미완료</button>
+    <button class="filter-chip" data-f="done" onclick="setFilter('done')">완료</button>
+    ${reefer ? `<button class="filter-chip special" data-f="reefer" onclick="setFilter('reefer')">❄ 리퍼 ${reefer}</button>` : ''}
+    ${xray ? `<button class="filter-chip xray" data-f="xray" onclick="setFilter('xray')">🔍 X-RAY ${xray}</button>` : ''}
+    ${fr ? `<button class="filter-chip" data-f="fr" onclick="setFilter('fr')">FR ${fr}</button>` : ''}
+    ${ot ? `<button class="filter-chip" data-f="ot" onclick="setFilter('ot')">OT ${ot}</button>` : ''}
+    ${dg ? `<button class="filter-chip" data-f="dg" onclick="setFilter('dg')">DG ${dg}</button>` : ''}
+  `;
+  $('filter-bar').innerHTML = html;
+}
+
+function setFilter(f) {
+  S.filter = f;
+  document.querySelectorAll('[data-f]').forEach(b => b.classList.toggle('active', b.dataset.f === f));
+  document.querySelectorAll('[data-filter]').forEach(b => b.classList.toggle('active', b.dataset.filter === f));
+  renderList();
+}
+
+function clearSearch() {
+  $('search-box').value = '';
+  S.searchQ = '';
+  renderList();
+}
+
+function getFiltered() {
+  let list = S.containers;
+  if (S.filter === 'todo') list = list.filter(c => !S.records[c.cno]);
+  else if (S.filter === 'done') list = list.filter(c => !!S.records[c.cno]);
+  else if (S.filter === 'reefer') list = list.filter(c => ['40HR','20RF','22RT','45RT'].includes(c.ctype));
+  else if (S.filter === 'xray') list = list.filter(c => c.xray);
+  else if (S.filter === 'fr') list = list.filter(c => c.ctype==='40FP'||c.ctype==='20FR');
+  else if (S.filter === 'ot') list = list.filter(c => c.ctype==='45OT'||c.ctype==='20OT');
+  else if (S.filter === 'dg') list = list.filter(c => c.ak);
+
+  if (S.searchQ) {
+    list = list.filter(c => 
+      c.cno.includes(S.searchQ) || 
+      c.cno.endsWith(S.searchQ) ||
+      c.loc.includes(S.searchQ) ||
+      (c.op||'').toUpperCase().includes(S.searchQ) ||
+      (c.bay+c.row+c.tier).includes(S.searchQ)
+    );
+  }
+  return list;
+}
+
+function renderList() {
+  const list = getFiltered();
+  const scroll = $('list-scroll');
+  
+  $('ls-count').textContent = `${list.length}건 표시`;
+  const doneCount = S.containers.filter(c => S.records[c.cno]).length;
+  $('ls-progress').textContent = `완료 ${doneCount}/${S.containers.length}`;
+  $('tb-progress').textContent = `${doneCount}/${S.containers.length}`;
+
+  if (!list.length) {
+    scroll.innerHTML = '<div class="empty-list">표시할 컨테이너가 없습니다</div>';
+    return;
+  }
+
+  // 정렬: 위치 순
+  list.sort((a,b) => (a.loc||'').localeCompare(b.loc||''));
+
+  const html = list.map(c => {
+    const done = !!S.records[c.cno];
+    const tags = [];
+    if (['40HR','20RF','22RT','45RT'].includes(c.ctype)) tags.push(`<span class="tag tag-rf">RF${c.temp!=null?' '+c.temp+'°':''}</span>`);
+    if (c.ctype === '40FP' || c.ctype === '20FR') tags.push(`<span class="tag tag-fr">FR</span>`);
+    if (c.ctype === '45OT' || c.ctype === '20OT') tags.push(`<span class="tag tag-ot">OT</span>`);
+    if (c.ak) tags.push(`<span class="tag tag-dg">DG/AK</span>`);
+    if (c.xray) tags.push(`<span class="tag tag-xr">X-RAY</span>`);
+    const r = S.records[c.cno];
+    if (r && r.dmg) tags.push(`<span class="tag tag-dmg">손상</span>`);
+    const cls = 'cont-row' + (done ? ' done' : '') + (S.selected===c.cno?' selected':'');
+    return `
+      <div class="${cls}" onclick="openDetail('${c.cno}')">
+        <div class="cont-checkbox">${done?'✓':''}</div>
+        <div class="cont-info">
+          <div class="cont-cno">${c.cno}</div>
+          <div class="cont-meta">
+            <span class="cont-loc">${c.bay}/${c.row}/${c.tier}</span>
+            <span>${c.ctype||'-'}</span>
+            <span>${c.fe==='F'?'Full':'Empty'}</span>
+            <span>${c.op||'-'}</span>
+          </div>
+        </div>
+        <div class="cont-tags">${tags.join('')}</div>
+      </div>
+    `;
+  }).join('');
+  scroll.innerHTML = html;
+}
+
+// =================== 상세 패널 ===================
+let curDetail = null;
+
+function openDetail(cno) {
+  const c = S.containers.find(x => x.cno === cno);
+  if (!c) return;
+  curDetail = c;
+  S.selected = cno;
+  const r = S.records[cno] || {};
+
+  $('dt-cno').textContent = cno;
+  $('dt-loc').textContent = `Bay ${c.bay} / Row ${c.row} / Tier ${c.tier}`;
+  $('dt-type').textContent = c.ctype || '-';
+  $('dt-fe').textContent = c.fe==='F'?'Full':'Empty';
+  $('dt-op').textContent = c.op || '-';
+  $('dt-wt').textContent = c.wt ? c.wt.toLocaleString() : '-';
+  $('dt-pol').textContent = c.pol || '-';
+  $('dt-pod').textContent = c.pod || '-';
+
+  if (c.temp != null) {$('dt-temp-wrap').classList.remove('hide'); $('dt-temp').textContent = c.temp + '°C';}
+  else $('dt-temp-wrap').classList.add('hide');
+
+  if (c.mbl) {$('dt-mbl-wrap').classList.remove('hide'); $('dt-mbl').textContent = c.mbl;}
+  else $('dt-mbl-wrap').classList.add('hide');
+
+  // 태그
+  const tags = [];
+  if (['40HR','20RF','22RT','45RT'].includes(c.ctype)) tags.push(`<span class="tag tag-rf">리퍼${c.temp!=null?' '+c.temp+'°':''}</span>`);
+  if (c.ctype === '40FP' || c.ctype === '20FR') tags.push(`<span class="tag tag-fr">FR</span>`);
+  if (c.ctype === '45OT' || c.ctype === '20OT') tags.push(`<span class="tag tag-ot">OT</span>`);
+  if (c.ak) tags.push(`<span class="tag tag-dg">DG/AK</span>`);
+  if (c.xray) tags.push(`<span class="tag tag-xr">X-RAY 대상</span>`);
+  $('dt-tags').innerHTML = tags.join('');
+
+  // 입력 값
+  $('dt-seal').value = r.seal || c.seal || '';
+  $('dt-seal-line').value = r.sealLine || '';
+  $('dt-seal-cust').value = r.sealCust || '';
+  $('dt-dmg-memo').value = r.dmgMemo || '';
+  $('dt-memo').value = r.memo || '';
+  setDamage(!!r.dmg);
+
+  // 완료 버튼
+  const btn = $('btn-complete');
+  if (S.records[cno]) {
+    btn.textContent = '✓ 완료됨 (재저장)';
+    btn.classList.add('done');
+  } else {
+    btn.textContent = '검수 완료';
+    btn.classList.remove('done');
+  }
+
+  $('detail-pane').classList.add('active');
+  renderList(); // 선택 표시
+}
+
+function closeDetail() {
+  $('detail-pane').classList.remove('active');
+  S.selected = null;
+  curDetail = null;
+  renderList();
+}
+
+function setDamage(yes) {
+  $('dmg-no').classList.toggle('active', !yes);
+  $('dmg-yes').classList.toggle('active', yes);
+  $('dt-dmg-memo').style.display = yes ? 'block' : 'none';
+}
+
+function completeContainer() {
+  if (!curDetail) return;
+  const c = curDetail;
+  const r = {
+    seal: $('dt-seal').value.trim(),
+    sealLine: $('dt-seal-line').value.trim(),
+    sealCust: $('dt-seal-cust').value.trim(),
+    dmg: $('dmg-yes').classList.contains('active'),
+    dmgMemo: $('dt-dmg-memo').value.trim(),
+    memo: $('dt-memo').value.trim(),
+    time: new Date().toISOString(),
+    worker: S.worker,
+    mode: S.modeMap[c.cno] || 'D'
+  };
+  S.records[c.cno] = r;
+  saveLocal();
+  
+  // GAS 전송
+  if (S.gasUrl) {
+    sendToSheet(c, r);
+  }
+
+  toast(`✓ ${c.cno} 검수 완료`, 'ok');
+  
+  // 다음 미완료로 자동 이동
+  const todo = S.containers.find(x => !S.records[x.cno] && x.loc > c.loc);
+  if (todo && window.innerWidth < 768) {
+    closeDetail();
+  } else if (todo) {
+    setTimeout(() => openDetail(todo.cno), 200);
+  } else {
+    closeDetail();
+  }
+
+  renderList();
+  renderStats();
+}
+
+function saveLocal() {
+  localStorage.setItem('tally-records-' + S.voyage, JSON.stringify(S.records));
+}
+
+// =================== 통계 패널 ===================
+function renderStats() {
+  const total = S.containers.length;
+  const done = S.containers.filter(c => S.records[c.cno]).length;
+  const pct = total ? Math.round(done/total*100) : 0;
+
+  // 베이별
+  const byBay = {};
+  for (const c of S.containers) {
+    if (!byBay[c.bay]) byBay[c.bay] = {total:0, done:0};
+    byBay[c.bay].total++;
+    if (S.records[c.cno]) byBay[c.bay].done++;
+  }
+  const bayHtml = Object.keys(byBay).sort().map(b => {
+    const v = byBay[b];
+    const p = v.total ? Math.round(v.done/v.total*100) : 0;
+    return `<div class="bar-row">
+      <div class="name">B${b}</div>
+      <div class="bar"><div class="bar-f" style="width:${p}%"></div></div>
+      <div class="num">${v.done}/${v.total}</div>
+    </div>`;
+  }).join('');
+
+  // 규격
+  const sz = {'20F':0,'40F':0,'45':0};
+  for (const c of S.containers) {
+    if (c.ctype.startsWith('2')) sz['20F']++;
+    else if (c.ctype.startsWith('45')) sz['45']++;
+    else if (c.ctype.startsWith('4')) sz['40F']++;
+  }
+
+  // 특수화물
+  const reefer = S.containers.filter(c => ['40HR','20RF','22RT','45RT'].includes(c.ctype));
+  const xray = S.containers.filter(c => c.xray);
+  const fr = S.containers.filter(c => c.ctype==='40FP'||c.ctype==='20FR');
+  const ot = S.containers.filter(c => c.ctype==='45OT'||c.ctype==='20OT');
+
+  $('stats-body').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card-title">전체 진행</div>
+      <div style="font-size:24px;font-weight:800;color:#0f4c75">${done} <span style="font-size:14px;color:#6a737d">/ ${total}</span></div>
+      <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div style="font-size:11px;color:#586069">${pct}% 완료 · 잔량 ${total-done}건</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">규격별</div>
+      <div class="kv"><span class="kv-k">20ft</span><span class="kv-v">${sz['20F']}</span></div>
+      <div class="kv"><span class="kv-k">40ft</span><span class="kv-v">${sz['40F']}</span></div>
+      ${sz['45']?`<div class="kv"><span class="kv-k">45ft</span><span class="kv-v">${sz['45']}</span></div>`:''}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">특수화물</div>
+      <div class="kv"><span class="kv-k">❄ 리퍼</span><span class="kv-v">${reefer.length}</span></div>
+      ${fr.length?`<div class="kv"><span class="kv-k">FR (플랫랙)</span><span class="kv-v">${fr.length}</span></div>`:''}
+      ${ot.length?`<div class="kv"><span class="kv-k">OT (오픈탑)</span><span class="kv-v">${ot.length}</span></div>`:''}
+      ${xray.length?`<div class="kv"><span class="kv-k">🔍 X-RAY</span><span class="kv-v" style="color:#bf360c">${xray.length}</span></div>`:''}
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-title">베이별 진행률</div>
+      ${bayHtml}
+    </div>
+  `;
+}
+
+// =================== Google Sheets ===================
+async function sendToSheet(c, r) {
+  if (!S.gasUrl) return;
+  const data = {
+    action: 'tally',
+    vessel: S.vessel, voyage: S.voyage,
+    cno: c.cno, loc: c.loc, ctype: c.ctype, fe: c.fe,
+    op: c.op, pol: c.pol, pod: c.pod,
+    temp: c.temp, ak: c.ak, xray: c.xray,
+    seal: r.seal, sealLine: r.sealLine, sealCust: r.sealCust,
+    dmg: r.dmg, dmgMemo: r.dmgMemo, memo: r.memo,
+    worker: r.worker, time: r.time, mode: r.mode
+  };
+  try {
+    await fetch(S.gasUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: {'Content-Type': 'text/plain'},
+      body: JSON.stringify(data)
+    });
+  } catch (e) {
+    console.error('GAS error', e);
+  }
+}
+
+async function syncFromSheet() {
+  if (!S.gasUrl) return;
+  try {
+    const url = S.gasUrl + (S.gasUrl.includes('?')?'&':'?') + 'action=list&voyage=' + encodeURIComponent(S.voyage);
+    const r = await fetch(url);
+    if (!r.ok) return;
+    const j = await r.json();
+    if (j.records) {
+      for (const rec of j.records) {
+        if (!S.records[rec.cno] || (S.records[rec.cno].time||'') < (rec.time||'')) {
+          S.records[rec.cno] = rec;
+        }
+      }
+      saveLocal();
+      renderList();
+      renderStats();
+    }
+  } catch (e) {}
+}
+
+// 폴링 (5명 동시 사용 시 자동 동기화)
+setInterval(() => { if (S.gasUrl && S.containers.length) syncFromSheet(); }, 60000);
+
+// =================== 내보내기 ===================
+function exportData() {
+  if (!S.containers.length) return;
+  const rows = [['컨테이너번호','위치','베이','규격','F/E','선사','POL','POD','리퍼온도','X-RAY','실번호','선사봉인','세관봉인','데미지','데미지메모','메모','검수원','시간','모드']];
+  for (const c of S.containers) {
+    const r = S.records[c.cno] || {};
+    rows.push([
+      c.cno, c.loc, c.bay, c.ctype, c.fe, c.op, c.pol, c.pod,
+      c.temp||'', c.xray?'Y':'',
+      r.seal||'', r.sealLine||'', r.sealCust||'',
+      r.dmg?'손상':(r.time?'정상':''), r.dmgMemo||'', r.memo||'',
+      r.worker||'', r.time||'', r.mode||''
+    ]);
+  }
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, '검수결과');
+  XLSX.writeFile(wb, `${S.vessel}_${S.voyage}_검수결과_${new Date().toISOString().slice(0,10)}.xlsx`);
+}
+
+// =================== 토스트 ===================
+function toast(msg, type) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + (type||'');
+  clearTimeout(t._tm);
+  t._tm = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// 키보드 단축키 (PC)
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.key === '/') {e.preventDefault(); $('search-box').focus();}
+  if (e.key === 'Escape' && curDetail) closeDetail();
+  if (e.key === 'Enter' && curDetail) completeContainer();
+});
+
+</script>
+</body>
+</html>
